@@ -107,15 +107,15 @@ mul :: ID.C a => [a] -> [a] -> [a]
 mul [] _ = []
 mul _ [] = []
 mul f g = zipWith binomConv (inits $ Poly.progression) (convolve f g)
-  where binomConv ns pairs = maybe 0 getSum 
+  where binomConv ns pairs = maybe 0 getSum
                            . mconcat
                            . map (fmap Sum)
                            $ zipWith (fmap . (*))
-                               (binoms ns) 
-                               (map (fmap (uncurry (*))) pairs) 
+                               (binoms ns)
+                               (map (fmap (uncurry (*))) pairs)
 
 convolve :: [a] -> [b] -> [[Maybe (a,b)]]
-convolve xs ys = takeWhile (not . all isNothing) 
+convolve xs ys = takeWhile (not . all isNothing)
                $ zipWith (zipWith pair) (inits' xs) (map reverse $ inits' ys)
   where inits' = drop 1 . inits . (++ repeat Nothing) . map Just
         pair x y = (,) <$> x <*> y
