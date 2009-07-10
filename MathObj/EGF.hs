@@ -158,4 +158,32 @@ compose (Cons xs) (Cons (y:ys)) =
 
 -- Exponential gf composition.  See Faa di Bruno's formula.
 comp :: Ring.C a => [a] -> [a] -> [a]
-comp = undefined -- XXX
+comp (x:xs) ys = x : map coeff (drop 1 . inits $ xs)
+  where coeff xs = sum $ zipWith (\y ps -> y * sum (map product ps)) ys (partitionCoeffs xs)
+
+-- | @partitionCoeffs xs@ returns a list of lists of sublists
+--   @xs@.  The kth list in the output contains length-k lists
+--   corresponding to integer partitions of @length xs@ into k parts;
+--   each list contains those elements from @xs@ which correspond to a
+--   given partition, where the elements of @xs@ are indexed starting
+--   with 1.
+--
+--   For example, @partitionCoeffs [a,b,c,d]@ returns @[[[d]], [[c,a],
+--   [b,b]], [[b,a,a]], [[a,a,a,a]]]@.
+partitionCoeffs :: [a] -> [[[a]]]
+partitionCoeffs xs = zipWith (partitionCoeffs' n) [1..] (init $ tails pairs)
+  where n     = length xs
+        pairs = reverse $ zip [1..] xs
+
+-- @partitionCoeffs' n k xs@ generates all integer partitions of n
+-- into exactly k parts, using integers from @map fst xs@ (but
+-- generating the corresponding elements from @map snd xs@).  @map fst
+-- xs@ should be strictly decreasing.
+partitionCoeffs' :: Int -> Int -> [(Int, a)] -> [[a]]
+partitionCoeffs' 0 0 _ = [[]]
+partitionCoeffs' n k [] = []
+partitionCoeffs' n k (x:xs)
+  | fst x + k - 1 > n = partitionCoeffs' n k xs
+  | fst x * k < n     = []
+  | otherwise         = map (snd x :) (partitionCoeffs' (n - fst x) (k-1) (x:xs))
+                        ++ partitionCoeffs' n k xs
