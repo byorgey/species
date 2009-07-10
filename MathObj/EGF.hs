@@ -11,12 +11,24 @@ import qualified Algebra.ZeroTestable as ZeroTestable
 
 import qualified MathObj.Polynomial as Poly
 
-import Data.Maybe (isNothing)
+import Data.Maybe (isNothing, fromMaybe)
 import Data.List (inits, tails, mapAccumL)
 import Control.Applicative
+import Data.Monoid hiding (Sum(..))
 
 import PreludeBase    hiding (const)
 import NumericPrelude hiding (negate)
+
+
+
+-- NOTE this should really go in the Additive module!
+newtype Sum a = Sum { getSum :: a }
+
+instance Additive.C a => Monoid (Sum a) where
+  mempty  = Sum zero
+  mappend (Sum a) (Sum b) = Sum (a + b)
+
+
 
 newtype T a = Cons {coeffs :: [a]} deriving (Ord)
 
@@ -80,7 +92,7 @@ scale :: Ring.C a => a -> [a] -> [a]
 scale = Poly.scale
 
 -- This works but it's super inefficient!  e.g. try
---   (fromCoeffs (replicate 100 1) * fromCoeffs (replicate 100 1)) :: T Integer
+--   mul (replicate 100 1) (replicate 100 1) :: [Integer]
 --
 -- mul :: Ring.C a => [a] -> [a] -> [a]
 -- mul [] _ = []
@@ -95,9 +107,12 @@ mul :: ID.C a => [a] -> [a] -> [a]
 mul [] _ = []
 mul _ [] = []
 mul f g = zipWith binomConv (inits $ Poly.progression) (convolve f g)
-  where binomConv ns pairs = 
-          sum $ zipWith (*) (binoms ns) 
-                            (map (maybe zero (uncurry (*))) pairs) 
+  where binomConv ns pairs = maybe 0 getSum 
+                           . mconcat
+                           . map (fmap Sum)
+                           $ zipWith (fmap . (*))
+                               (binoms ns) 
+                               (map (fmap (uncurry (*))) pairs) 
 
 convolve :: [a] -> [b] -> [[Maybe (a,b)]]
 convolve xs ys = takeWhile (not . all isNothing) 
@@ -134,4 +149,14 @@ integrate = (:)
 instance ID.C a => Differential.C (T a) where
   differentiate = lift1 differentiate
 
+compose :: (Ring.C a, ZeroTestable.C a) => T a -> T a -> T a
+compose (Cons []) (Cons [])    = Cons []
+compose (Cons (x:_)) (Cons []) = Cons [x]
+compose (Cons xs) (Cons (y:ys)) =
+  if isZero y
+    then Cons (comp xs ys)
+    else error "EGF.compose: inner series must not have an absolute term."
 
+-- Exponential gf composition.  See Faa di Bruno's formula.
+comp :: Ring.C a => [a] -> [a] -> [a]
+comp = undefined -- XXX
