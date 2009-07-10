@@ -122,10 +122,9 @@ convolve xs ys = takeWhile (not . all isNothing)
 
 -- Given an argument of the form [1..n], efficiently generate a list
 -- of the binomial coefficients [(n choose 0) .. (n choose n)].
--- XXX better way to write this? as a zip with a tied knot?
 binoms :: (ID.C a) => [a] -> [a]
-binoms ns = one : (snd $ mapAccumL nextB one (zip (reverse ns) ns))
-  where nextB b (m,d) = let x = b*m `div` d in (x,x)
+binoms ns = bs where
+  bs = 1 : zipWith3 (\b m d -> b * m `div` d) bs (reverse ns) ns
 
 instance (Additive.C a) => Additive.C (T a) where
     negate = lift1 Poly.negate
