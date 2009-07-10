@@ -91,8 +91,10 @@ negate = Poly.negate
 scale :: Ring.C a => a -> [a] -> [a]
 scale = Poly.scale
 
--- This works but it's super inefficient!  e.g. try
---   mul (replicate 100 1) (replicate 100 1) :: [Integer]
+-- This works and is rather elegant, but it's super inefficient!
+--   e.g. try mul (replicate 100 1) (replicate 100 1) :: [Integer].
+-- essentially the binomial coefficients arise as the number of times
+-- the same recursive call appears in the call tree.
 --
 -- mul :: Ring.C a => [a] -> [a] -> [a]
 -- mul [] _ = []
@@ -137,6 +139,7 @@ instance (ID.C a) => Ring.C (T a) where
     fromInteger n = const (fromInteger n)
     (*)           = lift2 mul
 
+-- Differentiation/integration of egfs just correspond to shifts.
 differentiate :: [a] -> [a]
 differentiate = safeTail
   where safeTail [] = []
@@ -177,8 +180,9 @@ partitionCoeffs xs = zipWith (partitionCoeffs' n) [1..] (init $ tails pairs)
 
 -- @partitionCoeffs' n k xs@ generates all integer partitions of n
 -- into exactly k parts, using integers from @map fst xs@ (but
--- generating the corresponding elements from @map snd xs@).  @map fst
--- xs@ should be strictly decreasing.
+-- generating the corresponding elements from @map snd xs@).
+--
+-- precondition: @map fst xs@ is strictly decreasing.
 partitionCoeffs' :: Int -> Int -> [(Int, a)] -> [[a]]
 partitionCoeffs' 0 0 _ = [[]]
 partitionCoeffs' n k [] = []
