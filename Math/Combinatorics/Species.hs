@@ -1,22 +1,19 @@
-{-# LANGUAGE ExistentialQuantification
-           , FlexibleInstances
-           , FlexibleContexts
-           , TypeOperators
+{-# LANGUAGE NoImplicitPrelude 
            , GADTs
-           , ScopedTypeVariables
-           , EmptyDataDecls 
-           , NoImplicitPrelude
+           , FlexibleInstances
   #-}
 
 module CombSpecies where
 
-import MyPrelude
 import qualified MathObj.PowerSeries as PowerSeries
 import qualified MathObj.EGF as EGF
 
 import qualified Algebra.Additive as Additive
 import qualified Algebra.Ring as Ring
 import qualified Algebra.Differential as Differential
+
+import NumericPrelude
+import PreludeBase
 
 unimplemented :: String -> a
 unimplemented = error . (++ " is not yet implemented.")
@@ -31,6 +28,7 @@ class (Differential.C s) => Species s where
   set       :: s             -- the species E of sets
   list      :: s             -- the species L of linear orderings
   o         :: s -> s -> s   -- partitional composition
+  nonEmpty  :: s -> s
 
 -- Some convenient synonyms.
 x, singletons, e, sets, lists :: Species s => s
@@ -53,9 +51,14 @@ madeOf = o
 
 instance Species (PowerSeries.T Integer) where
   singleton = PowerSeries.fromCoeffs [0,1]
-  sets      = PowerSeries.fromCoeffs (repeat 1)
-  lists     = PowerSeries.fromCoeffs (repeat 1)
+  set       = PowerSeries.fromCoeffs (repeat 1)
+  list      = PowerSeries.fromCoeffs (repeat 1)
   o         = unimplemented "unlabelled composition"
+  nonEmpty (PowerSeries.Cons (_:xs)) = PowerSeries.Cons (0:xs)
+  nonEmpty x = x
+
+unlabelled :: PowerSeries.T Integer -> PowerSeries.T Integer
+unlabelled = id
 
 --------------------------------------------------------------------------------
 -- Species algebra -------------------------------------------------------------
@@ -70,6 +73,7 @@ data SpeciesAlg where
    Der      :: SpeciesAlg -> SpeciesAlg
    E        :: SpeciesAlg
    L        :: SpeciesAlg
+   NonEmpty :: SpeciesAlg -> SpeciesAlg
      deriving (Show)
 
 instance Additive.C SpeciesAlg where
@@ -86,9 +90,13 @@ instance Differential.C SpeciesAlg where
 
 instance Species SpeciesAlg where
   singleton = X
-  sets      = E
-  lists     = L
+  set       = E
+  list      = L
   o         = (:.:)
+  nonEmpty  = NonEmpty
+
+reify :: SpeciesAlg -> SpeciesAlg
+reify = id
 
 reflect :: Species s => SpeciesAlg -> s
 reflect = undefined -- XXX
@@ -125,9 +133,14 @@ facts = 1 : zipWith (*) [1..] facts
 
 instance Species (EGF.T Integer) where
   singleton = EGF.fromCoeffs [0,1]
-  sets      = EGF.fromCoeffs $ repeat 1
-  lists     = EGF.fromCoeffs facts
-  o         = unimplemented "labelled composition"
+  set       = EGF.fromCoeffs $ repeat 1
+  list      = EGF.fromCoeffs facts
+  o         = EGF.compose
+  nonEmpty  (EGF.Cons (_:xs)) = EGF.Cons (0:xs)
+  nonEmpty  x = x
+
+labelled :: EGF.T Integer -> [Integer]
+labelled = EGF.coeffs
 
 --------------------------------------------------------------------------------
 -- Generation of species -------------------------------------------------------
