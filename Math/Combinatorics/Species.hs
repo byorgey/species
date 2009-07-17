@@ -7,12 +7,19 @@
 module Math.Combinatorics.Species where
 
 import qualified MathObj.PowerSeries as PowerSeries
-import qualified MathObj.EGF as EGF
+-- import qualified MathObj.EGF as EGF
+import qualified MathObj.FactoredRational as FQ
+import qualified MathObj.Monomial as Monomial
+import qualified MathObj.MultiVarPolynomial as MVP
 
 import qualified Algebra.Additive as Additive
 import qualified Algebra.Ring as Ring
 import qualified Algebra.Differential as Differential
-import qualified Algebra.Integrable as Integrable
+
+import qualified Data.Map as M
+import Control.Arrow ((&&&))
+import Data.List (genericReplicate, genericDrop, groupBy, sort)
+import Data.Function (on)
 
 import NumericPrelude
 import PreludeBase hiding (cycle)
@@ -61,7 +68,7 @@ octopi = octopus
 --------------------------------------------------------------------------------
 
 newtype Unlabelled = Unlabelled (PowerSeries.T Integer)
-  deriving (Additive.C, Ring.C)
+  deriving (Additive.C, Ring.C, Show)
 
 instance Differential.C Unlabelled where
   differentiate = unimplemented "unlabelled differentiation"
@@ -157,7 +164,7 @@ facts = 1 : zipWith (*) [1..] facts
 -- zip/unzip with factorial denominators as necessary.
 
 newtype Labelled = Labelled (PowerSeries.T Rational)
-  deriving (Additive.C, Ring.C, Differential.C)
+  deriving (Additive.C, Ring.C, Differential.C, Show)
 
 instance Species Labelled where
   singleton = Labelled $ PowerSeries.fromCoeffs [0,1]
@@ -178,9 +185,7 @@ instance Species (MVP.T Rational) where
   singleton = MVP.x 1
   set       = MVP.Cons . map partToMonomial . concatMap intPartitions $ [0..]
 
-  cycle     = undefined  -- cycles of size n are only fixed by the
-                         -- identity permutation and any permutation
-                         -- which has only one cycle of size n.
+  cycle     = MVP.Cons . concatMap cycleMonomials $ [1..]
 
   o = undefined          -- XXX
   nonEmpty = undefined   -- XXX
@@ -203,6 +208,13 @@ intPartitions n = intPartitions' n n
           [ if (j == 0) then js else (k,j):js
             | j <- reverse [0..n `div` k]
             , js <- intPartitions' (n - j*k) (min (k-1) (n - j*k)) ]
+
+cycleMonomials :: Integer -> [Monomial.T Rational]
+cycleMonomials n = map cycleMonomial ds
+  where n' = fromIntegral n
+        ds = sort . FQ.divisors $ n'
+        cycleMonomial d = Monomial.Cons (FQ.eulerPhi (n' / d) % n)
+                                        (M.singleton (n `div` (toInteger d)) (toInteger d))
 
 zToLabelled :: MVP.T Rational -> Labelled
 zToLabelled (MVP.Cons xs) 
