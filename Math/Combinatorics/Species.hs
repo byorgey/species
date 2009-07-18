@@ -187,8 +187,9 @@ instance Species (MVP.T Rational) where
 
   cycle     = MVP.Cons . concatMap cycleMonomials $ [1..]
 
-  o = undefined          -- XXX
-  nonEmpty = undefined   -- XXX
+  o         = MVP.compose
+  nonEmpty  p@(MVP.Cons (x:xs)) | Monomial.degree x == 0 = MVP.Cons xs
+                                | otherwise              = p
 
 partToMonomial :: [(Integer, Integer)] -> Monomial.T Rational
 partToMonomial js = Monomial.Cons (zCoeff js) (M.fromList js)
