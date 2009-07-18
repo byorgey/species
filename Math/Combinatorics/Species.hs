@@ -63,6 +63,10 @@ octopus, octopi :: Species s => s
 octopus = cycle `o` nonEmpty lists
 octopi = octopus
 
+partition, partitions :: Species s => s
+partition = set `o` nonEmpty sets
+partitions = partition
+
 --------------------------------------------------------------------------------
 -- Unlabelled enumeration (classical power series) -----------------------------
 --------------------------------------------------------------------------------
