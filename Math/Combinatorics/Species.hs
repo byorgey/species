@@ -2,6 +2,11 @@
            , GADTs
            , FlexibleInstances
            , GeneralizedNewtypeDeriving
+           , EmptyDataDecls
+           , TypeOperators
+           , TypeFamilies
+           , FlexibleContexts
+           , MultiParamTypeClasses
   #-}
 
 module Math.Combinatorics.Species where
@@ -17,8 +22,8 @@ import qualified Algebra.Ring as Ring
 import qualified Algebra.Differential as Differential
 
 import qualified Data.Map as M
-import Control.Arrow ((&&&))
-import Data.List (genericReplicate, genericDrop, groupBy, sort)
+import Control.Arrow ((&&&), first, second)
+import Data.List (genericReplicate, genericDrop, groupBy, sort, intercalate)
 import Data.Function (on)
 
 import NumericPrelude
@@ -39,6 +44,12 @@ class (Differential.C s) => Species s where
   o         :: s -> s -> s   -- partitional composition
   nonEmpty  :: s -> s
 
+  -- some derived species, in the class so we can have specialized
+  -- implementations.
+  list      :: s
+  list = oneHole cycle
+
+
 -- Some convenient synonyms and derived operations.
 pointed, oneHole :: (Species s) => s -> s  
 pointed = (singleton *) . Differential.differentiate
@@ -47,18 +58,15 @@ oneHole = Differential.differentiate
 madeOf :: Species s => s -> s -> s
 madeOf = o
 
-x, singletons, e, sets, cycles :: Species s => s
+x, singletons, e, sets, cycles, lists :: Species s => s
 x          = singleton
 singletons = singleton
 e          = set
 sets       = set
 cycles     = cycle
+lists      = list
 
--- Some derived species.
-list, lists :: Species s => s
-list = oneHole cycle
-lists = list
-
+-- More derived species.
 octopus, octopi :: Species s => s
 octopus = cycle `o` nonEmpty lists
 octopi = octopus
@@ -92,57 +100,73 @@ unlabelled (Unlabelled p) = PowerSeries.coeffs p
 -- Species algebra -------------------------------------------------------------
 --------------------------------------------------------------------------------
 
+data Z
+data S n
+data X
+data (:+:) f g
+data (:*:) f g
+data (:.:) f g
+data Der f
+data E
+data C
+data NonEmpty f
+
+data SpeciesAlgT s where
+   O        :: SpeciesAlgT Z
+   I        :: SpeciesAlgT (S Z)
+   X        :: SpeciesAlgT X
+   (:+:)    :: SpeciesAlgT f -> SpeciesAlgT g -> SpeciesAlgT (f :+: g)
+   (:*:)    :: SpeciesAlgT f -> SpeciesAlgT g -> SpeciesAlgT (f :*: g)
+   (:.:)    :: SpeciesAlgT f -> SpeciesAlgT g -> SpeciesAlgT (f :.: g)
+   Der      :: SpeciesAlgT f -> SpeciesAlgT (Der f)
+   E        :: SpeciesAlgT E
+   C        :: SpeciesAlgT C
+   NonEmpty :: SpeciesAlgT f -> SpeciesAlgT (NonEmpty f)
+--     deriving (Show)
+
+-- existential wrapper
 data SpeciesAlg where
-   N        :: Integer -> SpeciesAlg
-   X        :: SpeciesAlg
-   (:+:)    :: SpeciesAlg -> SpeciesAlg -> SpeciesAlg
-   (:*:)    :: SpeciesAlg -> SpeciesAlg -> SpeciesAlg
-   (:.:)    :: SpeciesAlg -> SpeciesAlg -> SpeciesAlg
-   Der      :: SpeciesAlg -> SpeciesAlg
-   E        :: SpeciesAlg
-   C        :: SpeciesAlg
-   NonEmpty :: SpeciesAlg -> SpeciesAlg
-     deriving (Show)
+  SA :: SpeciesAlgT s -> SpeciesAlg
 
 instance Additive.C SpeciesAlg where
-  zero   = N 0
-  (+)    = (:+:)
+  zero   = SA O
+  (SA f) + (SA g) = SA (f :+: g)
   negate = error "negation is not implemented yet!  wait until virtual species..."
 
 instance Ring.C SpeciesAlg where
-  (*) = (:*:)
-  one = N 1
+  (SA f) * (SA g) = SA (f :*: g)
+  one = SA I
 
 instance Differential.C SpeciesAlg where
-  differentiate = Der
+  differentiate (SA f) = SA (Der f)
 
 instance Species SpeciesAlg where
-  singleton = X
-  set       = E
-  cycle     = C
-  o         = (:.:)
-  nonEmpty  = NonEmpty
+  singleton = SA X
+  set       = SA E
+  cycle     = SA C
+  o (SA f) (SA g) = SA (f :.: g)
+  nonEmpty (SA f) = SA (NonEmpty f)
 
 reify :: SpeciesAlg -> SpeciesAlg
 reify = id
 
-reflect :: Species s => SpeciesAlg -> s
-reflect = undefined -- XXX
+-- reflect :: Species s => SpeciesAlg -> s
+-- reflect = undefined -- XXX
 
--- This is the basic idea: to do this right, we really want a more
---   sophisticated rewriting system.
-simplify :: SpeciesAlg -> SpeciesAlg
-simplify (N n :+: N m) = N (n+m)
-simplify (N n :*: N m) = N (n*m)
-simplify (N 0 :+: s)   = simplify s
-simplify (s :+: N 0)   = simplify s
-simplify (N 0 :*: s)   = N 0
-simplify (s :*: N 0)   = N 0
-simplify (f :+: g)     = simplify $ simplify f :+: simplify g
-simplify (f :*: g)     = simplify f :*: simplify g
-simplify (f :.: g)     = simplify f :.: simplify g
-simplify (Der f)       = Der $ simplify f
-simplify s = s
+-- -- This is the basic idea: to do this right, we really want a more
+-- --   sophisticated rewriting system.
+-- simplify :: SpeciesAlg -> SpeciesAlg
+-- simplify (N n :+: N m) = N (n+m)
+-- simplify (N n :*: N m) = N (n*m)
+-- simplify (N 0 :+: s)   = simplify s
+-- simplify (s :+: N 0)   = simplify s
+-- simplify (N 0 :*: s)   = N 0
+-- simplify (s :*: N 0)   = N 0
+-- simplify (f :+: g)     = simplify $ simplify f :+: simplify g
+-- simplify (f :*: g)     = simplify f :*: simplify g
+-- simplify (f :.: g)     = simplify f :.: simplify g
+-- simplify (Der f)       = Der $ simplify f
+-- simplify s = s
 
 --------------------------------------------------------------------------------
 -- Labelled enumeration (egf's) ------------------------------------------------
@@ -251,92 +275,121 @@ insertZeros = insertZeros' [0..]
 -- Generation of species -------------------------------------------------------
 --------------------------------------------------------------------------------
 
--- This seems really ugly.  Is there a better way to do this?
+newtype Const x a = Const x
+instance (Show x) => Show (Const x a) where
+  show (Const x) = show x
 
--- data Structure a = Set [a]
---                  | Inl (Structure a)
---                  | Inr (Structure a)
---                  | Pair (Structure a) (Structure a)
---                  | Comp (Structure (Structure a))
+newtype Identity a = Identity a
+instance (Show a) => Show (Identity a) where
+  show (Identity x) = show x
 
--- instance Species ([a] -> [Structure a]) where
---   singleton []  = []
---   singleton [x] = [Set [x]]
---   singleton _   = []
+newtype Sum f g a = Sum  { unSum  :: Either (f a) (g a) }
+instance (Show (f a), Show (g a)) => Show (Sum f g a) where
+  show (Sum x) = show x
 
---   set es        = [Set es]
+newtype Prod f g a = Prod { unProd :: (f a, g a) }
+instance (Show (f a), Show (g a)) => Show (Prod f g a) where
+  show (Prod x) = show x
 
---   list es       = map listToStructure (permutations es)
+newtype Comp f g a = Comp { unComp :: (f (g a)) }
+instance (Show (f (g a))) => Show (Comp f g a) where
+  show (Comp x) = show x
 
--- listToStructure :: [a] -> Structure a
--- listToStructure []     = Inl (Set [])
--- listToStructure (x:xs) = Inr (Pair (Set [x]) (listToStructure xs))
+newtype Cycle a = Cycle [a]
+instance (Show a) => Show (Cycle a) where
+  show (Cycle xs) = "{" ++ intercalate "," (map show xs) ++ "}"
+instance Functor Cycle where
+  fmap f (Cycle xs) = Cycle (fmap f xs)
 
--- structureToList :: Structure a -> [a]
--- structureToList (Inl _) = []
--- structureToList (Inr (Pair (Set [x]) xs)) = x : structureToList xs
--- structureToList _ = error "invalid list structure"                      
+data Star a = Star | Original a
+instance (Show a) => Show (Star a) where
+  show Star = "*"
+  show (Original a) = show a
+
+type family StructureF t :: * -> *
+type instance StructureF Z            = Const Integer
+type instance StructureF (S s)        = Const Integer
+type instance StructureF X            = Identity
+type instance StructureF (f :+: g)    = Sum (StructureF f) (StructureF g)
+type instance StructureF (f :*: g)    = Prod (StructureF f) (StructureF g)
+type instance StructureF (f :.: g)    = Comp (StructureF f) (StructureF g)
+type instance StructureF (Der f)      = Comp (StructureF f) Star
+type instance StructureF E            = []
+type instance StructureF C            = Cycle
+type instance StructureF (NonEmpty f) = StructureF f
+
+generateF :: SpeciesAlgT s -> [a] -> [StructureF s a]
+generateF O _   = []
+generateF I []  = [Const 1]
+generateF I _   = []
+generateF X [x] = [Identity x]
+generateF X _   = []
+generateF (f :+: g) xs = map (Sum . Left ) (generateF f xs) 
+                      ++ map (Sum . Right) (generateF g xs)
+generateF (f :*: g) xs = [ Prod (x, y) | (s1,s2) <- splits xs
+                                       ,       x <- generateF f s1
+                                       ,       y <- generateF g s2
+                         ]
+generateF (f :.: g) xs = [ Comp y | p  <- sPartitions xs
+                                  , xs <- mapM (generateF g) p
+                                  , y  <- generateF f xs
+                         ]
+generateF (Der f) xs = map Comp $ generateF f (Star : map Original xs)
+generateF E xs = [xs]
+generateF C [] = []
+generateF C (x:xs) = map (Cycle . (x:)) (permutations xs)
+generateF (NonEmpty f) [] = []
+generateF (NonEmpty f) xs = generateF f xs
+
+-- power set
+pSet :: [a] -> [([a],[a])]
+pSet [] = [([],[])]
+pSet (x:xs) = mapx first ++ mapx second 
+  where mapx which = map (which (x:)) $ pSet xs
+
+sPartitions :: [a] -> [[[a]]]
+sPartitions [] = [[]]
+sPartitions (s:s') = do (sub,compl) <- pSet s'
+                        let firstSubset = s:sub
+                        map (firstSubset:) $ sPartitions compl
+
+splits :: [a] -> [([a],[a])]
+splits []     = [([],[])]
+splits (x:xs) = map (first (x:)) ss ++ map (second (x:)) ss
+  where ss = splits xs
+
+permutations :: [a] -> [[a]]
+permutations [] = [[]]
+permutations xs = [ y:p | (y,ys) <- select xs
+                        , p      <- permutations ys
+                  ]
+
+select :: [a] -> [(a,[a])]
+select [] = []
+select (x:xs) = (x,xs) : map (second (x:)) (select xs)
 
 
+-- data Structure where
+--   Structure :: (Show t) => t -> Structure
 
--- newtype (f :+@ g) a = Sum  { unSum  :: Either (f a) (g a) }
---   deriving (Show)
--- newtype (f :*@ g) a = Prod { unProd :: (f a, g a) }
---   deriving (Show)
--- newtype (f :.@ g) a = Comp { unComp :: (f (g a)) }
---   deriving (Show)
+-- generate :: SpeciesAlg -> [a] -> [Structure]
+-- generate (SA s) xs = map Structure (generateF s xs)
 
--- data O
--- data I
--- data E
--- data X
--- data L
--- data (:+:) a b
--- data (:*:) a b
--- data (:.:) a b
--- data Der a
--- data (:@:) a b
+class Iso f g where
+  iso :: f a -> g a
 
+instance Iso (Comp Cycle Star) [] where
+  iso (Comp (Cycle (_:xs))) = map (\(Original x) -> x) xs
 
--- splits :: [a] -> [([a],[a])]
--- splits []     = [([],[])]
--- splits (x:xs) = map (first (x:)) ss ++ map (second (x:)) ss
---   where ss = splits xs
+instance (Iso f g, Functor h) => Iso (Comp h f) (Comp h g) where
+  iso (Comp h) = Comp (fmap iso h)
 
--- -- power set
--- pSet :: [a] -> [([a],[a])]
--- pSet [] = [([],[])]
--- pSet (x:xs) = mapx first ++ mapx second 
---   where mapx which = map (which (x:)) $ pSet xs
+instance (Iso f1 f2, Iso g1 g2) => Iso (Sum f1 g1) (Sum f2 g2) where
+  iso (Sum (Left x)) = Sum (Left (iso x))
+  iso (Sum (Right x)) = Sum (Right (iso x))
 
--- partitions :: [a] -> [[[a]]]
--- partitions [] = [[]]
--- partitions (s:s') = do (sub,compl) <- pSet s'
---                        let firstSubset = s:sub
---                        map (firstSubset:) $ partitions compl
+instance (Iso f1 f2, Iso g1 g2) => Iso (Prod f1 g1) (Prod f2 g2) where
+  iso (Prod (x,y)) = Prod (iso x, iso y)
 
--- permutations :: [a] -> [[a]]
--- permutations [] = [[]]
--- permutations (x:xs) = undefined  -- XXX
-
--- over :: forall a f. Species f -> [a] -> [f a]
--- over O _   = []
--- over I []  = [[]]
--- over I _   = []
--- over E ls  = [ls]
--- over X [l] = [[l]]
--- over X _   = []
--- over L ls  = permutations ls
--- over (f :+: g) ls = map (Sum . Left) (f `over` ls) ++ map (Sum . Right) (g `over` ls) 
--- over (f :*: g) ls = [ Prod (x, y) | (s1,s2) <- splits ls
---                                   ,       x <- f `over` s1
---                                   ,       y <- g `over` s2 
---                     ]
--- over (f :.: g) ls = [ Comp y | p  <- partitions ls
---                              , xs <- mapM (g `over`) p
---                              , y  <- f `over` xs 
---                     ]
--- over (Der f) ls   = f `over` (undefined : ls)
--- over (f :@: g) ls = map Comp $ f `over` (g `over` ls)
--- over (NonEmpty f) [] = []
--- over (NonEmpty f) ls = f `over` ls
+generateFI :: (Iso (StructureF s) f) => SpeciesAlgT s -> [a] -> [f a]
+generateFI s xs = map iso $ generateF s xs
