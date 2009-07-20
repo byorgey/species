@@ -83,22 +83,33 @@ newtype Unlabelled = Unlabelled (PowerSeries.T Integer)
   deriving (Additive.C, Ring.C, Show)
 
 instance Differential.C Unlabelled where
-  differentiate = unimplemented "unlabelled differentiation"
+  differentiate = error "unlabelled differentiation must go via cycle index series."
 
 instance Species Unlabelled where
   singleton = Unlabelled $ PowerSeries.fromCoeffs [0,1]
   set       = Unlabelled $ PowerSeries.fromCoeffs (repeat 1)
   cycle     = set
-  o         = unimplemented "unlabelled composition"
+  o         = error "unlabelled composition must go via cycle index series."
   nonEmpty (Unlabelled (PowerSeries.Cons (_:xs))) = Unlabelled (PowerSeries.Cons (0:xs))
   nonEmpty x = x
 
-unlabelled :: Unlabelled -> [Integer]
-unlabelled (Unlabelled p) = PowerSeries.coeffs p
+unlabelledCoeffs :: Unlabelled -> [Integer]
+unlabelledCoeffs (Unlabelled p) = PowerSeries.coeffs p
+
+unlabelled :: SpeciesAlg -> [Integer]
+unlabelled s 
+  | hasDer s || hasComp s = unlabelledCoeffs . zToUnlabelled . reflect $ s
+  | otherwise             = unlabelledCoeffs . reflect $ s
 
 --------------------------------------------------------------------------------
 -- Species algebra -------------------------------------------------------------
 --------------------------------------------------------------------------------
+
+class Functor f => ShowF f where
+  showF :: (Show a) => f a -> String
+
+-- instance (ShowF f, Show a) => Show (f a) where
+--   show = showF
 
 data Z
 data S n
@@ -115,18 +126,44 @@ data SpeciesAlgT s where
    O        :: SpeciesAlgT Z
    I        :: SpeciesAlgT (S Z)
    X        :: SpeciesAlgT X
-   (:+:)    :: SpeciesAlgT f -> SpeciesAlgT g -> SpeciesAlgT (f :+: g)
-   (:*:)    :: SpeciesAlgT f -> SpeciesAlgT g -> SpeciesAlgT (f :*: g)
-   (:.:)    :: SpeciesAlgT f -> SpeciesAlgT g -> SpeciesAlgT (f :.: g)
-   Der      :: SpeciesAlgT f -> SpeciesAlgT (Der f)
+   (:+:)    :: (ShowF (StructureF f), ShowF (StructureF g)) 
+            => SpeciesAlgT f -> SpeciesAlgT g -> SpeciesAlgT (f :+: g)
+   (:*:)    :: (ShowF (StructureF f), ShowF (StructureF g))
+            => SpeciesAlgT f -> SpeciesAlgT g -> SpeciesAlgT (f :*: g)
+   (:.:)    :: (ShowF (StructureF f), ShowF (StructureF g)) 
+            => SpeciesAlgT f -> SpeciesAlgT g -> SpeciesAlgT (f :.: g)
+   Der      :: (ShowF (StructureF f)) 
+            => SpeciesAlgT f -> SpeciesAlgT (Der f)
    E        :: SpeciesAlgT E
    C        :: SpeciesAlgT C
-   NonEmpty :: SpeciesAlgT f -> SpeciesAlgT (NonEmpty f)
+   NonEmpty :: (ShowF (StructureF f)) 
+            => SpeciesAlgT f -> SpeciesAlgT (NonEmpty f)
 --     deriving (Show)
+
+hasCompT :: SpeciesAlgT s -> Bool
+hasCompT (f :+: g) = hasCompT f || hasCompT g
+hasCompT (f :*: g) = hasCompT f || hasCompT g
+hasCompT (_ :.: _) = True
+hasCompT (NonEmpty f) = hasCompT f
+hasCompT _ = False
+
+hasDerT :: SpeciesAlgT s -> Bool
+hasDerT (f :+: g) = hasDerT f || hasDerT g
+hasDerT (f :*: g) = hasDerT f || hasDerT g
+hasDerT (f :.: g) = hasDerT f || hasDerT g
+hasDerT (Der _) = True
+hasDerT (NonEmpty f) = hasDerT f
+hasDerT _ = False
 
 -- existential wrapper
 data SpeciesAlg where
-  SA :: SpeciesAlgT s -> SpeciesAlg
+  SA :: (ShowF (StructureF s)) => SpeciesAlgT s -> SpeciesAlg
+
+hasComp :: SpeciesAlg -> Bool
+hasComp (SA s) = hasCompT s
+
+hasDer :: SpeciesAlg -> Bool
+hasDer (SA s) = hasDerT s
 
 instance Additive.C SpeciesAlg where
   zero   = SA O
@@ -150,8 +187,20 @@ instance Species SpeciesAlg where
 reify :: SpeciesAlg -> SpeciesAlg
 reify = id
 
--- reflect :: Species s => SpeciesAlg -> s
--- reflect = undefined -- XXX
+reflectT :: Species s => SpeciesAlgT f -> s
+reflectT O = zero
+reflectT I = one
+reflectT X = singleton
+reflectT (f :+: g) = reflectT f + reflectT g
+reflectT (f :*: g) = reflectT f * reflectT g
+reflectT (f :.: g) = reflectT f `o` reflectT g
+reflectT (Der f)   = oneHole (reflectT f)
+reflectT E = set
+reflectT C = cycle
+reflectT (NonEmpty f) = nonEmpty (reflectT f)
+
+reflect :: Species s => SpeciesAlg -> s
+reflect (SA f) = reflectT f
 
 -- -- This is the basic idea: to do this right, we really want a more
 -- --   sophisticated rewriting system.
@@ -275,36 +324,72 @@ insertZeros = insertZeros' [0..]
 -- Generation of species -------------------------------------------------------
 --------------------------------------------------------------------------------
 
+instance ShowF [] where
+  showF = show
+
 newtype Const x a = Const x
+instance Functor (Const x) where
+  fmap _ (Const x) = Const x
 instance (Show x) => Show (Const x a) where
   show (Const x) = show x
+instance (Show x) => ShowF (Const x) where
+  showF = show
 
 newtype Identity a = Identity a
+instance Functor Identity where
+  fmap f (Identity x) = Identity (f x)
 instance (Show a) => Show (Identity a) where
   show (Identity x) = show x
+instance ShowF Identity where
+  showF = show
 
 newtype Sum f g a = Sum  { unSum  :: Either (f a) (g a) }
+instance (Functor f, Functor g) => Functor (Sum f g) where
+  fmap f (Sum (Left fa))  = Sum (Left (fmap f fa))
+  fmap f (Sum (Right ga)) = Sum (Right (fmap f ga))
 instance (Show (f a), Show (g a)) => Show (Sum f g a) where
   show (Sum x) = show x
+instance (ShowF f, ShowF g) => ShowF (Sum f g) where
+  showF (Sum (Left fa)) = "Left " ++ showF fa
+  showF (Sum (Right ga)) = "Right " ++ showF ga
 
 newtype Prod f g a = Prod { unProd :: (f a, g a) }
+instance (Functor f, Functor g) => Functor (Prod f g) where
+  fmap f (Prod (fa, ga)) = Prod (fmap f fa, fmap f ga)
 instance (Show (f a), Show (g a)) => Show (Prod f g a) where
   show (Prod x) = show x
+instance (ShowF f, ShowF g) => ShowF (Prod f g) where
+  showF (Prod (fa, ga)) = "(" ++ showF fa ++ "," ++ showF ga ++ ")"
 
-newtype Comp f g a = Comp { unComp :: (f (g a)) }
+data Comp f g a = Comp { unComp :: (f (g a)) }
+instance (Functor f, Functor g) => Functor (Comp f g) where
+  fmap f (Comp fga) = Comp (fmap (fmap f) fga)
 instance (Show (f (g a))) => Show (Comp f g a) where
   show (Comp x) = show x
+instance (ShowF f, ShowF g) => ShowF (Comp f g) where
+  showF (Comp fga) = showF (fmap (RawString . showF) fga)
+
+newtype RawString = RawString String
+instance Show RawString where
+  show (RawString s) = s
 
 newtype Cycle a = Cycle [a]
-instance (Show a) => Show (Cycle a) where
-  show (Cycle xs) = "{" ++ intercalate "," (map show xs) ++ "}"
 instance Functor Cycle where
   fmap f (Cycle xs) = Cycle (fmap f xs)
+instance (Show a) => Show (Cycle a) where
+  show (Cycle xs) = "{" ++ intercalate "," (map show xs) ++ "}"
+instance ShowF Cycle where
+  showF = show
 
 data Star a = Star | Original a
+instance Functor Star where
+  fmap _ Star = Star
+  fmap f (Original a) = Original (f a)
 instance (Show a) => Show (Star a) where
   show Star = "*"
   show (Original a) = show a
+instance ShowF Star where
+  showF = show
 
 type family StructureF t :: * -> *
 type instance StructureF Z            = Const Integer
@@ -369,11 +454,14 @@ select [] = []
 select (x:xs) = (x,xs) : map (second (x:)) (select xs)
 
 
--- data Structure where
---   Structure :: (Show t) => t -> Structure
+data Structure a where
+  Structure :: (ShowF f) => f a -> Structure a
 
--- generate :: SpeciesAlg -> [a] -> [Structure]
--- generate (SA s) xs = map Structure (generateF s xs)
+instance (Show a) => Show (Structure a) where
+  show (Structure t) = showF t
+
+generate :: SpeciesAlg -> [a] -> [Structure a]
+generate (SA s) xs = map Structure (generateF s xs)
 
 class Iso f g where
   iso :: f a -> g a
