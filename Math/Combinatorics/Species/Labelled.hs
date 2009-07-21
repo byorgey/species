@@ -1,9 +1,12 @@
-{-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE NoImplicitPrelude 
+           , GeneralizedNewtypeDeriving
+  #-}
 module Math.Combinatorics.Species.Labelled where
 
-import qualified MathObj.PowerSeries as PowerSeries
+import Math.Combinatorics.Species.Types
+import Math.Combinatorics.Species.Class
 
-import Data.Lub (parCommute, HasLub(..), flatLub)
+import qualified MathObj.PowerSeries as PowerSeries
 
 import NumericPrelude
 import PreludeBase hiding (cycle)
@@ -27,25 +30,6 @@ facts = 1 : zipWith (*) [1..] facts
 --
 -- Sigh.  Just compute explicitly with normal power series and
 -- zip/unzip with factorial denominators as necessary.
-
-newtype LazyRational = LR { unLR :: Rational }
-  deriving (Eq, Ord, Additive.C, ZeroTestable.C, Field.C)
-
-instance HasLub LazyRational where
-  lub = flatLub
-
-instance Show LazyRational where
-  show (LR r) = show r
-
-instance Ring.C LazyRational where
-  (*) = parCommute lazyTimes
-    where lazyTimes (LR 0) _ = LR 0
-          lazyTimes (LR 1) x = x
-          lazyTimes (LR a) (LR b) = LR (a*b)
-  fromInteger = LR . fromInteger
-
-newtype Labelled = Labelled (PowerSeries.T LazyRational)
-  deriving (Additive.C, Ring.C, Differential.C, Show)
 
 instance Species Labelled where
   singleton = Labelled $ PowerSeries.fromCoeffs [0,1]

@@ -1,10 +1,12 @@
 {-# LANGUAGE NoImplicitPrelude
            , GADTs
-           , EmptyDataDecls
+           , TypeOperators
+           , FlexibleContexts
   #-}
 module Math.Combinatorics.Species.Algebra where
 
 import Math.Combinatorics.Species.Class
+import Math.Combinatorics.Species.Types
 
 import qualified Algebra.Additive as Additive
 import qualified Algebra.Ring as Ring
@@ -13,22 +15,8 @@ import qualified Algebra.Differential as Differential
 import NumericPrelude
 import PreludeBase hiding (cycle)
 
-class Functor f => ShowF f where
-  showF :: (Show a) => f a -> String
-
 -- instance (ShowF f, Show a) => Show (f a) where
 --   show = showF
-
-data Z
-data S n
-data X
-data (:+:) f g
-data (:*:) f g
-data (:.:) f g
-data Der f
-data E
-data C
-data NonEmpty f
 
 data SpeciesAlgT s where
    O        :: SpeciesAlgT Z

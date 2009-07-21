@@ -1,83 +1,19 @@
+{-# LANGUAGE NoImplicitPrelude 
+           , GADTs
+           , MultiParamTypeClasses
+           , FlexibleInstances
+           , FlexibleContexts
+  #-}
 module Math.Combinatorics.Species.Generate where
 
-instance ShowF [] where
-  showF = show
+import Math.Combinatorics.Species.Class
+import Math.Combinatorics.Species.Types
+import Math.Combinatorics.Species.Algebra
 
-newtype Const x a = Const x
-instance Functor (Const x) where
-  fmap _ (Const x) = Const x
-instance (Show x) => Show (Const x a) where
-  show (Const x) = show x
-instance (Show x) => ShowF (Const x) where
-  showF = show
+import Control.Arrow (first, second)
 
-newtype Identity a = Identity a
-instance Functor Identity where
-  fmap f (Identity x) = Identity (f x)
-instance (Show a) => Show (Identity a) where
-  show (Identity x) = show x
-instance ShowF Identity where
-  showF = show
-
-newtype Sum f g a = Sum  { unSum  :: Either (f a) (g a) }
-instance (Functor f, Functor g) => Functor (Sum f g) where
-  fmap f (Sum (Left fa))  = Sum (Left (fmap f fa))
-  fmap f (Sum (Right ga)) = Sum (Right (fmap f ga))
-instance (Show (f a), Show (g a)) => Show (Sum f g a) where
-  show (Sum x) = show x
-instance (ShowF f, ShowF g) => ShowF (Sum f g) where
-  showF (Sum (Left fa)) = "Left " ++ showF fa
-  showF (Sum (Right ga)) = "Right " ++ showF ga
-
-newtype Prod f g a = Prod { unProd :: (f a, g a) }
-instance (Functor f, Functor g) => Functor (Prod f g) where
-  fmap f (Prod (fa, ga)) = Prod (fmap f fa, fmap f ga)
-instance (Show (f a), Show (g a)) => Show (Prod f g a) where
-  show (Prod x) = show x
-instance (ShowF f, ShowF g) => ShowF (Prod f g) where
-  showF (Prod (fa, ga)) = "(" ++ showF fa ++ "," ++ showF ga ++ ")"
-
-data Comp f g a = Comp { unComp :: (f (g a)) }
-instance (Functor f, Functor g) => Functor (Comp f g) where
-  fmap f (Comp fga) = Comp (fmap (fmap f) fga)
-instance (Show (f (g a))) => Show (Comp f g a) where
-  show (Comp x) = show x
-instance (ShowF f, ShowF g) => ShowF (Comp f g) where
-  showF (Comp fga) = showF (fmap (RawString . showF) fga)
-
-newtype RawString = RawString String
-instance Show RawString where
-  show (RawString s) = s
-
-newtype Cycle a = Cycle [a]
-instance Functor Cycle where
-  fmap f (Cycle xs) = Cycle (fmap f xs)
-instance (Show a) => Show (Cycle a) where
-  show (Cycle xs) = "{" ++ intercalate "," (map show xs) ++ "}"
-instance ShowF Cycle where
-  showF = show
-
-data Star a = Star | Original a
-instance Functor Star where
-  fmap _ Star = Star
-  fmap f (Original a) = Original (f a)
-instance (Show a) => Show (Star a) where
-  show Star = "*"
-  show (Original a) = show a
-instance ShowF Star where
-  showF = show
-
-type family StructureF t :: * -> *
-type instance StructureF Z            = Const Integer
-type instance StructureF (S s)        = Const Integer
-type instance StructureF X            = Identity
-type instance StructureF (f :+: g)    = Sum (StructureF f) (StructureF g)
-type instance StructureF (f :*: g)    = Prod (StructureF f) (StructureF g)
-type instance StructureF (f :.: g)    = Comp (StructureF f) (StructureF g)
-type instance StructureF (Der f)      = Comp (StructureF f) Star
-type instance StructureF E            = []
-type instance StructureF C            = Cycle
-type instance StructureF (NonEmpty f) = StructureF f
+import NumericPrelude
+import PreludeBase hiding (cycle)
 
 generateF :: SpeciesAlgT s -> [a] -> [StructureF s a]
 generateF O _   = []

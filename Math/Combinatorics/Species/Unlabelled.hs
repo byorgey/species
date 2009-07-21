@@ -1,5 +1,6 @@
 module Math.Combinatorics.Species.Unlabelled where
 
+import Math.Combinatorics.Species.Types
 import Math.Combinatorics.Species.Class
 import Math.Combinatorics.Species.Algebra
 import Math.Combinatorics.Species.CycleIndex
@@ -10,9 +11,6 @@ import qualified Algebra.Differential as Differential
 
 import NumericPrelude
 import PreludeBase hiding (cycle)
-
-newtype Unlabelled = Unlabelled (PowerSeries.T Integer)
-  deriving (Additive.C, Ring.C, Show)
 
 instance Differential.C Unlabelled where
   differentiate = error "unlabelled differentiation must go via cycle index series."

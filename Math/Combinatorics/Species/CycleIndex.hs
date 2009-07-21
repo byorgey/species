@@ -1,10 +1,27 @@
+{-# LANGUAGE NoImplicitPrelude 
+           , FlexibleInstances
+  #-}
+
 module Math.Combinatorics.Species.CycleIndex where
 
+import Math.Combinatorics.Species.Types
 import Math.Combinatorics.Species.Class
+import Math.Combinatorics.Species.Labelled
 
+import qualified MathObj.PowerSeries as PowerSeries
 import qualified MathObj.MultiVarPolynomial as MVP
 import qualified MathObj.Monomial as Monomial
 import qualified MathObj.FactoredRational as FQ
+
+import qualified Algebra.Ring as Ring
+
+import qualified Data.Map as M
+import Data.List (genericReplicate, genericDrop, groupBy, sort, intercalate)
+import Data.Function (on)
+import Control.Arrow ((&&&), first, second)
+
+import NumericPrelude
+import PreludeBase hiding (cycle)
 
 instance Species (MVP.T Rational) where
   singleton = MVP.x 1

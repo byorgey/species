@@ -16,7 +16,8 @@ description:    A DSL for describing combinatorial species, along with a number
 
 Library
   build-depends: base >= 3.0 && < 4.2, numeric-prelude >= 0.1.1 && < 0.2,
-                 np-extras >= 0.1 && < 0.2
+                 np-extras >= 0.1 && < 0.2, containers >= 0.2 && < 0.3,
+                 lub >= 0.0.5 && < 0.1
   exposed-modules:
     Math.Combinatorics.Species
     Math.Combinatorics.Species.Class

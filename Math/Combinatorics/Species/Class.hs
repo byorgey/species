@@ -1,36 +1,11 @@
-{-# LANGUAGE NoImplicitPrelude 
-           , GADTs
-           , FlexibleInstances
-           , GeneralizedNewtypeDeriving
-           , EmptyDataDecls
-           , TypeOperators
-           , TypeFamilies
-           , FlexibleContexts
-           , MultiParamTypeClasses
-  #-}
+{-# LANGUAGE NoImplicitPrelude #-}
 
 module Math.Combinatorics.Species.Class where
 
-import qualified MathObj.PowerSeries as PowerSeries
-import qualified MathObj.FactoredRational as FQ
-import qualified MathObj.Monomial as Monomial
-
-import qualified Algebra.Additive as Additive
-import qualified Algebra.Ring as Ring
 import qualified Algebra.Differential as Differential
-import qualified Algebra.ZeroTestable as ZeroTestable
-import qualified Algebra.Field as Field
-
-import qualified Data.Map as M
-import Control.Arrow ((&&&), first, second)
-import Data.List (genericReplicate, genericDrop, groupBy, sort, intercalate)
-import Data.Function (on)
 
 import NumericPrelude
 import PreludeBase hiding (cycle)
-
-unimplemented :: String -> a
-unimplemented = error . (++ " is not yet implemented.")
 
 --------------------------------------------------------------------------------
 -- The class of species --------------------------------------------------------
