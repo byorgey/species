@@ -36,6 +36,8 @@ unimplemented = error . (++ " is not yet implemented.")
 -- The class of species --------------------------------------------------------
 --------------------------------------------------------------------------------
 
+infixr 5 .:
+
 -- Differential requires s to be a differentiable ring.
 class (Differential.C s) => Species s where
   singleton :: s             -- the species X of singletons
@@ -43,12 +45,7 @@ class (Differential.C s) => Species s where
   cycle     :: s             -- the species C of cyclical orderings (cycles)
   o         :: s -> s -> s   -- partitional composition
   nonEmpty  :: s -> s
-
-  -- some derived species, in the class so we can have specialized
-  -- implementations.
-  list      :: s
-  list = oneHole cycle
-
+  (.:)      :: s -> s -> s   -- XXX
 
 -- Some convenient synonyms and derived operations.
 pointed, oneHole :: (Species s) => s -> s  
@@ -58,22 +55,32 @@ oneHole = Differential.differentiate
 madeOf :: Species s => s -> s -> s
 madeOf = o
 
-x, singletons, e, sets, cycles, lists :: Species s => s
+x, singletons, e, sets, cycles :: Species s => s
 x          = singleton
 singletons = singleton
 e          = set
 sets       = set
 cycles     = cycle
-lists      = list
 
--- More derived species.
+-- Derived species.
+list, lists :: Species s => s
+list  = oneHole cycle
+lists = list
+
 octopus, octopi :: Species s => s
 octopus = cycle `o` nonEmpty lists
-octopi = octopus
+octopi  = octopus
 
 partition, partitions :: Species s => s
-partition = set `o` nonEmpty sets
+partition  = set `o` nonEmpty sets
 partitions = partition
+
+-- rooted binary trees.  How to make this lazy enough?
+--
+-- probably need to change definition of power series multiplication so that
+--   we get short-circuiting on zero (?).
+rbt :: Species s => s
+rbt = 1 .: x * rbt^2
 
 --------------------------------------------------------------------------------
 -- Unlabelled enumeration (classical power series) -----------------------------
@@ -92,6 +99,9 @@ instance Species Unlabelled where
   o         = error "unlabelled composition must go via cycle index series."
   nonEmpty (Unlabelled (PowerSeries.Cons (_:xs))) = Unlabelled (PowerSeries.Cons (0:xs))
   nonEmpty x = x
+
+  (Unlabelled (PowerSeries.Cons (x:_))) .: Unlabelled (PowerSeries.Cons xs)
+    = Unlabelled (PowerSeries.Cons (x:tail xs))
 
 unlabelledCoeffs :: Unlabelled -> [Integer]
 unlabelledCoeffs (Unlabelled p) = PowerSeries.coeffs p
@@ -251,6 +261,10 @@ instance Species Labelled where
   nonEmpty (Labelled (PowerSeries.Cons (_:xs))) = Labelled (PowerSeries.Cons (0:xs))
   nonEmpty x = x
 
+  (Labelled (PowerSeries.Cons (x:_))) .: Labelled (PowerSeries.Cons xs)
+    = Labelled (PowerSeries.Cons (x:tail xs))
+
+
 labelled :: Labelled -> [Integer]
 labelled (Labelled f) = map numerator . zipWith (*) (map fromInteger facts) $ PowerSeries.coeffs f
 
@@ -267,6 +281,10 @@ instance Species (MVP.T Rational) where
   o         = MVP.compose
   nonEmpty  p@(MVP.Cons (x:xs)) | Monomial.degree x == 0 = MVP.Cons xs
                                 | otherwise              = p
+
+  (MVP.Cons (x:_)) .: (MVP.Cons (y:ys)) = MVP.Cons (x:rest)
+    where rest | Monomial.pDegree y == 0 = ys
+               | otherwise               = (y:ys)
 
 partToMonomial :: [(Integer, Integer)] -> Monomial.T Rational
 partToMonomial js = Monomial.Cons (zCoeff js) (M.fromList js)
