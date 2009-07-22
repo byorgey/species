@@ -2,7 +2,13 @@
            , FlexibleInstances
   #-}
 
-module Math.Combinatorics.Species.CycleIndex where
+-- | An instance of 'Species' for cycle index series.  For details on
+--   cycle index series, see \"Combinatorial Species and Tree-Like
+--   Structures\", chapter 1.
+module Math.Combinatorics.Species.CycleIndex 
+    ( zToEGF
+    , zToGF
+    ) where
 
 import Math.Combinatorics.Species.Types
 import Math.Combinatorics.Species.Class
@@ -23,29 +29,42 @@ import Control.Arrow ((&&&), first, second)
 import NumericPrelude
 import PreludeBase hiding (cycle)
 
-instance Species (MVP.T Rational) where
-  singleton = MVP.x 1
-  set       = MVP.Cons . map partToMonomial . concatMap intPartitions $ [0..]
+instance Species CycleIndex where
+  singleton = CI $ MVP.x 1
+  set       = CI . MVP.Cons . map partToMonomial . concatMap intPartitions $ [0..]
 
-  cycle     = MVP.Cons . concatMap cycleMonomials $ [1..]
+  cycle     = CI . MVP.Cons . concatMap cycleMonomials $ [1..]
 
-  o         = MVP.compose
-  nonEmpty  p@(MVP.Cons (x:xs)) | Monomial.degree x == 0 = MVP.Cons xs
-                                | otherwise              = p
+  o (CI f) (CI g) = CI $ MVP.compose f g
+  nonEmpty  p@(CI (MVP.Cons (x:xs))) | Monomial.degree x == 0 = CI $ MVP.Cons xs
+                                     | otherwise              = p
 
-  (MVP.Cons (x:_)) .: (MVP.Cons (y:ys)) = MVP.Cons (x:rest)
+  (CI (MVP.Cons (x:_))) .: (CI (MVP.Cons (y:ys))) = CI $ MVP.Cons (x:rest)
     where rest | Monomial.pDegree y == 0 = ys
                | otherwise               = (y:ys)
 
+-- | Convert an integer partition to the corresponding monomial in the
+--   cycle index series for the species of sets.
 partToMonomial :: [(Integer, Integer)] -> Monomial.T Rational
 partToMonomial js = Monomial.Cons (zCoeff js) (M.fromList js)
 
+-- | @'zCoeff' js@ is the coefficient of the corresponding monomial in
+--   the cycle index series for the species of sets.
 zCoeff :: [(Integer, Integer)] -> Rational
 zCoeff js = toRational $ 1 / aut js
 
+-- | @aut js@ is is the number of automorphisms of a permutation with
+--   cycle type @js@ (i.e. a permutation which has @n@ cycles of size
+--   @i@ for each @(i,n)@ in @js@).
 aut :: [(Integer, Integer)] -> FQ.T
 aut = product . map (\(b,e) -> FQ.factorial e * (fromInteger b)^e)
 
+-- | Generate all partitions of an integer.  In particular, if @p@ is
+--   an element of the list output by @intPartitions n@, then @sum
+--   . map (uncurry (*)) $ p == n@.
+--
+--   Also, the partitions are generated in an order corresponding to
+--   the Ord instance for 'Monomial'.
 intPartitions :: Integer -> [[(Integer, Integer)]]
 intPartitions n = intPartitions' n n
   where intPartitions' :: Integer -> Integer -> [[(Integer,Integer)]]
@@ -56,6 +75,8 @@ intPartitions n = intPartitions' n n
             | j <- reverse [0..n `div` k]
             , js <- intPartitions' (n - j*k) (min (k-1) (n - j*k)) ]
 
+-- | @cycleMonomials d@ generates all monomials of partition degree
+--   @d@ in the cycle index series for the species C of cycles.
 cycleMonomials :: Integer -> [Monomial.T Rational]
 cycleMonomials n = map cycleMonomial ds
   where n' = fromIntegral n
@@ -63,16 +84,20 @@ cycleMonomials n = map cycleMonomial ds
         cycleMonomial d = Monomial.Cons (FQ.eulerPhi (n' / d) % n)
                                         (M.singleton (n `div` (toInteger d)) (toInteger d))
 
-zToEGF :: MVP.T Rational -> EGF
-zToEGF (MVP.Cons xs) 
+-- | Convert a cycle index series to an exponential generating
+--   function:  F(x) = Z_F(x,0,0,0,...).
+zToEGF :: CycleIndex -> EGF
+zToEGF (CI (MVP.Cons xs))
   = EGF . PowerSeries.fromCoeffs . map LR
   . insertZeros
   . concatMap (\(c,as) -> case as of { [] -> [(0,c)] ; [(1,p)] -> [(p,c)] ; _ -> [] })
   . map (Monomial.coeff &&& (M.assocs . Monomial.powers))
   $ xs
 
-zToGF :: MVP.T Rational -> GF
-zToGF (MVP.Cons xs)
+-- | Convert a cycle index series to an ordinary generating function:
+--   F~(x) = Z_F(x,x^2,x^3,...).
+zToGF :: CycleIndex -> GF
+zToGF (CI (MVP.Cons xs))
   = GF . PowerSeries.fromCoeffs . map numerator
   . insertZeros
   . map ((fst . head) &&& (sum . map snd))
@@ -80,6 +105,10 @@ zToGF (MVP.Cons xs)
   . map ((sum . map (uncurry (*)) . M.assocs . Monomial.powers) &&& Monomial.coeff)
   $ xs
 
+-- | Since cycle index series use a sparse representation, not every
+--   power of x may be present after converting to an ordinary or
+--   exponential generating function; 'insertZeros' inserts
+--   coefficients of zero where necessary.
 insertZeros :: Ring.C a => [(Integer, a)] -> [a]
 insertZeros = insertZeros' [0..]
   where
