@@ -35,6 +35,7 @@ module Math.Combinatorics.Species.Class
     , permutation, permutations
     , subset, subsets
     , ballot, ballots
+    , ksubset, ksubsets
 
     ) where
 
@@ -177,3 +178,8 @@ subsets = subset
 ballots, ballot :: Species s => s
 ballot = list `o` nonEmpty sets
 ballots = ballot
+
+-- | Subsets of size exactly k, p[k] = E_k * E.
+ksubsets, ksubset :: Species s => Integer -> s
+ksubset k = (set `ofSizeExactly` k) * set
+ksubsets = ksubset

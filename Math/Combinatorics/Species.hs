@@ -36,6 +36,7 @@ module Math.Combinatorics.Species
     , permutation, permutations
     , subset, subsets
     , ballot, ballots
+    , ksubset, ksubsets            
 
       -- * Computing with species
     , labelled
