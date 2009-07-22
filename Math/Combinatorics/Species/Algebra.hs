@@ -48,8 +48,9 @@ data SpeciesAlgT s where
             => SpeciesAlgT f -> SpeciesAlgT (Der f)
    E        :: SpeciesAlgT E
    C        :: SpeciesAlgT C
-   NonEmpty :: (ShowF (StructureF f)) 
-            => SpeciesAlgT f -> SpeciesAlgT (NonEmpty f)
+   OfSize   :: SpeciesAlgT f -> (Integer -> Bool) -> SpeciesAlgT f
+   OfSizeExactly :: SpeciesAlgT f -> Integer -> SpeciesAlgT f
+
 --   (:.)     :: (ShowF (StructureF f), ShowF (StructureF g))
 --            => SpeciesAlgT f -> SpeciesAlgT g -> SpeciesAlgT (f :. g)
 
@@ -64,7 +65,9 @@ instance Show (SpeciesAlgT s) where
   show (Der f)   = show f ++ "'"
   show E         = "E"
   show C         = "C"
-  show (NonEmpty f) = show f ++ "_+"
+  show (OfSize f p) = "<" ++ show f ++ ">"
+  show (OfSizeExactly f n) = show f ++ "_" ++ show n
+
 --  show (f :. g)  = show f ++ ".:" ++ show g
 
 -- | 'needsZT' is a predicate which checks whether a species uses any
@@ -74,9 +77,10 @@ instance Show (SpeciesAlgT s) where
 needsZT :: SpeciesAlgT s -> Bool
 needsZT (f :+: g)    = needsZT f || needsZT g
 needsZT (f :*: g)    = needsZT f || needsZT g
-needsZT (NonEmpty f) = needsZT f
 needsZT (_ :.: _)    = True
 needsZT (Der _)      = True
+needsZT (OfSize f _) = needsZT f
+needsZT (OfSizeExactly f _) = needsZT f
 needsZT _            = False
 
 -- | An existential wrapper to hide the phantom type parameter to
@@ -104,11 +108,12 @@ instance Differential.C SpeciesAlg where
   differentiate (SA f) = SA (Der f)
 
 instance Species SpeciesAlg where
-  singleton = SA X
-  set       = SA E
-  cycle     = SA C
-  o (SA f) (SA g) = SA (f :.: g)
-  nonEmpty (SA f) = SA (NonEmpty f)
+  singleton              = SA X
+  set                    = SA E
+  cycle                  = SA C
+  o (SA f) (SA g)        = SA (f :.: g)
+  ofSize (SA f) p        = SA (OfSize f p)
+  ofSizeExactly (SA f) n = SA (OfSizeExactly f n)
 
 -- | Reify a species expression into a tree.  Of course, this is just
 --   the identity function with a usefully restricted type.  For example:
@@ -129,7 +134,8 @@ reflectT (f :.: g) = reflectT f `o` reflectT g
 reflectT (Der f)   = oneHole (reflectT f)
 reflectT E = set
 reflectT C = cycle
-reflectT (NonEmpty f) = nonEmpty (reflectT f)
+reflectT (OfSize f p) = ofSize (reflectT f) p
+reflectT (OfSizeExactly f n) = ofSizeExactly (reflectT f) n
 
 -- | A version of 'reflectT' for the existential wrapper 'SpeciesAlg'.
 reflect :: Species s => SpeciesAlg -> s

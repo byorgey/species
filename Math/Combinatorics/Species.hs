@@ -26,6 +26,7 @@ module Math.Combinatorics.Species
           
       -- ** Derived operations
     , pointed
+    , nonEmpty
 
       -- ** Derived species
     , list, lists

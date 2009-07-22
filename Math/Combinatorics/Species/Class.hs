@@ -23,6 +23,7 @@ module Math.Combinatorics.Species.Class
       -- $derived_ops
 
     , pointed
+    , nonEmpty
 
       -- * Derived species
       -- $derived
@@ -70,8 +71,15 @@ class (Differential.C s) => Species s where
   -- | Partitional composition
   o         :: s -> s -> s
 
-  -- | don't put a structure on the empty set
-  nonEmpty  :: s -> s
+  -- | Only put a structure on underlying sets whose size satisfies
+  --   the predicate.
+  ofSize    :: s -> (Integer -> Bool) -> s
+
+  -- | Only put a structure on underlying sets of the given size.  We
+  --   include this as a special case, instead of just using @ofSize
+  --   (==k)@, since it can be more efficient: we get to turn infinite
+  --   lists of coefficients into finite ones.
+  ofSizeExactly :: s -> Integer -> s
 
   -- | @s1 .: s2@ is the species which puts an s1 structure on the
   --   empty set and an s2 structure on anything else.  Useful for
@@ -116,6 +124,10 @@ cycles     = cycle
 --   to the operator @x d/dx@.
 pointed :: Species s => s -> s
 pointed = (x *) . Differential.differentiate
+
+-- | Don't put a structure on the empty set.
+nonEmpty  :: Species s => s -> s
+nonEmpty = flip ofSize (>0)
 
 
 -- $derived

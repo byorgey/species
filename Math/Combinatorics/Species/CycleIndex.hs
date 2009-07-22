@@ -31,13 +31,17 @@ import PreludeBase hiding (cycle)
 
 instance Species CycleIndex where
   singleton = CI $ MVP.x 1
-  set       = CI . MVP.Cons . map partToMonomial . concatMap intPartitions $ [0..]
+  set       = ciFromMonomials . map partToMonomial . concatMap intPartitions $ [0..]
 
-  cycle     = CI . MVP.Cons . concatMap cycleMonomials $ [1..]
+  cycle     = ciFromMonomials . concatMap cycleMonomials $ [1..]
 
-  o (CI f) (CI g) = CI $ MVP.compose f g
-  nonEmpty  p@(CI (MVP.Cons (x:xs))) | Monomial.degree x == 0 = CI $ MVP.Cons xs
-                                     | otherwise              = p
+  o = liftCI2 MVP.compose
+
+  ofSize s p = (liftCI . MVP.lift1 $ filter (p . Monomial.pDegree)) s
+  ofSizeExactly s n = (liftCI . MVP.lift1 $
+                        ( takeWhile ((==n) . Monomial.pDegree)
+                        . dropWhile ((<n) . Monomial.pDegree))) s
+                         
 
   (CI (MVP.Cons (x:_))) .: (CI (MVP.Cons (y:ys))) = CI $ MVP.Cons (x:rest)
     where rest | Monomial.pDegree y == 0 = ys
@@ -112,7 +116,7 @@ zToGF (CI (MVP.Cons xs))
 insertZeros :: Ring.C a => [(Integer, a)] -> [a]
 insertZeros = insertZeros' [0..]
   where
-    insertZeros' _ [] = repeat 0
+    insertZeros' _ [] = []
     insertZeros' (n:ns) ((pow,c):pcs) 
       | n < pow   = genericReplicate (pow - n) 0 
                     ++ insertZeros' (genericDrop (pow - n) (n:ns)) ((pow,c):pcs)

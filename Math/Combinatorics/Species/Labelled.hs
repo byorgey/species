@@ -1,5 +1,6 @@
 {-# LANGUAGE NoImplicitPrelude 
            , GeneralizedNewtypeDeriving
+           , PatternGuards
   #-}
 -- | An interpretation of species as exponential generating functions,
 --   which count labelled structures.
@@ -10,7 +11,7 @@ module Math.Combinatorics.Species.Labelled
 import Math.Combinatorics.Species.Types
 import Math.Combinatorics.Species.Class
 
-import qualified MathObj.PowerSeries as PowerSeries
+import qualified MathObj.PowerSeries as PS
 
 import NumericPrelude
 import PreludeBase hiding (cycle)
@@ -19,15 +20,15 @@ facts :: [Integer]
 facts = 1 : zipWith (*) [1..] facts
 
 instance Species EGF where
-  singleton = EGF $ PowerSeries.fromCoeffs [0,1]
-  set       = EGF $ PowerSeries.fromCoeffs (map (LR . (1%)) facts)
-  cycle     = EGF $ PowerSeries.fromCoeffs (0 : map (LR . (1%)) [1..])
-  o (EGF f) (EGF g) = EGF $ PowerSeries.compose f g
-  nonEmpty (EGF (PowerSeries.Cons (_:xs))) = EGF (PowerSeries.Cons (0:xs))
-  nonEmpty x = x
+  singleton         = egfFromCoeffs [0,1]
+  set               = egfFromCoeffs (map (LR . (1%)) facts)
+  cycle             = egfFromCoeffs (0 : map (LR . (1%)) [1..])
+  o                 = liftEGF2 PS.compose
+  ofSize s p        = (liftEGF . PS.lift1 $ filterCoeffs p) s
+  ofSizeExactly s n = (liftEGF . PS.lift1 $ selectIndex n) s
 
-  (EGF (PowerSeries.Cons (x:_))) .: EGF (PowerSeries.Cons ~(_:xs))
-    = EGF (PowerSeries.Cons (x:xs))
+  (EGF (PS.Cons (x:_))) .: EGF (PS.Cons ~(_:xs))
+    = EGF (PS.Cons (x:xs))
 
 -- | Extract the coefficients of an exponential generating function as
 --   a list of Integers.  Since 'EGF' is an instance of
@@ -42,7 +43,8 @@ instance Species EGF where
 --   gives the number of labelled octopi on 0, 1, 2, 3, ... 9 elements.
 
 labelled :: EGF -> [Integer]
-labelled (EGF f) = map numerator . zipWith (*) (map fromInteger facts) . map unLR $ PowerSeries.coeffs f
+labelled (EGF f) = map numerator . zipWith (*) (map fromInteger facts) . map unLR 
+                 $ PS.coeffs f
 
 -- A previous version of this module used an EGF library which
 -- explicitly computed with EGF's.  However, it turned out to be much

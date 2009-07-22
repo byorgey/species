@@ -8,7 +8,7 @@ import Math.Combinatorics.Species.Class
 import Math.Combinatorics.Species.Algebra
 import Math.Combinatorics.Species.CycleIndex
 
-import qualified MathObj.PowerSeries as PowerSeries
+import qualified MathObj.PowerSeries as PS
 
 import qualified Algebra.Differential as Differential
 
@@ -19,18 +19,18 @@ instance Differential.C GF where
   differentiate = error "unlabelled differentiation must go via cycle index series."
 
 instance Species GF where
-  singleton = GF $ PowerSeries.fromCoeffs [0,1]
-  set       = GF $ PowerSeries.fromCoeffs (repeat 1)
-  cycle     = set
-  o         = error "unlabelled composition must go via cycle index series."
-  nonEmpty (GF (PowerSeries.Cons (_:xs))) = GF (PowerSeries.Cons (0:xs))
-  nonEmpty x = x
+  singleton         = gfFromCoeffs [0,1]
+  set               = gfFromCoeffs (repeat 1)
+  cycle             = set
+  o                 = error "unlabelled composition must go via cycle index series."
+  ofSize s p        = (liftGF . PS.lift1 $ filterCoeffs p) s
+  ofSizeExactly s n = (liftGF . PS.lift1 $ selectIndex n) s
 
-  (GF (PowerSeries.Cons (x:_))) .: GF (PowerSeries.Cons xs)
-    = GF (PowerSeries.Cons (x:tail xs))
+  (GF (PS.Cons (x:_))) .: GF (PS.Cons xs)
+    = GF (PS.Cons (x:tail xs))
 
 unlabelledCoeffs :: GF -> [Integer]
-unlabelledCoeffs (GF p) = PowerSeries.coeffs p
+unlabelledCoeffs (GF p) = PS.coeffs p
 
 -- | Extract the coefficients of an ordinary generating function as a
 --   list of Integers.  In particular, @unlabelled s !!  n@ is the

@@ -20,6 +20,7 @@ import Math.Combinatorics.Species.Types
 import Math.Combinatorics.Species.Algebra
 
 import Control.Arrow (first, second)
+import Data.List (genericLength)
 
 import NumericPrelude
 import PreludeBase hiding (cycle)
@@ -56,9 +57,11 @@ generateF (f :.: g) xs = [ Comp y | p  <- sPartitions xs
 generateF (Der f) xs = map Comp $ generateF f (Star : map Original xs)
 generateF E xs = [xs]
 generateF C [] = []
-generateF C (x:xs) = map (Cycle . (x:)) (permutations xs)
-generateF (NonEmpty f) [] = []
-generateF (NonEmpty f) xs = generateF f xs
+generateF C (x:xs) = map (Cycle . (x:)) (sPermutations xs)
+generateF (OfSize f p) xs | p (genericLength xs) = generateF f xs
+                          | otherwise     = []
+generateF (OfSizeExactly f n) xs | genericLength xs == n = generateF f xs
+                                 | otherwise = []
 
 -- | @pSet xs@ generates the power set of @xs@, yielding a list of
 --   subsets of @xs@ paired with their complements.
@@ -75,10 +78,10 @@ sPartitions (s:s') = do (sub,compl) <- pSet s'
                         map (firstSubset:) $ sPartitions compl
 
 -- | Generate all permutations of a list.
-permutations :: [a] -> [[a]]
-permutations [] = [[]]
-permutations xs = [ y:p | (y,ys) <- select xs
-                        , p      <- permutations ys
+sPermutations :: [a] -> [[a]]
+sPermutations [] = [[]]
+sPermutations xs = [ y:p | (y,ys) <- select xs
+                         , p      <- sPermutations ys
                   ]
 
 -- | Select each element of a list in turn, yielding a list of

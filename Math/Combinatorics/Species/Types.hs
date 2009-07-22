@@ -17,8 +17,22 @@ module Math.Combinatorics.Species.Types
       -- * Series types
 
     , EGF(..)
+    , egfFromCoeffs
+    , liftEGF
+    , liftEGF2
+
     , GF(..)
+    , gfFromCoeffs
+    , liftGF
+    , liftGF2
+
     , CycleIndex(..)
+    , ciFromMonomials
+    , liftCI
+    , liftCI2
+
+    , filterCoeffs
+    , selectIndex
 
       -- * Higher-order Show
 
@@ -43,12 +57,13 @@ module Math.Combinatorics.Species.Types
     , StructureF
     ) where
 
-import Data.List (intercalate)
+import Data.List (intercalate, genericReplicate)
 import NumericPrelude
 import PreludeBase
 
-import qualified MathObj.PowerSeries as PowerSeries
+import qualified MathObj.PowerSeries as PS
 import qualified MathObj.MultiVarPolynomial as MVP
+import qualified MathObj.Monomial as Monomial
 
 import qualified Algebra.Additive as Additive
 import qualified Algebra.Ring as Ring
@@ -89,16 +104,68 @@ type LazyZ = LazyRing Integer
 --------------------------------------------------------------------------------
 
 -- | Exponential generating functions, for counting labelled species.
-newtype EGF = EGF (PowerSeries.T LazyQ)
+newtype EGF = EGF (PS.T LazyQ)
   deriving (Additive.C, Ring.C, Differential.C, Show)
 
+egfFromCoeffs :: [LazyQ] -> EGF
+egfFromCoeffs = EGF . PS.fromCoeffs
+
+liftEGF :: (PS.T LazyQ -> PS.T LazyQ) -> EGF -> EGF
+liftEGF f (EGF x) = EGF (f x)
+
+liftEGF2 :: (PS.T LazyQ -> PS.T LazyQ -> PS.T LazyQ) 
+         -> EGF -> EGF -> EGF
+liftEGF2 f (EGF x) (EGF y) = EGF (f x y)
+
 -- | Ordinary generating functions, for counting unlabelled species.
-newtype GF = GF (PowerSeries.T Integer)
+newtype GF = GF (PS.T Integer)
   deriving (Additive.C, Ring.C, Show)
+
+gfFromCoeffs :: [Integer] -> GF
+gfFromCoeffs = GF . PS.fromCoeffs
+
+liftGF :: (PS.T Integer -> PS.T Integer) -> GF -> GF
+liftGF f (GF x) = GF (f x)
+
+liftGF2 :: (PS.T Integer -> PS.T Integer -> PS.T Integer) 
+         -> GF -> GF -> GF
+liftGF2 f (GF x) (GF y) = GF (f x y)
 
 -- | Cycle index series.
 newtype CycleIndex = CI (MVP.T Rational)
   deriving (Additive.C, Ring.C, Differential.C, Show)
+
+ciFromMonomials :: [Monomial.T Rational] -> CycleIndex
+ciFromMonomials = CI . MVP.Cons
+
+liftCI :: (MVP.T Rational -> MVP.T Rational)
+        -> CycleIndex -> CycleIndex
+liftCI f (CI x) = CI (f x)
+
+liftCI2 :: (MVP.T Rational -> MVP.T Rational -> MVP.T Rational)
+        -> CycleIndex -> CycleIndex -> CycleIndex
+liftCI2 f (CI x) (CI y) = CI (f x y)
+
+-- Some series utility functions
+
+-- | Filter the coefficients of a series according to a predicate.
+filterCoeffs :: (Additive.C a) => (Integer -> Bool) -> [a] -> [a]
+filterCoeffs p = zipWith (filterCoeff p) [0..]
+    where filterCoeff p n x | p n       = x
+                            | otherwise = Additive.zero
+
+-- | Set every coefficient of a series to 0 except the selected
+--   index. Truncate any trailing zeroes.
+selectIndex :: (Ring.C a, Eq a) => Integer -> [a] -> [a]
+selectIndex n xs = xs'
+    where mx = safeIndex n xs
+          safeIndex _ []     = Nothing
+          safeIndex 0 (x:_)  = Just x
+          safeIndex n (_:xs) = safeIndex (n-1) xs
+          xs' = case mx of
+                  Just 0 -> []
+                  Just x -> genericReplicate n 0 ++ [x]
+                  _      -> []
 
 --------------------------------------------------------------------------------
 --  Higher-order Show  ---------------------------------------------------------
@@ -154,8 +221,8 @@ instance (Functor f, Functor g) => Functor (Sum f g) where
 instance (Show (f a), Show (g a)) => Show (Sum f g a) where
   show (Sum x) = show x
 instance (ShowF f, ShowF g) => ShowF (Sum f g) where
-  showF (Sum (Left fa)) = "Left " ++ showF fa
-  showF (Sum (Right ga)) = "Right " ++ showF ga
+  showF (Sum (Left fa)) = "inl(" ++ showF fa ++ ")"
+  showF (Sum (Right ga)) = "inr(" ++ showF ga ++ ")"
 
 -- | Functor product.
 newtype Prod f g a = Prod { unProd :: (f a, g a) }
