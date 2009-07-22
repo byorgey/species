@@ -58,5 +58,5 @@ unlabelledCoeffs (GF p) = PowerSeries.coeffs p
 --   ordinary generating functions otherwise.
 unlabelled :: SpeciesAlg -> [Integer]
 unlabelled s 
-  | hasDer s || hasComp s = unlabelledCoeffs . zToGF . reflect $ s
+  | needsZ s = unlabelledCoeffs . zToGF . reflect $ s
   | otherwise             = unlabelledCoeffs . reflect $ s

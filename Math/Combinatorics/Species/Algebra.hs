@@ -3,7 +3,19 @@
            , TypeOperators
            , FlexibleContexts
   #-}
-module Math.Combinatorics.Species.Algebra where
+
+-- | A data structure to reify combinatorial species.
+module Math.Combinatorics.Species.Algebra 
+    (
+      SpeciesAlgT(..)
+    , SpeciesAlg(..)
+    , needsZT, needsZ
+
+    , reify
+    , reflectT
+    , reflect
+    
+    ) where
 
 import Math.Combinatorics.Species.Class
 import Math.Combinatorics.Species.Types
@@ -15,9 +27,13 @@ import qualified Algebra.Differential as Differential
 import NumericPrelude
 import PreludeBase hiding (cycle)
 
--- instance (ShowF f, Show a) => Show (f a) where
---   show = showF
-
+-- | Reified combinatorial species.  Note that 'SpeciesAlgT' has a
+--   phantom type parameter which also reflects the structure, so we
+--   can do case analysis on species at both the value and type level.
+--
+--   Of course, the non-uniform type parameter means that
+--   'SpeciesAlgT' cannot be an instance of the 'Species' class; for
+--   that purpose the existential wrapper 'SpeciesAlg' is provided.
 data SpeciesAlgT s where
    O        :: SpeciesAlgT Z
    I        :: SpeciesAlgT (S Z)
@@ -34,31 +50,46 @@ data SpeciesAlgT s where
    C        :: SpeciesAlgT C
    NonEmpty :: (ShowF (StructureF f)) 
             => SpeciesAlgT f -> SpeciesAlgT (NonEmpty f)
+--   (:.)     :: (ShowF (StructureF f), ShowF (StructureF g))
+--            => SpeciesAlgT f -> SpeciesAlgT g -> SpeciesAlgT (f :. g)
 
-hasCompT :: SpeciesAlgT s -> Bool
-hasCompT (f :+: g) = hasCompT f || hasCompT g
-hasCompT (f :*: g) = hasCompT f || hasCompT g
-hasCompT (_ :.: _) = True
-hasCompT (NonEmpty f) = hasCompT f
-hasCompT _ = False
+-- XXX improve this
+instance Show (SpeciesAlgT s) where
+  show O = "0"
+  show I = "1"
+  show X = "X"
+  show (f :+: g) = "(" ++ show f ++ " + " ++ show g ++ ")"
+  show (f :*: g) = "(" ++ show f ++ " * " ++ show g ++ ")"
+  show (f :.: g) = "(" ++ show f ++ " . " ++ show g ++ ")"
+  show (Der f)   = show f ++ "'"
+  show E         = "E"
+  show C         = "C"
+  show (NonEmpty f) = show f ++ "_+"
+--  show (f :. g)  = show f ++ ".:" ++ show g
 
-hasDerT :: SpeciesAlgT s -> Bool
-hasDerT (f :+: g) = hasDerT f || hasDerT g
-hasDerT (f :*: g) = hasDerT f || hasDerT g
-hasDerT (f :.: g) = hasDerT f || hasDerT g
-hasDerT (Der _) = True
-hasDerT (NonEmpty f) = hasDerT f
-hasDerT _ = False
+-- | 'needsZT' is a predicate which checks whether a species uses any
+--   of the operations which are not supported directly by ordinary
+--   generating functions (composition and differentiation), and hence
+--   need cycle index series.
+needsZT :: SpeciesAlgT s -> Bool
+needsZT (f :+: g)    = needsZT f || needsZT g
+needsZT (f :*: g)    = needsZT f || needsZT g
+needsZT (NonEmpty f) = needsZT f
+needsZT (_ :.: _)    = True
+needsZT (Der _)      = True
+needsZT _            = False
 
--- existential wrapper
+-- | An existential wrapper to hide the phantom type parameter to
+--   'SpeciesAlgT', so we can make it an instance of 'Species'.
 data SpeciesAlg where
   SA :: (ShowF (StructureF s)) => SpeciesAlgT s -> SpeciesAlg
 
-hasComp :: SpeciesAlg -> Bool
-hasComp (SA s) = hasCompT s
+-- | A version of 'needsZT' for 'SpeciesAlg'.
+needsZ :: SpeciesAlg -> Bool
+needsZ (SA s) = needsZT s
 
-hasDer :: SpeciesAlg -> Bool
-hasDer (SA s) = hasDerT s
+instance Show SpeciesAlg where
+  show (SA f) = show f
 
 instance Additive.C SpeciesAlg where
   zero   = SA O
@@ -79,9 +110,15 @@ instance Species SpeciesAlg where
   o (SA f) (SA g) = SA (f :.: g)
   nonEmpty (SA f) = SA (NonEmpty f)
 
+-- | Reify a species expression into a tree.  Of course, this is just
+--   the identity function with a usefully restricted type.  For example:
+--
+-- > > reify octopus
+-- > (C . C'_+)
 reify :: SpeciesAlg -> SpeciesAlg
 reify = id
 
+-- | Reflect a species back into any instance of the 'Species' class.
 reflectT :: Species s => SpeciesAlgT f -> s
 reflectT O = zero
 reflectT I = one
@@ -94,20 +131,6 @@ reflectT E = set
 reflectT C = cycle
 reflectT (NonEmpty f) = nonEmpty (reflectT f)
 
+-- | A version of 'reflectT' for the existential wrapper 'SpeciesAlg'.
 reflect :: Species s => SpeciesAlg -> s
 reflect (SA f) = reflectT f
-
--- -- This is the basic idea: to do this right, we really want a more
--- --   sophisticated rewriting system.
--- simplify :: SpeciesAlg -> SpeciesAlg
--- simplify (N n :+: N m) = N (n+m)
--- simplify (N n :*: N m) = N (n*m)
--- simplify (N 0 :+: s)   = simplify s
--- simplify (s :+: N 0)   = simplify s
--- simplify (N 0 :*: s)   = N 0
--- simplify (s :*: N 0)   = N 0
--- simplify (f :+: g)     = simplify $ simplify f :+: simplify g
--- simplify (f :*: g)     = simplify f :*: simplify g
--- simplify (f :.: g)     = simplify f :.: simplify g
--- simplify (Der f)       = Der $ simplify f
--- simplify s = s
