@@ -28,8 +28,12 @@ module Math.Combinatorics.Species.Class
       -- $derived
 
     , list, lists
+    , element, elements
     , octopus, octopi
     , partition, partitions
+    , permutation, permutations
+    , subset, subsets
+    , ballot, ballots
 
     ) where
 
@@ -54,16 +58,16 @@ infixr 5 .:
 --   sets@.
 class (Differential.C s) => Species s where
 
-  -- | the species X of singletons
+  -- | The species X of singletons
   singleton :: s
 
-  -- | the species E of sets
+  -- | The species E of sets
   set       :: s
 
-  -- | the species C of cyclical orderings (cycles/rings)
+  -- | The species C of cyclical orderings (cycles/rings)
   cycle     :: s
 
-  -- | partitional composition
+  -- | Partitional composition
   o         :: s -> s -> s
 
   -- | don't put a structure on the empty set
@@ -118,7 +122,8 @@ pointed = (x *) . Differential.differentiate
 -- Some species that can be defined in terms of the primitive species
 -- operations.
 
--- | The species of linear orderings (lists).
+-- | The species L of linear orderings (lists): since lists are
+--   isomorphic to cycles with a hole, we may take L = C'.
 list :: Species s => s
 list  = oneHole cycle
 
@@ -126,9 +131,15 @@ list  = oneHole cycle
 lists :: Species s => s
 lists = list
 
+-- | Structures of the species eps of elements are just elements of
+--   the underlying set: eps = X * E.
+elements, element :: Species s => s
+element = x * e
+elements = element
+
 -- | An octopus is a cyclic arrangement of lists, so called because
 --   the lists look like \"tentacles\" attached to the cyclic
---   \"body\".
+--   \"body\": Oct = C o E+ .
 octopi, octopus :: Species s => s
 octopus = cycle `o` nonEmpty lists
 octopi  = octopus
@@ -139,3 +150,18 @@ partitions, partition :: Species s => s
 partition  = set `o` nonEmpty sets
 partitions = partition
 
+-- | A permutation is a set of disjoint cycles: S = E o C.
+permutations, permutation :: Species s => s
+permutation = set `o` cycles
+permutations = permutation
+
+-- | The species p of subsets is given by p = E * E.
+subsets, subset :: Species s => s
+subset = set * set
+subsets = subset
+
+-- | The species Bal of ballots consists of linear orderings of
+--   nonempty sets: Bal = L o E+.
+ballots, ballot :: Species s => s
+ballot = list `o` nonEmpty sets
+ballots = ballot

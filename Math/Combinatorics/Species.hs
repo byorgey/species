@@ -29,8 +29,12 @@ module Math.Combinatorics.Species
 
       -- ** Derived species
     , list, lists
+    , element, elements
     , octopus, octopi
     , partition, partitions
+    , permutation, permutations
+    , subset, subsets
+    , ballot, ballots
 
       -- * Computing with species
     , labelled
