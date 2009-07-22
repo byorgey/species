@@ -15,22 +15,22 @@ import qualified Algebra.Differential as Differential
 import NumericPrelude
 import PreludeBase hiding (cycle)
 
-instance Differential.C Unlabelled where
+instance Differential.C GF where
   differentiate = error "unlabelled differentiation must go via cycle index series."
 
-instance Species Unlabelled where
-  singleton = Unlabelled $ PowerSeries.fromCoeffs [0,1]
-  set       = Unlabelled $ PowerSeries.fromCoeffs (repeat 1)
+instance Species GF where
+  singleton = GF $ PowerSeries.fromCoeffs [0,1]
+  set       = GF $ PowerSeries.fromCoeffs (repeat 1)
   cycle     = set
   o         = error "unlabelled composition must go via cycle index series."
-  nonEmpty (Unlabelled (PowerSeries.Cons (_:xs))) = Unlabelled (PowerSeries.Cons (0:xs))
+  nonEmpty (GF (PowerSeries.Cons (_:xs))) = GF (PowerSeries.Cons (0:xs))
   nonEmpty x = x
 
-  (Unlabelled (PowerSeries.Cons (x:_))) .: Unlabelled (PowerSeries.Cons xs)
-    = Unlabelled (PowerSeries.Cons (x:tail xs))
+  (GF (PowerSeries.Cons (x:_))) .: GF (PowerSeries.Cons xs)
+    = GF (PowerSeries.Cons (x:tail xs))
 
-unlabelledCoeffs :: Unlabelled -> [Integer]
-unlabelledCoeffs (Unlabelled p) = PowerSeries.coeffs p
+unlabelledCoeffs :: GF -> [Integer]
+unlabelledCoeffs (GF p) = PowerSeries.coeffs p
 
 -- | Extract the coefficients of an ordinary generating function as a
 --   list of Integers.  In particular, @unlabelled s !!  n@ is the
@@ -44,7 +44,7 @@ unlabelledCoeffs (Unlabelled p) = PowerSeries.coeffs p
 --
 --   Actually, the above is something of a white lie, as you may have
 --   already realized by looking at the input type of 'unlabelled',
---   which is 'SpeciesAlg' rather than the expected 'Unlabelled'.  The
+--   which is 'SpeciesAlg' rather than the expected 'GF'.  The
 --   reason is that although products and sums of unlabelled species
 --   correspond to products and sums of ordinary generating functions,
 --   composition and differentiation do not!  In order to compute an
@@ -58,5 +58,5 @@ unlabelledCoeffs (Unlabelled p) = PowerSeries.coeffs p
 --   ordinary generating functions otherwise.
 unlabelled :: SpeciesAlg -> [Integer]
 unlabelled s 
-  | hasDer s || hasComp s = unlabelledCoeffs . zToUnlabelled . reflect $ s
+  | hasDer s || hasComp s = unlabelledCoeffs . zToGF . reflect $ s
   | otherwise             = unlabelledCoeffs . reflect $ s

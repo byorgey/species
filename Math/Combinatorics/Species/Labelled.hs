@@ -18,19 +18,19 @@ import PreludeBase hiding (cycle)
 facts :: [Integer]
 facts = 1 : zipWith (*) [1..] facts
 
-instance Species Labelled where
-  singleton = Labelled $ PowerSeries.fromCoeffs [0,1]
-  set       = Labelled $ PowerSeries.fromCoeffs (map (LR . (1%)) facts)
-  cycle     = Labelled $ PowerSeries.fromCoeffs (0 : map (LR . (1%)) [1..])
-  o (Labelled f) (Labelled g) = Labelled $ PowerSeries.compose f g
-  nonEmpty (Labelled (PowerSeries.Cons (_:xs))) = Labelled (PowerSeries.Cons (0:xs))
+instance Species EGF where
+  singleton = EGF $ PowerSeries.fromCoeffs [0,1]
+  set       = EGF $ PowerSeries.fromCoeffs (map (LR . (1%)) facts)
+  cycle     = EGF $ PowerSeries.fromCoeffs (0 : map (LR . (1%)) [1..])
+  o (EGF f) (EGF g) = EGF $ PowerSeries.compose f g
+  nonEmpty (EGF (PowerSeries.Cons (_:xs))) = EGF (PowerSeries.Cons (0:xs))
   nonEmpty x = x
 
-  (Labelled (PowerSeries.Cons (x:_))) .: Labelled (PowerSeries.Cons ~(_:xs))
-    = Labelled (PowerSeries.Cons (x:xs))
+  (EGF (PowerSeries.Cons (x:_))) .: EGF (PowerSeries.Cons ~(_:xs))
+    = EGF (PowerSeries.Cons (x:xs))
 
 -- | Extract the coefficients of an exponential generating function as
---   a list of Integers.  Since 'Labelled' is an instance of
+--   a list of Integers.  Since 'EGF' is an instance of
 --   'Species', the idea is that 'labelled' can be applied directly to
 --   an expression of the Species DSL.  In particular, @labelled s !!
 --   n@ is the number of labelled s-structures on an underlying set of
@@ -41,8 +41,8 @@ instance Species Labelled where
 --
 --   gives the number of labelled octopi on 0, 1, 2, 3, ... 9 elements.
 
-labelled :: Labelled -> [Integer]
-labelled (Labelled f) = map numerator . zipWith (*) (map fromInteger facts) . map unLR $ PowerSeries.coeffs f
+labelled :: EGF -> [Integer]
+labelled (EGF f) = map numerator . zipWith (*) (map fromInteger facts) . map unLR $ PowerSeries.coeffs f
 
 -- A previous version of this module used an EGF library which
 -- explicitly computed with EGF's.  However, it turned out to be much

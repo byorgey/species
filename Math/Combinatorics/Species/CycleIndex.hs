@@ -63,17 +63,17 @@ cycleMonomials n = map cycleMonomial ds
         cycleMonomial d = Monomial.Cons (FQ.eulerPhi (n' / d) % n)
                                         (M.singleton (n `div` (toInteger d)) (toInteger d))
 
-zToLabelled :: MVP.T Rational -> Labelled
-zToLabelled (MVP.Cons xs) 
-  = Labelled . PowerSeries.fromCoeffs . map LR
+zToEGF :: MVP.T Rational -> EGF
+zToEGF (MVP.Cons xs) 
+  = EGF . PowerSeries.fromCoeffs . map LR
   . insertZeros
   . concatMap (\(c,as) -> case as of { [] -> [(0,c)] ; [(1,p)] -> [(p,c)] ; _ -> [] })
   . map (Monomial.coeff &&& (M.assocs . Monomial.powers))
   $ xs
 
-zToUnlabelled :: MVP.T Rational -> Unlabelled
-zToUnlabelled (MVP.Cons xs)
-  = Unlabelled . PowerSeries.fromCoeffs . map numerator
+zToGF :: MVP.T Rational -> GF
+zToGF (MVP.Cons xs)
+  = GF . PowerSeries.fromCoeffs . map numerator
   . insertZeros
   . map ((fst . head) &&& (sum . map snd))
   . groupBy ((==) `on` fst)
