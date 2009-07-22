@@ -21,6 +21,7 @@ Library
   exposed-modules:
     Math.Combinatorics.Species
     Math.Combinatorics.Species.Class
+    Math.Combinatorics.Species.Types
     Math.Combinatorics.Species.Labelled
     Math.Combinatorics.Species.Unlabelled
     Math.Combinatorics.Species.CycleIndex
