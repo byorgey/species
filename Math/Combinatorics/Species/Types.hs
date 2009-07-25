@@ -4,6 +4,7 @@
            , TypeOperators
            , FlexibleContexts
            , GeneralizedNewtypeDeriving
+           , DeriveDataTypeable
   #-}
 
 -- | Some common types used by the species library.
@@ -48,6 +49,7 @@ module Math.Combinatorics.Species.Types
     , Prod(..)
     , Comp(..)
     , Cycle(..)
+    , Set(..)
     , Star(..)
 
       -- * Type-level species
@@ -72,6 +74,8 @@ import qualified Algebra.ZeroTestable as ZeroTestable
 import qualified Algebra.Field as Field
 
 import Data.Lub (parCommute, HasLub(..), flatLub)
+
+import Data.Typeable
 
 --------------------------------------------------------------------------------
 --  Lazy multiplication  -------------------------------------------------------
@@ -203,9 +207,14 @@ instance (Show x) => Show (Const x a) where
   show (Const x) = show x
 instance (Show x) => ShowF (Const x) where
   showF = show
+instance Typeable2 Const where
+  typeOf2 _ = mkTyConApp (mkTyCon "Const") []
+instance Typeable x => Typeable1 (Const x) where
+  typeOf1 = typeOf1Default
 
 -- | The identity functor.
 newtype Identity a = Identity a
+  deriving Typeable
 instance Functor Identity where
   fmap f (Identity x) = Identity (f x)
 instance (Show a) => Show (Identity a) where
@@ -223,6 +232,12 @@ instance (Show (f a), Show (g a)) => Show (Sum f g a) where
 instance (ShowF f, ShowF g) => ShowF (Sum f g) where
   showF (Sum (Left fa)) = "inl(" ++ showF fa ++ ")"
   showF (Sum (Right ga)) = "inr(" ++ showF ga ++ ")"
+instance (Typeable1 f, Typeable1 g) => Typeable1 (Sum f g) where
+  typeOf1 x = mkTyConApp (mkTyCon "Math.Combinatorics.Species.Types.Sum") [typeOf1 (getF x), typeOf1 (getG x)]
+    where getF :: Sum f g a -> f a
+          getF = undefined
+          getG :: Sum f g a -> g a
+          getG = undefined
 
 -- | Functor product.
 newtype Prod f g a = Prod { unProd :: (f a, g a) }
@@ -232,6 +247,12 @@ instance (Show (f a), Show (g a)) => Show (Prod f g a) where
   show (Prod x) = show x
 instance (ShowF f, ShowF g) => ShowF (Prod f g) where
   showF (Prod (fa, ga)) = "(" ++ showF fa ++ "," ++ showF ga ++ ")"
+instance (Typeable1 f, Typeable1 g) => Typeable1 (Prod f g) where
+  typeOf1 x = mkTyConApp (mkTyCon "Math.Combinatorics.Species.Types.Prod") [typeOf1 (getF x), typeOf1 (getG x)]
+    where getF :: Prod f g a -> f a
+          getF = undefined
+          getG :: Prod f g a -> g a
+          getG = undefined
 
 -- | Functor composition.
 data Comp f g a = Comp { unComp :: (f (g a)) }
@@ -241,21 +262,37 @@ instance (Show (f (g a))) => Show (Comp f g a) where
   show (Comp x) = show x
 instance (ShowF f, ShowF g) => ShowF (Comp f g) where
   showF (Comp fga) = showF (fmap (RawString . showF) fga)
+instance (Typeable1 f, Typeable1 g) => Typeable1 (Comp f g) where
+  typeOf1 x = mkTyConApp (mkTyCon "Math.Combinatorics.Species.Types.Comp") [typeOf1 (getF x), typeOf1 (getG x)]
+    where getF :: Comp f g a -> f a
+          getF = undefined
+          getG :: Comp f g a -> g a
+          getG = undefined
 
 -- | Cycle structure.  A value of type 'Cycle a' is implemented as
 --   '[a]', but thought of as a directed cycle.
 newtype Cycle a = Cycle [a]
-instance Functor Cycle where
-  fmap f (Cycle xs) = Cycle (fmap f xs)
+  deriving (Functor, Typeable)
 instance (Show a) => Show (Cycle a) where
-  show (Cycle xs) = "{" ++ intercalate "," (map show xs) ++ "}"
+  show (Cycle xs) = "<" ++ intercalate "," (map show xs) ++ ">"
 instance ShowF Cycle where
+  showF = show
+
+
+-- | Set structure.  A value of type 'Set a' is implemented as '[a]',
+--   but thought of as an unordered set.
+newtype Set a = Set [a]
+  deriving (Functor, Typeable)
+instance (Show a) => Show (Set a) where
+  show (Set xs) = "{" ++ intercalate "," (map show xs) ++ "}"
+instance ShowF Set where
   showF = show
 
 -- | 'Star' is isomorphic to 'Maybe', but with a more useful 'Show'
 --   instance for our purposes.  Used to implement species
 --   differentiation.
 data Star a = Star | Original a
+  deriving (Typeable)
 instance Functor Star where
   fmap _ Star = Star
   fmap f (Original a) = Original (f a)
@@ -298,7 +335,7 @@ type instance StructureF (f :+: g)    = Sum (StructureF f) (StructureF g)
 type instance StructureF (f :*: g)    = Prod (StructureF f) (StructureF g)
 type instance StructureF (f :.: g)    = Comp (StructureF f) (StructureF g)
 type instance StructureF (Der f)      = Comp (StructureF f) Star
-type instance StructureF E            = []
+type instance StructureF E            = Set
 type instance StructureF C            = Cycle
 type instance StructureF (NonEmpty f) = StructureF f
 

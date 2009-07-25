@@ -24,6 +24,8 @@ import qualified Algebra.Additive as Additive
 import qualified Algebra.Ring as Ring
 import qualified Algebra.Differential as Differential
 
+import Data.Typeable
+
 import NumericPrelude
 import PreludeBase hiding (cycle)
 
@@ -86,7 +88,7 @@ needsZT _            = False
 -- | An existential wrapper to hide the phantom type parameter to
 --   'SpeciesAlgT', so we can make it an instance of 'Species'.
 data SpeciesAlg where
-  SA :: (ShowF (StructureF s)) => SpeciesAlgT s -> SpeciesAlg
+  SA :: (ShowF (StructureF s), Typeable1 (StructureF s)) => SpeciesAlgT s -> SpeciesAlg
 
 -- | A version of 'needsZT' for 'SpeciesAlg'.
 needsZ :: SpeciesAlg -> Bool
