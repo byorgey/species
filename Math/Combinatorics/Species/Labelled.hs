@@ -26,9 +26,8 @@ instance Species EGF where
   o                 = liftEGF2 PS.compose
   ofSize s p        = (liftEGF . PS.lift1 $ filterCoeffs p) s
   ofSizeExactly s n = (liftEGF . PS.lift1 $ selectIndex n) s
-
-  (EGF (PS.Cons (x:_))) .: EGF (PS.Cons ~(_:xs))
-    = EGF (PS.Cons (x:xs))
+  cartesian         = liftEGF2 . PS.lift2 $ \xs ys -> zipWith3 mult xs ys (map fromIntegral facts)
+    where mult x y z = x * y * z
 
 -- | Extract the coefficients of an exponential generating function as
 --   a list of Integers.  Since 'EGF' is an instance of

@@ -66,6 +66,8 @@ generateF (OfSize f p) xs | p (genericLength xs) = generateF f xs
                           | otherwise     = []
 generateF (OfSizeExactly f n) xs | genericLength xs == n = generateF f xs
                                  | otherwise = []
+generateF (f :><: g) xs = [ Prod (x,y) | x <- generateF f xs
+                                       , y <- generateF g xs ]
 
 -- | @pSet xs@ generates the power set of @xs@, yielding a list of
 --   subsets of @xs@ paired with their complements.

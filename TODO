@@ -1,5 +1,5 @@
 * virtual species
 * add a Field constraint: species division  (derangements)
 * functor composition
-* cartesian/Hadamard product    (graphs etc.)
 * recursively defined species   (trees etc.)
+* generation of unlabelled structures

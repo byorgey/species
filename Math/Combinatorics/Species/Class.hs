@@ -14,6 +14,7 @@ module Math.Combinatorics.Species.Class
 
     , oneHole
     , madeOf
+    , (><)
     , x
     , e
     , sets
@@ -43,8 +44,6 @@ import qualified Algebra.Differential as Differential
 
 import NumericPrelude
 import PreludeBase hiding (cycle)
-
-infixr 5 .:
 
 -- | The Species type class.  Note that the @Differential@ constraint
 --   requires s to be a differentiable ring, which means that every
@@ -82,10 +81,11 @@ class (Differential.C s) => Species s where
   --   lists of coefficients into finite ones.
   ofSizeExactly :: s -> Integer -> s
 
-  -- | @s1 .: s2@ is the species which puts an s1 structure on the
-  --   empty set and an s2 structure on anything else.  Useful for
-  --   getting recursively defined species off the ground.
-  (.:)      :: s -> s -> s
+  -- | Cartisian product of two species.  an F x G structure consists
+  --   of an F structure superimposed on a G structure over the same
+  --   labels.
+  cartesian :: s -> s -> s
+
 
 -- $synonyms
 -- Some synonyms are provided for convenience.  In particular,
@@ -102,6 +102,10 @@ oneHole = Differential.differentiate
 -- | A synonym for 'o' (partitional composition).
 madeOf :: Species s => s -> s -> s
 madeOf = o
+
+-- | A synonym for cartesian product.
+(><) :: Species s => s -> s -> s
+(><) = cartesian
 
 -- | A synonym for 'singleton'.
 x :: Species s => s

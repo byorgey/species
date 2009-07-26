@@ -55,7 +55,7 @@ module Math.Combinatorics.Species.Types
       -- * Type-level species
       -- $typespecies    
       
-    , Z, S, X, (:+:), (:*:), (:.:), Der, E, C, NonEmpty
+    , Z, S, X, (:+:), (:*:), (:.:), Der, E, C, (:><:)
     , StructureF
     ) where
 
@@ -321,7 +321,7 @@ data (:.:) f g
 data Der f
 data E
 data C
-data NonEmpty f
+data (:><:) f g
 
 -- | 'StructureF' is a type function which maps type-level species
 --   descriptions to structure functors.  That is, a structure of the
@@ -337,5 +337,5 @@ type instance StructureF (f :.: g)    = Comp (StructureF f) (StructureF g)
 type instance StructureF (Der f)      = Comp (StructureF f) Star
 type instance StructureF E            = Set
 type instance StructureF C            = Cycle
-type instance StructureF (NonEmpty f) = StructureF f
+type instance StructureF (f :><: g)   = Prod (StructureF f) (StructureF g)
 

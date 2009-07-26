@@ -20,6 +20,7 @@ import qualified MathObj.Monomial as Monomial
 import qualified MathObj.FactoredRational as FQ
 
 import qualified Algebra.Ring as Ring
+import qualified Algebra.ZeroTestable as ZeroTestable
 
 import qualified Data.Map as M
 import Data.List (genericReplicate, genericDrop, groupBy, sort, intercalate)
@@ -41,12 +42,9 @@ instance Species CycleIndex where
   ofSizeExactly s n = (liftCI . MVP.lift1 $
                         ( takeWhile ((==n) . Monomial.pDegree)
                         . dropWhile ((<n) . Monomial.pDegree))) s
+
+  cartesian = liftCI2 . MVP.lift2 $ \x y -> hadamard x y
                          
-
-  (CI (MVP.Cons (x:_))) .: (CI (MVP.Cons (y:ys))) = CI $ MVP.Cons (x:rest)
-    where rest | Monomial.pDegree y == 0 = ys
-               | otherwise               = (y:ys)
-
 -- | Convert an integer partition to the corresponding monomial in the
 --   cycle index series for the species of sets.
 partToMonomial :: [(Integer, Integer)] -> Monomial.T Rational
@@ -121,3 +119,10 @@ insertZeros = insertZeros' [0..]
       | n < pow   = genericReplicate (pow - n) 0 
                     ++ insertZeros' (genericDrop (pow - n) (n:ns)) ((pow,c):pcs)
       | otherwise = c : insertZeros' ns pcs
+
+-- | Hadamard product.
+hadamard :: (Ring.C a, ZeroTestable.C a) => [Monomial.T a] -> [Monomial.T a] -> [Monomial.T a]
+hadamard = MVP.merge False zap
+  where zap m1 m2 = Monomial.Cons (Monomial.coeff m1 * Monomial.coeff m2 * 
+                                    (fromInteger . toInteger . aut . M.assocs . Monomial.powers $ m1))
+                                  (Monomial.powers m1)
