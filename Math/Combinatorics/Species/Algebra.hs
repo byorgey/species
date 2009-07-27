@@ -73,8 +73,8 @@ instance Show (SpeciesAlgT s) where
 
 -- | 'needsZT' is a predicate which checks whether a species uses any
 --   of the operations which are not supported directly by ordinary
---   generating functions (composition and differentiation), and hence
---   need cycle index series.
+--   generating functions (composition, differentiation, and cartesian
+--   product), and hence need cycle index series.
 needsZT :: SpeciesAlgT s -> Bool
 needsZT (f :+: g)    = needsZT f || needsZT g
 needsZT (f :*: g)    = needsZT f || needsZT g
@@ -120,15 +120,19 @@ instance Species SpeciesAlg where
   cartesian (SA f) (SA g) = SA (f :><: g)
   nonEmpty (SA f)         = SA (NonEmpty f)
 
--- | Reify a species expression into a tree.  Of course, this is just
---   the identity function with a usefully restricted type.  For example:
+-- | Reify a species expression into an AST.  Of course, this is just
+--   the identity function with a usefully restricted type.  For
+--   example:
 --
 -- > > reify octopus
--- > (C . C'_+)
+-- > C . C'+
+-- > > reify (ksubset 3)
+-- > E3 * E
+
 reify :: SpeciesAlg -> SpeciesAlg
 reify = id
 
--- | Reflect a species back into any instance of the 'Species' class.
+-- | Reflect an AST back into any instance of the 'Species' class.
 reflectT :: Species s => SpeciesAlgT f -> s
 reflectT O                   = zero
 reflectT I                   = one
