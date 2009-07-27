@@ -24,7 +24,6 @@ module Math.Combinatorics.Species.Class
       -- $derived_ops
 
     , pointed
-    , nonEmpty
 
       -- * Derived species
       -- $derived
@@ -71,6 +70,11 @@ class (Differential.C s) => Species s where
   -- | Partitional composition
   o         :: s -> s -> s
 
+  -- | Cartisian product of two species.  an F x G structure consists
+  --   of an F structure superimposed on a G structure over the same
+  --   labels.
+  cartesian :: s -> s -> s
+
   -- | Only put a structure on underlying sets whose size satisfies
   --   the predicate.
   ofSize    :: s -> (Integer -> Bool) -> s
@@ -80,11 +84,11 @@ class (Differential.C s) => Species s where
   --   (==k)@, since it can be more efficient: we get to turn infinite
   --   lists of coefficients into finite ones.
   ofSizeExactly :: s -> Integer -> s
+  ofSizeExactly s n = s `ofSize` (==n)
 
-  -- | Cartisian product of two species.  an F x G structure consists
-  --   of an F structure superimposed on a G structure over the same
-  --   labels.
-  cartesian :: s -> s -> s
+  -- | Don't put a structure on the empty set.
+  nonEmpty  :: s -> s
+  nonEmpty = flip ofSize (>0)
 
 
 -- $synonyms
@@ -130,9 +134,6 @@ cycles     = cycle
 pointed :: Species s => s -> s
 pointed = (x *) . Differential.differentiate
 
--- | Don't put a structure on the empty set.
-nonEmpty  :: Species s => s -> s
-nonEmpty = flip ofSize (>0)
 
 
 -- $derived

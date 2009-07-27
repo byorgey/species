@@ -22,11 +22,11 @@ module Math.Combinatorics.Species
       -- ** Convenience methods
     , oneHole
     , madeOf
+    , (><)
     , x, e, sets, cycles
           
       -- ** Derived operations
     , pointed
-    , nonEmpty
 
       -- ** Derived species
     , list, lists
@@ -43,11 +43,16 @@ module Math.Combinatorics.Species
     , unlabelled
     , generate
 
+    , SpeciesAlgT(..)
+    , SpeciesAlg(..)
+    , reify
+    , reflect
+
     ) where
 
 import Math.Combinatorics.Species.Class
 import Math.Combinatorics.Species.Labelled
 import Math.Combinatorics.Species.Unlabelled
 import Math.Combinatorics.Species.Generate
-  
+import Math.Combinatorics.Species.Algebra
 
