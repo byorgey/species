@@ -16,7 +16,6 @@ module Math.Combinatorics.Species.Class
     , madeOf
     , (><), (@@)
     , x
-    , e
     , sets
     , cycles
     , subsets
@@ -54,6 +53,9 @@ import PreludeBase hiding (cycle)
 --   i.e. partitional product), and "Algebra.Differential" (species
 --   differentiation, i.e. adjoining a distinguished element).
 --
+--   Minimal complete definition: 'singleton', 'set', 'cycle', 'o',
+--   'cartesian', 'fcomp', 'ofSize'.
+--
 --   Note that the 'o' operation can be used infix to suggest common
 --   notation for composition, and also to be read as an abbreviation
 --   for \"of\", as in \"top o' the mornin'\": @set \`o\` nonEmpty
@@ -90,12 +92,12 @@ class (Differential.C s) => Species s where
   ksubset :: Integer -> s
   ksubset k = (set `ofSizeExactly` k) * set
 
-  -- | Structures of the species eps of elements are just elements of
-  --   the underlying set: eps = X * E.  Included with default
+  -- | Structures of the species e of elements are just elements of
+  --   the underlying set: e = X * E.  Included with default
   --   definition in 'Species' class for the same reason as 'subset'
   --   and 'ksubset'.
   element :: s
-  element = x * e
+  element = x * set
 
   -- | Partitional composition.  To form all (F o G)-structures on the
   --   underlying set U, first form all set partitions of U; for each
@@ -108,7 +110,7 @@ class (Differential.C s) => Species s where
   --   the same underlying set.
   cartesian :: s -> s -> s
 
-  -- | Functor product of two species.  An (F `fcomp` G)-structure
+  -- | Functor product of two species.  An (F \@\@ G)-structure
   --   consists of an F-structure on the set of all G-structures.
   fcomp :: s -> s -> s
 
@@ -116,10 +118,11 @@ class (Differential.C s) => Species s where
   --   the predicate.
   ofSize    :: s -> (Integer -> Bool) -> s
 
-  -- | Only put a structure on underlying sets of the given size.  We
-  --   include this as a special case, instead of just using @ofSize
-  --   (==k)@, since it can be more efficient: we get to turn infinite
-  --   lists of coefficients into finite ones.
+  -- | Only put a structure on underlying sets of the given size.  A
+  --   default implementation of @ofSize (==k)@ is provided, but this
+  --   method is included in the 'Species' class as a special case
+  --   since it can be more efficient: we get to turn infinite lists
+  --   of coefficients into finite ones.
   ofSizeExactly :: s -> Integer -> s
   ofSizeExactly s n = s `ofSize` (==n)
 
@@ -158,10 +161,6 @@ madeOf = o
 x :: Species s => s
 x          = singleton
 
--- | A synonym for 'set'.
-e :: Species s => s
-e          = set
-
 sets :: Species s => s
 sets       = set
 
@@ -186,7 +185,6 @@ pointed = (x *) . Differential.differentiate
 list :: Species s => s
 list  = oneHole cycle
 
--- | A convenient synonym for 'list'.
 lists :: Species s => s
 lists = list
 
@@ -231,8 +229,8 @@ simpleGraph = subset @@ (ksubset 2)
 simpleGraphs = simpleGraph
 
 -- | A directed graph (with loops) is a subset of all pairs drawn
---   (without replacement) from the set of vertices: D = p \@\@ eps ><
---   eps.  It can also be thought of as the species of binary relations.
+--   (without replacement) from the set of vertices: D = p \@\@ (e ><
+--   e).  It can also be thought of as the species of binary relations.
 directedGraphs, directedGraph :: Species s => s
 directedGraph = subset @@ (element >< element)
 directedGraphs = directedGraph

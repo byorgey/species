@@ -23,7 +23,7 @@ module Math.Combinatorics.Species
     , oneHole
     , madeOf
     , (><), (@@)
-    , x, e, sets, cycles
+    , x, sets, cycles
     , subsets
     , ksubsets
     , elements
