@@ -58,21 +58,27 @@ import PreludeBase hiding (cycle)
 --   sets@.
 class (Differential.C s) => Species s where
 
-  -- | The species X of singletons
+  -- | The species X of singletons. X puts a singleton structure on an
+  --   underlying set of size 1, and no structures on any other
+  --   underlying sets.
   singleton :: s
 
-  -- | The species E of sets
+  -- | The species E of sets.  E puts a singleton structure on any
+  --   underlying set.
   set       :: s
 
-  -- | The species C of cyclical orderings (cycles/rings)
+  -- | The species C of cyclical orderings (cycles/rings).
   cycle     :: s
 
-  -- | Partitional composition
+  -- | Partitional composition.  To form all (F o G)-structures on the
+  --   underlying set U, first form all set partitions of U; for each
+  --   partition p, put an F-structure on the classes of p, and a
+  --   separate G-structure on the elements in each class.
   o         :: s -> s -> s
 
-  -- | Cartisian product of two species.  an F x G structure consists
-  --   of an F structure superimposed on a G structure over the same
-  --   labels.
+  -- | Cartisian product of two species.  An (F x G)-structure
+  --   consists of an F structure superimposed on a G structure over
+  --   the same underlying set.
   cartesian :: s -> s -> s
 
   -- | Functor product of two species.  An (F `fcomp` G)-structure
