@@ -44,25 +44,29 @@ import PreludeBase hiding (cycle)
 --   structure type---but this means that the output list type must be
 --   existentially quantified as well; see 'generate' below.
 generateF :: SpeciesAlgT s -> [a] -> [StructureF s a]
-generateF O _   = []
-generateF I []  = [Const 1]
-generateF I _   = []
-generateF X [x] = [Identity x]
-generateF X _   = []
-generateF (f :+: g) xs = map (Sum . Left ) (generateF f xs) 
-                      ++ map (Sum . Right) (generateF g xs)
-generateF (f :*: g) xs = [ Prod (x, y) | (s1,s2) <- pSet xs
-                                       ,       x <- generateF f s1
-                                       ,       y <- generateF g s2
-                         ]
-generateF (f :.: g) xs = [ Comp y | p  <- sPartitions xs
-                                  , xs <- mapM (generateF g) p
-                                  , y  <- generateF f xs
-                         ]
-generateF (Der f) xs = map Comp $ generateF f (Star : map Original xs)
-generateF E xs = [Set xs]
-generateF C [] = []
-generateF C (x:xs) = map (Cycle . (x:)) (sPermutations xs)
+generateF O _           = []
+generateF I []          = [Const 1]
+generateF I _           = []
+generateF X [x]         = [Identity x]
+generateF X _           = []
+generateF E xs          = [Set xs]
+generateF C []          = []
+generateF C (x:xs)      = map (Cycle . (x:)) (sPermutations xs)
+generateF (f :+: g) xs  = map (Sum . Left ) (generateF f xs) 
+                        ++ map (Sum . Right) (generateF g xs)
+generateF (f :*: g) xs  = [ Prod (x, y) | (s1,s2) <- pSet xs
+                                        ,       x <- generateF f s1
+                                        ,       y <- generateF g s2
+                          ]
+generateF (f :.: g) xs  = [ Comp y | p  <- sPartitions xs
+                                   , xs <- mapM (generateF g) p
+                                   , y  <- generateF f xs
+                          ]
+generateF (f :><: g) xs = [ Prod (x,y) | x <- generateF f xs
+                                       , y <- generateF g xs ]
+generateF (f :@: g) xs  = map Comp $ generateF f (generateF g xs)
+generateF (Der f) xs    = map Comp $ generateF f (Star : map Original xs)
+
 generateF (OfSize f p) xs | p (genericLength xs) = generateF f xs
                           | otherwise     = []
 generateF (OfSizeExactly f n) xs | genericLength xs == n = generateF f xs

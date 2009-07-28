@@ -3,3 +3,5 @@
 * functor composition
 * recursively defined species   (trees etc.)
 * generation of unlabelled structures
+* move 'subset' (and 'ksubset'?) into species class 
+    so we can specialize generation (?)
