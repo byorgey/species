@@ -24,19 +24,19 @@ module Math.Combinatorics.Species
     , madeOf
     , (><), (@@)
     , x, e, sets, cycles
+    , subsets
+    , ksubsets
+    , elements
 
       -- ** Derived operations
     , pointed
 
       -- ** Derived species
     , list, lists
-    , element, elements
     , octopus, octopi
     , partition, partitions
     , permutation, permutations
-    , subset, subsets
     , ballot, ballots
-    , ksubset, ksubsets
     , simpleGraph, simpleGraphs
     , directedGraph, directedGraphs
 

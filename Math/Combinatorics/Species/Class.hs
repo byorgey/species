@@ -19,6 +19,9 @@ module Math.Combinatorics.Species.Class
     , e
     , sets
     , cycles
+    , subsets
+    , ksubsets
+    , elements
 
       -- * Derived operations
       -- $derived_ops
@@ -29,13 +32,10 @@ module Math.Combinatorics.Species.Class
       -- $derived
 
     , list, lists
-    , element, elements
     , octopus, octopi
     , partition, partitions
     , permutation, permutations
-    , subset, subsets
     , ballot, ballots
-    , ksubset, ksubsets
     , simpleGraph, simpleGraphs
     , directedGraph, directedGraphs
 
@@ -72,6 +72,31 @@ class (Differential.C s) => Species s where
   -- | The species C of cyclical orderings (cycles/rings).
   cycle     :: s
 
+  -- | The species p of subsets is given by p = E * E. 'subset' has a
+  --   default implementation of @set * set@, but is included in the
+  --   'Species' class so it can be overridden when generating
+  --   structures: since subset is defined as @set * set@, the
+  --   generation code by default generates a pair of the subset and
+  --   its complement, but normally when thinking about subsets we
+  --   only want to see the elements in the subset.  To explicitly
+  --   generate subset/complement pairs, you can use @set * set@
+  --   directly.
+  subset :: s
+  subset = set * set
+
+  -- | Subsets of size exactly k, p[k] = E_k * E.  Included with a
+  --   default definition in the 'Species' class for the same reason
+  --   as 'subset'.
+  ksubset :: Integer -> s
+  ksubset k = (set `ofSizeExactly` k) * set
+
+  -- | Structures of the species eps of elements are just elements of
+  --   the underlying set: eps = X * E.  Included with default
+  --   definition in 'Species' class for the same reason as 'subset'
+  --   and 'ksubset'.
+  element :: s
+  element = x * e
+
   -- | Partitional composition.  To form all (F o G)-structures on the
   --   underlying set U, first form all set partitions of U; for each
   --   partition p, put an F-structure on the classes of p, and a
@@ -98,10 +123,12 @@ class (Differential.C s) => Species s where
   ofSizeExactly :: s -> Integer -> s
   ofSizeExactly s n = s `ofSize` (==n)
 
-  -- | Don't put a structure on the empty set.
+  -- | Don't put a structure on the empty set.  The default definition
+  --   uses 'ofSize'; included in the 'Species' class so it can be
+  --   overriden in special cases (such as when reifying species
+  --   expressions).
   nonEmpty  :: s -> s
   nonEmpty = flip ofSize (>0)
-
 
 -- $synonyms
 -- Some synonyms are provided for convenience.  In particular,
@@ -150,8 +177,6 @@ cycles     = cycle
 pointed :: Species s => s -> s
 pointed = (x *) . Differential.differentiate
 
-
-
 -- $derived
 -- Some species that can be defined in terms of the primitive species
 -- operations.
@@ -165,10 +190,7 @@ list  = oneHole cycle
 lists :: Species s => s
 lists = list
 
--- | Structures of the species eps of elements are just elements of
---   the underlying set: eps = X * E.
-elements, element :: Species s => s
-element = x * e
+elements :: Species s => s
 elements = element
 
 -- | An octopus is a cyclic arrangement of lists, so called because
@@ -189,9 +211,7 @@ permutations, permutation :: Species s => s
 permutation = set `o` cycles
 permutations = permutation
 
--- | The species p of subsets is given by p = E * E.
-subsets, subset :: Species s => s
-subset = set * set
+subsets :: Species s => s
 subsets = subset
 
 -- | The species Bal of ballots consists of linear orderings of
@@ -200,9 +220,7 @@ ballots, ballot :: Species s => s
 ballot = list `o` nonEmpty sets
 ballots = ballot
 
--- | Subsets of size exactly k, p[k] = E_k * E.
-ksubsets, ksubset :: Species s => Integer -> s
-ksubset k = (set `ofSizeExactly` k) * set
+ksubsets :: Species s => Integer -> s
 ksubsets = ksubset
 
 -- | Simple graphs (undirected, without loops). A simple graph is a

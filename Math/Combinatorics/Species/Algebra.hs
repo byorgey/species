@@ -5,7 +5,7 @@
   #-}
 
 -- | A data structure to reify combinatorial species.
-module Math.Combinatorics.Species.Algebra 
+module Math.Combinatorics.Species.Algebra
     (
       SpeciesAlgT(..)
     , SpeciesAlg(..)
@@ -14,7 +14,7 @@ module Math.Combinatorics.Species.Algebra
     , reify
     , reflectT
     , reflect
-    
+
     ) where
 
 import Math.Combinatorics.Species.Class
@@ -42,17 +42,20 @@ data SpeciesAlgT s where
    X        :: SpeciesAlgT X
    E        :: SpeciesAlgT E
    C        :: SpeciesAlgT C
-   (:+:)    :: (ShowF (StructureF f), ShowF (StructureF g)) 
+   Subset   :: SpeciesAlgT Sub
+   KSubset  :: Integer -> SpeciesAlgT Sub
+   Elt      :: SpeciesAlgT Elt
+   (:+:)    :: (ShowF (StructureF f), ShowF (StructureF g))
             => SpeciesAlgT f -> SpeciesAlgT g -> SpeciesAlgT (f :+: g)
    (:*:)    :: (ShowF (StructureF f), ShowF (StructureF g))
             => SpeciesAlgT f -> SpeciesAlgT g -> SpeciesAlgT (f :*: g)
-   (:.:)    :: (ShowF (StructureF f), ShowF (StructureF g)) 
+   (:.:)    :: (ShowF (StructureF f), ShowF (StructureF g))
             => SpeciesAlgT f -> SpeciesAlgT g -> SpeciesAlgT (f :.: g)
    (:><:)   :: (ShowF (StructureF f), ShowF (StructureF g))
             => SpeciesAlgT f -> SpeciesAlgT g -> SpeciesAlgT (f :><: g)
    (:@:)   :: (ShowF (StructureF f), ShowF (StructureF g))
             => SpeciesAlgT f -> SpeciesAlgT g -> SpeciesAlgT (f :@: g)
-   Der      :: (ShowF (StructureF f)) 
+   Der      :: (ShowF (StructureF f))
             => SpeciesAlgT f -> SpeciesAlgT (Der f)
    OfSize   :: SpeciesAlgT f -> (Integer -> Bool) -> SpeciesAlgT f
    OfSizeExactly :: SpeciesAlgT f -> Integer -> SpeciesAlgT f
@@ -64,6 +67,9 @@ instance Show (SpeciesAlgT s) where
   showsPrec _ X                   = showChar 'X'
   showsPrec _ E                   = showChar 'E'
   showsPrec _ C                   = showChar 'C'
+  showsPrec _ Subset              = showChar 'p'
+  showsPrec _ (KSubset n)         = showChar 'p' . shows n
+  showsPrec _ (Elt)               = showChar 'e'
   showsPrec p (f :+: g)           = showParen (p>6)  $ showsPrec 6 f . showString " + "  . showsPrec 6 g
   showsPrec p (f :*: g)           = showParen (p>=7) $ showsPrec 7 f . showString " * "  . showsPrec 7 g
   showsPrec p (f :.: g)           = showParen (p>=7) $ showsPrec 7 f . showString " . "  . showsPrec 7 g
@@ -119,6 +125,9 @@ instance Species SpeciesAlg where
   singleton               = SA X
   set                     = SA E
   cycle                   = SA C
+  subset                  = SA Subset
+  ksubset k               = SA (KSubset k)
+  element                 = SA Elt
   o (SA f) (SA g)         = SA (f :.: g)
   cartesian (SA f) (SA g) = SA (f :><: g)
   fcomp (SA f) (SA g)     = SA (f :@: g)
@@ -145,6 +154,9 @@ reflectT I                   = one
 reflectT X                   = singleton
 reflectT E                   = set
 reflectT C                   = cycle
+reflectT Subset              = subset
+reflectT (KSubset k)         = ksubset k
+reflectT Elt                 = element
 reflectT (f :+: g)           = reflectT f + reflectT g
 reflectT (f :*: g)           = reflectT f * reflectT g
 reflectT (f :.: g)           = reflectT f `o` reflectT g

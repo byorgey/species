@@ -1,4 +1,4 @@
-{-# LANGUAGE NoImplicitPrelude 
+{-# LANGUAGE NoImplicitPrelude
            , GADTs
            , MultiParamTypeClasses
            , FlexibleInstances
@@ -44,28 +44,31 @@ import PreludeBase hiding (cycle)
 --   structure type---but this means that the output list type must be
 --   existentially quantified as well; see 'generate' below.
 generateF :: SpeciesAlgT s -> [a] -> [StructureF s a]
-generateF O _           = []
-generateF I []          = [Const 1]
-generateF I _           = []
-generateF X [x]         = [Identity x]
-generateF X _           = []
-generateF E xs          = [Set xs]
-generateF C []          = []
-generateF C (x:xs)      = map (Cycle . (x:)) (sPermutations xs)
-generateF (f :+: g) xs  = map (Sum . Left ) (generateF f xs) 
-                        ++ map (Sum . Right) (generateF g xs)
-generateF (f :*: g) xs  = [ Prod (x, y) | (s1,s2) <- pSet xs
-                                        ,       x <- generateF f s1
-                                        ,       y <- generateF g s2
-                          ]
-generateF (f :.: g) xs  = [ Comp y | p  <- sPartitions xs
-                                   , xs <- mapM (generateF g) p
-                                   , y  <- generateF f xs
-                          ]
-generateF (f :><: g) xs = [ Prod (x,y) | x <- generateF f xs
-                                       , y <- generateF g xs ]
-generateF (f :@: g) xs  = map Comp $ generateF f (generateF g xs)
-generateF (Der f) xs    = map Comp $ generateF f (Star : map Original xs)
+generateF O _            = []
+generateF I []           = [Const 1]
+generateF I _            = []
+generateF X [x]          = [Identity x]
+generateF X _            = []
+generateF E xs           = [Set xs]
+generateF C []           = []
+generateF C (x:xs)       = map (Cycle . (x:)) (sPermutations xs)
+generateF Subset xs      = map (Set . fst) (pSet xs)
+generateF (KSubset k) xs = map Set (sKSubsets k xs)
+generateF Elt xs         = map Identity xs
+generateF (f :+: g) xs   = map (Sum . Left ) (generateF f xs)
+                         ++ map (Sum . Right) (generateF g xs)
+generateF (f :*: g) xs   = [ Prod (x, y) | (s1,s2) <- pSet xs
+                                         ,       x <- generateF f s1
+                                         ,       y <- generateF g s2
+                           ]
+generateF (f :.: g) xs   = [ Comp y | p  <- sPartitions xs
+                                    , xs <- mapM (generateF g) p
+                                    , y  <- generateF f xs
+                           ]
+generateF (f :><: g) xs  = [ Prod (x,y) | x <- generateF f xs
+                                        , y <- generateF g xs ]
+generateF (f :@: g) xs   = map Comp $ generateF f (generateF g xs)
+generateF (Der f) xs     = map Comp $ generateF f (Star : map Original xs)
 
 generateF (OfSize f p) xs | p (genericLength xs) = generateF f xs
                           | otherwise     = []
@@ -76,8 +79,14 @@ generateF (OfSizeExactly f n) xs | genericLength xs == n = generateF f xs
 --   subsets of @xs@ paired with their complements.
 pSet :: [a] -> [([a],[a])]
 pSet [] = [([],[])]
-pSet (x:xs) = mapx first ++ mapx second 
+pSet (x:xs) = mapx first ++ mapx second
   where mapx which = map (which (x:)) $ pSet xs
+
+-- | @sKSubsets k xs@ generate all the size-k subsets of @xs@.
+sKSubsets :: Integer -> [a] -> [[a]]
+sKSubsets 0 _      = [[]]
+sKSubsets _ []     = []
+sKSubsets n (x:xs) = map (x:) (sKSubsets (n-1) xs) ++ sKSubsets n xs
 
 -- | Generate all partitions of a set.
 sPartitions :: [a] -> [[[a]]]

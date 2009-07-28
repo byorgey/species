@@ -59,7 +59,7 @@ module Math.Combinatorics.Species.Types
       -- * Type-level species
       -- $typespecies
 
-    , Z, S, X, (:+:), (:*:), (:.:), Der, E, C, (:><:), (:@:)
+    , Z, S, X, E, C, Sub, Elt, (:+:), (:*:), (:.:), (:><:), (:@:), Der
     , StructureF
     ) where
 
@@ -326,6 +326,8 @@ data S n
 data X
 data E
 data C
+data Sub
+data Elt
 data (:+:) f g
 data (:*:) f g
 data (:.:) f g
@@ -343,6 +345,8 @@ type instance StructureF (S s)        = Const Integer
 type instance StructureF X            = Identity
 type instance StructureF E            = Set
 type instance StructureF C            = Cycle
+type instance StructureF Sub          = Set
+type instance StructureF Elt          = Identity
 type instance StructureF (f :+: g)    = Sum (StructureF f) (StructureF g)
 type instance StructureF (f :*: g)    = Prod (StructureF f) (StructureF g)
 type instance StructureF (f :.: g)    = Comp (StructureF f) (StructureF g)
