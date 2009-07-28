@@ -50,6 +50,8 @@ data SpeciesAlgT s where
             => SpeciesAlgT f -> SpeciesAlgT g -> SpeciesAlgT (f :.: g)
    (:><:)   :: (ShowF (StructureF f), ShowF (StructureF g))
             => SpeciesAlgT f -> SpeciesAlgT g -> SpeciesAlgT (f :><: g)
+   (:@:)   :: (ShowF (StructureF f), ShowF (StructureF g))
+            => SpeciesAlgT f -> SpeciesAlgT g -> SpeciesAlgT (f :@: g)
    Der      :: (ShowF (StructureF f)) 
             => SpeciesAlgT f -> SpeciesAlgT (Der f)
    OfSize   :: SpeciesAlgT f -> (Integer -> Bool) -> SpeciesAlgT f
@@ -66,6 +68,7 @@ instance Show (SpeciesAlgT s) where
   showsPrec p (f :*: g)           = showParen (p>=7) $ showsPrec 7 f . showString " * "  . showsPrec 7 g
   showsPrec p (f :.: g)           = showParen (p>=7) $ showsPrec 7 f . showString " . "  . showsPrec 7 g
   showsPrec p (f :><: g)          = showParen (p>=7) $ showsPrec 7 f . showString " >< " . showsPrec 7 g
+  showsPrec p (f :@: g)           = showParen (p>=7) $ showsPrec 7 f . showString " @ "  . showsPrec 7 g
   showsPrec p (Der f)             = showsPrec 11 f . showChar '\''
   showsPrec _ (OfSize f p)        = showChar '<' .  showsPrec 0 f . showChar '>'
   showsPrec _ (OfSizeExactly f n) = showsPrec 11 f . shows n
@@ -73,13 +76,15 @@ instance Show (SpeciesAlgT s) where
 
 -- | 'needsZT' is a predicate which checks whether a species uses any
 --   of the operations which are not supported directly by ordinary
---   generating functions (composition, differentiation, and cartesian
---   product), and hence need cycle index series.
+--   generating functions (composition, differentiation, cartesian
+--   product, and functor composition), and hence need cycle index
+--   series.
 needsZT :: SpeciesAlgT s -> Bool
 needsZT (f :+: g)    = needsZT f || needsZT g
 needsZT (f :*: g)    = needsZT f || needsZT g
 needsZT (_ :.: _)    = True
 needsZT (_ :><: _)   = True
+needsZT (_ :@: _)    = True
 needsZT (Der _)      = True
 needsZT (OfSize f _) = needsZT f
 needsZT (OfSizeExactly f _) = needsZT f
@@ -115,9 +120,10 @@ instance Species SpeciesAlg where
   set                     = SA E
   cycle                   = SA C
   o (SA f) (SA g)         = SA (f :.: g)
+  cartesian (SA f) (SA g) = SA (f :><: g)
+  fcomp (SA f) (SA g)     = SA (f :@: g)
   ofSize (SA f) p         = SA (OfSize f p)
   ofSizeExactly (SA f) n  = SA (OfSizeExactly f n)
-  cartesian (SA f) (SA g) = SA (f :><: g)
   nonEmpty (SA f)         = SA (NonEmpty f)
 
 -- | Reify a species expression into an AST.  Of course, this is just
@@ -142,7 +148,8 @@ reflectT C                   = cycle
 reflectT (f :+: g)           = reflectT f + reflectT g
 reflectT (f :*: g)           = reflectT f * reflectT g
 reflectT (f :.: g)           = reflectT f `o` reflectT g
-reflectT (f :><: g)          = cartesian (reflectT f) (reflectT g)
+reflectT (f :><: g)          = reflectT f >< reflectT g
+reflectT (f :@: g)           = reflectT f @@ reflectT g
 reflectT (Der f)             = oneHole (reflectT f)
 reflectT (OfSize f p)        = ofSize (reflectT f) p
 reflectT (OfSizeExactly f n) = ofSizeExactly (reflectT f) n

@@ -22,7 +22,7 @@ module Math.Combinatorics.Species
       -- ** Convenience methods
     , oneHole
     , madeOf
-    , (><)
+    , (><), (@@)
     , x, e, sets, cycles
           
       -- ** Derived operations

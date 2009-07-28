@@ -12,6 +12,7 @@ import Math.Combinatorics.Species.Types
 import Math.Combinatorics.Species.Class
 
 import qualified MathObj.PowerSeries as PS
+import qualified MathObj.FactoredRational as FQ
 
 import NumericPrelude
 import PreludeBase hiding (cycle)
@@ -24,10 +25,18 @@ instance Species EGF where
   set               = egfFromCoeffs (map (LR . (1%)) facts)
   cycle             = egfFromCoeffs (0 : map (LR . (1%)) [1..])
   o                 = liftEGF2 PS.compose
-  ofSize s p        = (liftEGF . PS.lift1 $ filterCoeffs p) s
-  ofSizeExactly s n = (liftEGF . PS.lift1 $ selectIndex n) s
   cartesian         = liftEGF2 . PS.lift2 $ \xs ys -> zipWith3 mult xs ys (map fromIntegral facts)
     where mult x y z = x * y * z
+  fcomp             = liftEGF2 . PS.lift2 $ \fs gs -> map (\(n,gn) -> let gn' = numerator . unLR $ gn 
+                                                                       in (fs `safeIndex` gn') 
+                                                                            * LR (toRational (FQ.factorial gn' / FQ.factorial n)))
+                                                          (zip [0..] $ zipWith (*) (map fromIntegral facts) gs)
+    where safeIndex [] _     = 0
+          safeIndex (x:_)  0 = x
+          safeIndex (_:xs) n = safeIndex xs (n-1)
+
+  ofSize s p        = (liftEGF . PS.lift1 $ filterCoeffs p) s
+  ofSizeExactly s n = (liftEGF . PS.lift1 $ selectIndex n) s
 
 -- | Extract the coefficients of an exponential generating function as
 --   a list of Integers.  Since 'EGF' is an instance of

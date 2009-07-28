@@ -14,7 +14,7 @@ module Math.Combinatorics.Species.Class
 
     , oneHole
     , madeOf
-    , (><)
+    , (><), (@@)
     , x
     , e
     , sets
@@ -75,6 +75,10 @@ class (Differential.C s) => Species s where
   --   labels.
   cartesian :: s -> s -> s
 
+  -- | Functor product of two species.  An (F `fcomp` G)-structure
+  --   consists of an F-structure on the set of all G-structures.
+  fcomp :: s -> s -> s
+
   -- | Only put a structure on underlying sets whose size satisfies
   --   the predicate.
   ofSize    :: s -> (Integer -> Bool) -> s
@@ -110,6 +114,10 @@ madeOf = o
 -- | A synonym for cartesian product.
 (><) :: Species s => s -> s -> s
 (><) = cartesian
+
+-- | A synonym for functor composition.
+(@@) :: Species s => s -> s -> s
+(@@) = fcomp
 
 -- | A synonym for 'singleton'.
 x :: Species s => s

@@ -20,9 +20,10 @@ module Math.Combinatorics.Species.Generate
 import Math.Combinatorics.Species.Class
 import Math.Combinatorics.Species.Types
 import Math.Combinatorics.Species.Algebra
+import Math.Combinatorics.Species.CycleIndex (intPartitions)
 
 import Control.Arrow (first, second)
-import Data.List (genericLength)
+import Data.List (genericLength, genericReplicate)
 
 import Data.Typeable
 

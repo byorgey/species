@@ -16,19 +16,20 @@ import NumericPrelude
 import PreludeBase hiding (cycle)
 
 needsCI :: String -> a
-needsCI op = error (op ++ " must go via cycle index series.")
+needsCI op = error ("unlabelled " ++ op ++ " must go via cycle index series.")
 
 instance Differential.C GF where
-  differentiate = needsCI "unlabelled differentiation"
+  differentiate = needsCI "differentiation"
 
 instance Species GF where
   singleton         = gfFromCoeffs [0,1]
   set               = gfFromCoeffs (repeat 1)
   cycle             = set
-  o                 = needsCI "unlabelled composition"
+  o                 = needsCI "composition"
+  cartesian         = needsCI "cartesian product"
+  fcomp             = needsCI "functor composition"
   ofSize s p        = (liftGF . PS.lift1 $ filterCoeffs p) s
   ofSizeExactly s n = (liftGF . PS.lift1 $ selectIndex n) s
-  cartesian         = needsCI "unlabelled cartesian product"
 
 unlabelledCoeffs :: GF -> [Integer]
 unlabelledCoeffs (GF p) = PS.coeffs p
