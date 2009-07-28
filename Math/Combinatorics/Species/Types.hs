@@ -9,9 +9,13 @@
 
 -- | Some common types used by the species library.
 module Math.Combinatorics.Species.Types
-    ( -- * Lazy multiplication
-      
-      LazyRing(..)
+    ( -- * Miscellaneous
+
+      CycleType
+
+      -- * Lazy multiplication
+
+    , LazyRing(..)
     , LazyQ
     , LazyZ
 
@@ -53,8 +57,8 @@ module Math.Combinatorics.Species.Types
     , Star(..)
 
       -- * Type-level species
-      -- $typespecies    
-      
+      -- $typespecies
+
     , Z, S, X, (:+:), (:*:), (:.:), Der, E, C, (:><:), (:@:)
     , StructureF
     ) where
@@ -76,6 +80,11 @@ import qualified Algebra.Field as Field
 import Data.Lub (parCommute, HasLub(..), flatLub)
 
 import Data.Typeable
+
+-- | A representation of the cycle type of a permutation.  If @c ::
+--   CycleType@ and @(k,n) `elem` c@, then the permutation has @n@
+--   cycles of size @k@.
+type CycleType = [(Integer, Integer)]
 
 --------------------------------------------------------------------------------
 --  Lazy multiplication  -------------------------------------------------------
@@ -117,7 +126,7 @@ egfFromCoeffs = EGF . PS.fromCoeffs
 liftEGF :: (PS.T LazyQ -> PS.T LazyQ) -> EGF -> EGF
 liftEGF f (EGF x) = EGF (f x)
 
-liftEGF2 :: (PS.T LazyQ -> PS.T LazyQ -> PS.T LazyQ) 
+liftEGF2 :: (PS.T LazyQ -> PS.T LazyQ -> PS.T LazyQ)
          -> EGF -> EGF -> EGF
 liftEGF2 f (EGF x) (EGF y) = EGF (f x y)
 
@@ -131,7 +140,7 @@ gfFromCoeffs = GF . PS.fromCoeffs
 liftGF :: (PS.T Integer -> PS.T Integer) -> GF -> GF
 liftGF f (GF x) = GF (f x)
 
-liftGF2 :: (PS.T Integer -> PS.T Integer -> PS.T Integer) 
+liftGF2 :: (PS.T Integer -> PS.T Integer -> PS.T Integer)
          -> GF -> GF -> GF
 liftGF2 f (GF x) (GF y) = GF (f x y)
 

@@ -1,14 +1,21 @@
-{-# LANGUAGE NoImplicitPrelude 
+{-# LANGUAGE NoImplicitPrelude
            , FlexibleInstances
   #-}
 
 -- | An instance of 'Species' for cycle index series.  For details on
 --   cycle index series, see \"Combinatorial Species and Tree-Like
 --   Structures\", chapter 1.
-module Math.Combinatorics.Species.CycleIndex 
+module Math.Combinatorics.Species.CycleIndex
     ( zToEGF
     , zToGF
+
+    , zCoeff
+    , zFix
+
+      -- * Miscellaneous
+    , aut
     , intPartitions
+    , cyclePower
     ) where
 
 import Math.Combinatorics.Species.Types
@@ -43,13 +50,11 @@ instance Species CycleIndex where
   cartesian = liftCI2 . MVP.lift2 $ \x y -> hadamard x y
 
   fcomp     = zFComp
-                         
+
   ofSize s p = (liftCI . MVP.lift1 $ filter (p . Monomial.pDegree)) s
   ofSizeExactly s n = (liftCI . MVP.lift1 $
                         ( takeWhile ((==n) . Monomial.pDegree)
                         . dropWhile ((<n) . Monomial.pDegree))) s
-
-type CycleType = [(Integer, Integer)]
 
 -- | Convert an integer partition to the corresponding monomial in the
 --   cycle index series for the species of sets.
@@ -63,15 +68,19 @@ ezCoeff js = toRational $ 1 / aut js
 
 -- | @aut js@ is is the number of automorphisms of a permutation with
 --   cycle type @js@ (i.e. a permutation which has @n@ cycles of size
---   @i@ for each @(i,n)@ in @js@).
+--   @i@ for each @(i,n)@ in @js@).  Another way to look at it is that
+--   there are @n!/aut js@ permutations on n elements with cycle type
+--   @js@.  The result type is a @'FactoredRational.T'@.
 aut :: CycleType -> FQ.T
 aut = product . map (\(b,e) -> FQ.factorial e * (fromInteger b)^e)
 
 -- | Generate all partitions of an integer.  In particular, if @p@ is
 --   an element of the list output by @intPartitions n@, then @sum
---   . map (uncurry (*)) $ p == n@.
+--   . map (uncurry (*)) $ p == n@.  The result type is @[CycleType]@
+--   since each integer partition of @n@ corresponds to the cycle type
+--   of a permutation on @n@ elements.
 --
---   Also, the partitions are generated in an order corresponding to
+--   The partitions are generated in an order corresponding to
 --   the Ord instance for 'Monomial'.
 intPartitions :: Integer -> [CycleType]
 intPartitions n = intPartitions' n n
@@ -121,15 +130,15 @@ insertZeros :: Ring.C a => [(Integer, a)] -> [a]
 insertZeros = insertZeros' [0..]
   where
     insertZeros' _ [] = []
-    insertZeros' (n:ns) ((pow,c):pcs) 
-      | n < pow   = genericReplicate (pow - n) 0 
+    insertZeros' (n:ns) ((pow,c):pcs)
+      | n < pow   = genericReplicate (pow - n) 0
                     ++ insertZeros' (genericDrop (pow - n) (n:ns)) ((pow,c):pcs)
       | otherwise = c : insertZeros' ns pcs
 
 -- | Hadamard product.
 hadamard :: (Ring.C a, ZeroTestable.C a) => [Monomial.T a] -> [Monomial.T a] -> [Monomial.T a]
 hadamard = MVP.merge False zap
-  where zap m1 m2 = Monomial.Cons (Monomial.coeff m1 * Monomial.coeff m2 * 
+  where zap m1 m2 = Monomial.Cons (Monomial.coeff m1 * Monomial.coeff m2 *
                                     (fromInteger . toInteger . aut . M.assocs . Monomial.powers $ m1))
                                   (Monomial.powers m1)
 
@@ -166,11 +175,11 @@ zFix z n = numerator $ toRational (aut n) * zCoeff z n
 
 -- | Functor composition for cycle index series.  See BLL pp. 72--73.
 --
---   We have  
+--   We have
 --
---     Z_F \@ Z_G = sum_{n>=0} 1/n! 
---                    sum_{nn \in Par(n)} 
---                      aut(nn) * fix F[(G[nn])_1, (G[nn])_2, ...]
+--     Z_F \@ Z_G = sum_{n>=0}
+--                    sum_{nn \in Par(n)}
+--                      1/aut(nn) * fix F[(G[nn])_1, (G[nn])_2, ...]
 --                      * x_1^nn_1 x_2^nn_2 ...
 --
 --   where
@@ -191,9 +200,9 @@ zFComp f g = ciFromMonomials $
              concat $ for [0..] $ \n ->
                for (intPartitions n) $ \nn ->
                  Monomial.mkMonomial
-                   (toRational (aut nn / FQ.factorial n) * (zFix f (gnn nn n) % 1))
+                   (toRational (1 / aut nn) * (zFix f (gnn nn n) % 1))
                    nn
-                 
+
   where for     = flip map
 
         -- Convert g to an EGF for later reference.
@@ -210,23 +219,27 @@ zFComp f g = ciFromMonomials $
         -- so we know we are looking for a permutation on that many
         -- elements.
         gnn :: CycleType -> Integer -> CycleType
+        gnn [] _  = []
         gnn  nn n = (gnn' nn) `truncToPartitionOf` (gEGF `genericIndex` n)
 
         -- Compute the image of a cycle type under G.
         gnn' :: CycleType -> CycleType
         gnn' nn = concat $ for [1..] $ \k -> let xk = gnnk nn k
-                                              in [ (k,xk) | xk > 0 ]
+                                             in [ (k,xk) | xk > 0 ]
 
         -- Compute (G[nn])_k for a particular k, that is, the number
         -- of cycles of size k in the image under G of any permutation
         -- with cycle type nn.
         gnnk :: CycleType -> Integer -> Integer
-        gnnk nn k = k * sum (
-                      for (FQ.divisors k') $ \d -> 
-                        FQ.mu (k'/d) * zFix g (cyclePower nn (toInteger d)))
+        gnnk nn k = (`div` k) . sum $
+                      for (FQ.divisors k') $ \d ->
+                        FQ.mu (k'/d) * zFix g (cyclePower nn (toInteger d))
           where k' = fromIntegral k
 
         truncToPartitionOf :: CycleType -> Integer -> CycleType
-        truncToPartitionOf p n = map snd $ takeWhile ((<=n) . fst) partials 
-          where partials = zip (tail $ scanl (\soFar cyc -> soFar + uncurry (*) cyc) 0 p)
-                               p
+        truncToPartitionOf _ 0 = []
+        truncToPartitionOf p n = map snd $ takeUntil ((>=n) . fst) partials
+          where partials = zip (tail $ scanl (\soFar cyc -> soFar + uncurry (*) cyc) 0 p) p
+                takeUntil p [] = []
+                takeUntil p (x:xs) | p x = [x]
+                                   | otherwise = x : takeUntil p xs
