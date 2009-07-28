@@ -315,14 +315,14 @@ instance ShowF Star where
 data Z
 data S n
 data X
+data E
+data C
 data (:+:) f g
 data (:*:) f g
 data (:.:) f g
-data Der f
-data E
-data C
 data (:><:) f g
 data (:@:) f g
+data Der f
 
 -- | 'StructureF' is a type function which maps type-level species
 --   descriptions to structure functors.  That is, a structure of the
