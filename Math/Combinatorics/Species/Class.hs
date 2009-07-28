@@ -36,6 +36,8 @@ module Math.Combinatorics.Species.Class
     , subset, subsets
     , ballot, ballots
     , ksubset, ksubsets
+    , simpleGraph, simpleGraphs
+    , directedGraph, directedGraphs
 
     ) where
 
@@ -202,3 +204,17 @@ ballots = ballot
 ksubsets, ksubset :: Species s => Integer -> s
 ksubset k = (set `ofSizeExactly` k) * set
 ksubsets = ksubset
+
+-- | Simple graphs (undirected, without loops). A simple graph is a
+--   subset of the set of all size-two subsets of the vertices: G = p
+--   \@\@ p_2.
+simpleGraphs, simpleGraph :: Species s => s
+simpleGraph = subset @@ (ksubset 2)
+simpleGraphs = simpleGraph
+
+-- | A directed graph (with loops) is a subset of all pairs drawn
+--   (without replacement) from the set of vertices: D = p \@\@ eps ><
+--   eps.  It can also be thought of as the species of binary relations.
+directedGraphs, directedGraph :: Species s => s
+directedGraph = subset @@ (element >< element)
+directedGraphs = directedGraph

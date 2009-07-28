@@ -24,7 +24,7 @@ module Math.Combinatorics.Species
     , madeOf
     , (><), (@@)
     , x, e, sets, cycles
-          
+
       -- ** Derived operations
     , pointed
 
@@ -36,7 +36,9 @@ module Math.Combinatorics.Species
     , permutation, permutations
     , subset, subsets
     , ballot, ballots
-    , ksubset, ksubsets            
+    , ksubset, ksubsets
+    , simpleGraph, simpleGraphs
+    , directedGraph, directedGraphs
 
       -- * Computing with species
     , labelled
