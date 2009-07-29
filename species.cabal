@@ -25,6 +25,6 @@ Library
     Math.Combinatorics.Species.Labelled
     Math.Combinatorics.Species.Unlabelled
     Math.Combinatorics.Species.CycleIndex
-    Math.Combinatorics.Species.Algebra
+    Math.Combinatorics.Species.AST
     Math.Combinatorics.Species.Generate
   extensions: NoImplicitPrelude

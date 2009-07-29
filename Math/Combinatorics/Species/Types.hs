@@ -237,7 +237,8 @@ instance (Functor f, Functor g) => Functor (Sum f g) where
   fmap f (Sum (Left fa))  = Sum (Left (fmap f fa))
   fmap f (Sum (Right ga)) = Sum (Right (fmap f ga))
 instance (Show (f a), Show (g a)) => Show (Sum f g a) where
-  show (Sum x) = show x
+  show (Sum (Left fa)) = "inl(" ++ show fa ++ ")"
+  show (Sum (Right ga)) = "inr(" ++ show ga ++ ")"
 instance (ShowF f, ShowF g) => ShowF (Sum f g) where
   showF (Sum (Left fa)) = "inl(" ++ showF fa ++ ")"
   showF (Sum (Right ga)) = "inr(" ++ showF ga ++ ")"
@@ -280,7 +281,7 @@ instance (Typeable1 f, Typeable1 g) => Typeable1 (Comp f g) where
 
 -- | Cycle structure.  A value of type 'Cycle a' is implemented as
 --   '[a]', but thought of as a directed cycle.
-newtype Cycle a = Cycle [a]
+newtype Cycle a = Cycle { getCycle :: [a] }
   deriving (Functor, Typeable)
 instance (Show a) => Show (Cycle a) where
   show (Cycle xs) = "<" ++ intercalate "," (map show xs) ++ ">"
@@ -290,7 +291,7 @@ instance ShowF Cycle where
 
 -- | Set structure.  A value of type 'Set a' is implemented as '[a]',
 --   but thought of as an unordered set.
-newtype Set a = Set [a]
+newtype Set a = Set { getSet :: [a] }
   deriving (Functor, Typeable)
 instance (Show a) => Show (Set a) where
   show (Set xs) = "{" ++ intercalate "," (map show xs) ++ "}"
@@ -316,10 +317,10 @@ instance ShowF Star where
 --------------------------------------------------------------------------------
 
 -- $typespecies
--- Some constructor-less data types used as indices to 'SpeciesAlgT'
--- to reflect the species structure at the type level.  This is the
--- point at which we wish we were doing this in a dependently typed
--- language.
+-- Some constructor-less data types used as indices to
+-- 'SpeciesTypedAST' to reflect the species structure at the type
+-- level.  This is the point at which we wish we were doing this in a
+-- dependently typed language.
 
 data Z
 data S n

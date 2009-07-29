@@ -5,7 +5,7 @@ module Math.Combinatorics.Species.Unlabelled
 
 import Math.Combinatorics.Species.Types
 import Math.Combinatorics.Species.Class
-import Math.Combinatorics.Species.Algebra
+import Math.Combinatorics.Species.AST
 import Math.Combinatorics.Species.CycleIndex
 
 import qualified MathObj.PowerSeries as PS
@@ -46,19 +46,19 @@ unlabelledCoeffs (GF p) = PS.coeffs p
 --
 --   Actually, the above is something of a white lie, as you may have
 --   already realized by looking at the input type of 'unlabelled',
---   which is 'SpeciesAlg' rather than the expected 'GF'.  The
---   reason is that although products and sums of unlabelled species
+--   which is 'SpeciesAST' rather than the expected 'GF'.  The reason
+--   is that although products and sums of unlabelled species
 --   correspond to products and sums of ordinary generating functions,
---   composition and differentiation do not!  In order to compute an
---   ordinary generating function for a species defined in terms of
---   composition and/or differentiation, we must compute the cycle
---   index series for the species and then convert it to an ordinary
---   generating function.  So 'unlabelled' actually works by first
---   reifying the species to an AST and checking whether it uses
---   composition or differentiation, and using operations on cycle
---   index series if it does, and (much faster) operations directly on
---   ordinary generating functions otherwise.
-unlabelled :: SpeciesAlg -> [Integer]
+--   other operations such as composition and differentiation do not!
+--   In order to compute an ordinary generating function for a species
+--   defined in terms of composition and/or differentiation, we must
+--   compute the cycle index series for the species and then convert
+--   it to an ordinary generating function.  So 'unlabelled' actually
+--   works by first reifying the species to an AST and checking which
+--   operations are used in its definition, and then choosing to work
+--   with cycle index series or directly with (much faster) ordinary
+--   generating functions as appropriate.
+unlabelled :: SpeciesAST -> [Integer]
 unlabelled s 
   | needsZ s  = unlabelledCoeffs . zToGF . reflect $ s
   | otherwise = unlabelledCoeffs . reflect $ s

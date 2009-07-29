@@ -10,7 +10,6 @@ module Math.Combinatorics.Species.Class
       Species(..)
 
       -- * Convenience methods
-      -- $synonyms
 
     , oneHole
     , madeOf
@@ -60,6 +59,13 @@ import PreludeBase hiding (cycle)
 --   notation for composition, and also to be read as an abbreviation
 --   for \"of\", as in \"top o' the mornin'\": @set \`o\` nonEmpty
 --   sets@.
+--
+--   In this version of the library, 'Species' has four instances:
+--   'EGF' (exponential generating functions, for counting labelled
+--   structures), 'GF' (ordinary generating function, for counting
+--   unlabelled structures), 'CycleIndex' (cycle index series, a
+--   generalization of both 'EGF' and 'GF'), and 'SpeciesAST' (reified
+--   species expressions).
 class (Differential.C s) => Species s where
 
   -- | The species X of singletons. X puts a singleton structure on an
@@ -110,7 +116,7 @@ class (Differential.C s) => Species s where
   --   the same underlying set.
   cartesian :: s -> s -> s
 
-  -- | Functor product of two species.  An (F \@\@ G)-structure
+  -- | Functor composition of two species.  An (F \@\@ G)-structure
   --   consists of an F-structure on the set of all G-structures.
   fcomp :: s -> s -> s
 
@@ -133,11 +139,12 @@ class (Differential.C s) => Species s where
   nonEmpty  :: s -> s
   nonEmpty = flip ofSize (>0)
 
--- $synonyms
--- Some synonyms are provided for convenience.  In particular,
--- gramatically it can often be convenient to have both the singular
--- and plural versions of species, for example, @set \`o\` nonEmpty
--- sets@.
+  -- | @rec n s f@ is the species which puts an s-structure on label
+  --   sets of size <= n, and which are described recusively by (fix
+  --   f) for larger label sets.
+  -- rec :: Integer -> s -> (s -> s) -> s  
+
+
 
 -- | A convenient synonym for differentiation.  F'-structures look
 --   like F-structures on a set formed by adjoining a distinguished

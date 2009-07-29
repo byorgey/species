@@ -5,10 +5,10 @@
   #-}
 
 -- | A data structure to reify combinatorial species.
-module Math.Combinatorics.Species.Algebra
+module Math.Combinatorics.Species.AST
     (
-      SpeciesAlgT(..)
-    , SpeciesAlg(..)
+      SpeciesTypedAST(..)
+    , SpeciesAST(..)
     , needsZT, needsZ
 
     , reify
@@ -29,39 +29,40 @@ import Data.Typeable
 import NumericPrelude
 import PreludeBase hiding (cycle)
 
--- | Reified combinatorial species.  Note that 'SpeciesAlgT' has a
+-- | Reified combinatorial species.  Note that 'SpeciesTypedAST' has a
 --   phantom type parameter which also reflects the structure, so we
 --   can do case analysis on species at both the value and type level.
 --
 --   Of course, the non-uniform type parameter means that
---   'SpeciesAlgT' cannot be an instance of the 'Species' class; for
---   that purpose the existential wrapper 'SpeciesAlg' is provided.
-data SpeciesAlgT s where
-   O        :: SpeciesAlgT Z
-   I        :: SpeciesAlgT (S Z)
-   X        :: SpeciesAlgT X
-   E        :: SpeciesAlgT E
-   C        :: SpeciesAlgT C
-   Subset   :: SpeciesAlgT Sub
-   KSubset  :: Integer -> SpeciesAlgT Sub
-   Elt      :: SpeciesAlgT Elt
+--   'SpeciesTypedAST' cannot be an instance of the 'Species' class;
+--   for that purpose the existential wrapper 'SpeciesAST' is
+--   provided.
+data SpeciesTypedAST s where
+   O        :: SpeciesTypedAST Z
+   I        :: SpeciesTypedAST (S Z)
+   X        :: SpeciesTypedAST X
+   E        :: SpeciesTypedAST E
+   C        :: SpeciesTypedAST C
+   Subset   :: SpeciesTypedAST Sub
+   KSubset  :: Integer -> SpeciesTypedAST Sub
+   Elt      :: SpeciesTypedAST Elt
    (:+:)    :: (ShowF (StructureF f), ShowF (StructureF g))
-            => SpeciesAlgT f -> SpeciesAlgT g -> SpeciesAlgT (f :+: g)
+            => SpeciesTypedAST f -> SpeciesTypedAST g -> SpeciesTypedAST (f :+: g)
    (:*:)    :: (ShowF (StructureF f), ShowF (StructureF g))
-            => SpeciesAlgT f -> SpeciesAlgT g -> SpeciesAlgT (f :*: g)
+            => SpeciesTypedAST f -> SpeciesTypedAST g -> SpeciesTypedAST (f :*: g)
    (:.:)    :: (ShowF (StructureF f), ShowF (StructureF g))
-            => SpeciesAlgT f -> SpeciesAlgT g -> SpeciesAlgT (f :.: g)
+            => SpeciesTypedAST f -> SpeciesTypedAST g -> SpeciesTypedAST (f :.: g)
    (:><:)   :: (ShowF (StructureF f), ShowF (StructureF g))
-            => SpeciesAlgT f -> SpeciesAlgT g -> SpeciesAlgT (f :><: g)
+            => SpeciesTypedAST f -> SpeciesTypedAST g -> SpeciesTypedAST (f :><: g)
    (:@:)   :: (ShowF (StructureF f), ShowF (StructureF g))
-            => SpeciesAlgT f -> SpeciesAlgT g -> SpeciesAlgT (f :@: g)
+            => SpeciesTypedAST f -> SpeciesTypedAST g -> SpeciesTypedAST (f :@: g)
    Der      :: (ShowF (StructureF f))
-            => SpeciesAlgT f -> SpeciesAlgT (Der f)
-   OfSize   :: SpeciesAlgT f -> (Integer -> Bool) -> SpeciesAlgT f
-   OfSizeExactly :: SpeciesAlgT f -> Integer -> SpeciesAlgT f
-   NonEmpty :: SpeciesAlgT f -> SpeciesAlgT f
+            => SpeciesTypedAST f -> SpeciesTypedAST (Der f)
+   OfSize   :: SpeciesTypedAST f -> (Integer -> Bool) -> SpeciesTypedAST f
+   OfSizeExactly :: SpeciesTypedAST f -> Integer -> SpeciesTypedAST f
+   NonEmpty :: SpeciesTypedAST f -> SpeciesTypedAST f
 
-instance Show (SpeciesAlgT s) where
+instance Show (SpeciesTypedAST s) where
   showsPrec _ O                   = showChar '0'
   showsPrec _ I                   = showChar '1'
   showsPrec _ X                   = showChar 'X'
@@ -85,7 +86,7 @@ instance Show (SpeciesAlgT s) where
 --   generating functions (composition, differentiation, cartesian
 --   product, and functor composition), and hence need cycle index
 --   series.
-needsZT :: SpeciesAlgT s -> Bool
+needsZT :: SpeciesTypedAST s -> Bool
 needsZT (f :+: g)    = needsZT f || needsZT g
 needsZT (f :*: g)    = needsZT f || needsZT g
 needsZT (_ :.: _)    = True
@@ -98,30 +99,31 @@ needsZT (NonEmpty f) = needsZT f
 needsZT _            = False
 
 -- | An existential wrapper to hide the phantom type parameter to
---   'SpeciesAlgT', so we can make it an instance of 'Species'.
-data SpeciesAlg where
-  SA :: (ShowF (StructureF s), Typeable1 (StructureF s)) => SpeciesAlgT s -> SpeciesAlg
+--   'SpeciesTypedAST', so we can make it an instance of 'Species'.
+data SpeciesAST where
+  SA :: (ShowF (StructureF s), Typeable1 (StructureF s)) 
+     => SpeciesTypedAST s -> SpeciesAST
 
--- | A version of 'needsZT' for 'SpeciesAlg'.
-needsZ :: SpeciesAlg -> Bool
+-- | A version of 'needsZT' for 'SpeciesAST'.
+needsZ :: SpeciesAST -> Bool
 needsZ (SA s) = needsZT s
 
-instance Show SpeciesAlg where
+instance Show SpeciesAST where
   show (SA f) = show f
 
-instance Additive.C SpeciesAlg where
+instance Additive.C SpeciesAST where
   zero   = SA O
   (SA f) + (SA g) = SA (f :+: g)
   negate = error "negation is not implemented yet!  wait until virtual species..."
 
-instance Ring.C SpeciesAlg where
+instance Ring.C SpeciesAST where
   (SA f) * (SA g) = SA (f :*: g)
   one = SA I
 
-instance Differential.C SpeciesAlg where
+instance Differential.C SpeciesAST where
   differentiate (SA f) = SA (Der f)
 
-instance Species SpeciesAlg where
+instance Species SpeciesAST where
   singleton               = SA X
   set                     = SA E
   cycle                   = SA C
@@ -144,11 +146,11 @@ instance Species SpeciesAlg where
 -- > > reify (ksubset 3)
 -- > E3 * E
 
-reify :: SpeciesAlg -> SpeciesAlg
+reify :: SpeciesAST -> SpeciesAST
 reify = id
 
 -- | Reflect an AST back into any instance of the 'Species' class.
-reflectT :: Species s => SpeciesAlgT f -> s
+reflectT :: Species s => SpeciesTypedAST f -> s
 reflectT O                   = zero
 reflectT I                   = one
 reflectT X                   = singleton
@@ -167,6 +169,6 @@ reflectT (OfSize f p)        = ofSize (reflectT f) p
 reflectT (OfSizeExactly f n) = ofSizeExactly (reflectT f) n
 reflectT (NonEmpty f)        = nonEmpty (reflectT f)
 
--- | A version of 'reflectT' for the existential wrapper 'SpeciesAlg'.
-reflect :: Species s => SpeciesAlg -> s
+-- | Reflect an AST back into any instance of the 'Species' class.
+reflect :: Species s => SpeciesAST -> s
 reflect (SA f) = reflectT f

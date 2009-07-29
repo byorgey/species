@@ -3,6 +3,7 @@
            , MultiParamTypeClasses
            , FlexibleInstances
            , FlexibleContexts
+           , ScopedTypeVariables
   #-}
 
 -- | Generation of species: given a species and an underlying set of
@@ -12,14 +13,14 @@ module Math.Combinatorics.Species.Generate
     ( generateF
     , Structure(..)
     , generate
-    , generate'
     , structureType
+    , generateTyped
 
     ) where
 
 import Math.Combinatorics.Species.Class
 import Math.Combinatorics.Species.Types
-import Math.Combinatorics.Species.Algebra
+import Math.Combinatorics.Species.AST
 import Math.Combinatorics.Species.CycleIndex (intPartitions)
 
 import Control.Arrow (first, second)
@@ -37,13 +38,13 @@ import PreludeBase hiding (cycle)
 --   function of the species structure.  (Of course, it would be
 --   really nice to have a real dependently-typed language for this!)
 --
---   Unfortunately, 'SpeciesAlgT' cannot be made an instance of
+--   Unfortunately, 'SpeciesTypedAST' cannot be made an instance of
 --   'Species', so if we want to be able to generate structures given
 --   an expression of the 'Species' DSL as input, we must take
---   'SpeciesAlg' as input, which existentially wraps the phantom
+--   'SpeciesAST' as input, which existentially wraps the phantom
 --   structure type---but this means that the output list type must be
 --   existentially quantified as well; see 'generate' below.
-generateF :: SpeciesAlgT s -> [a] -> [StructureF s a]
+generateF :: SpeciesTypedAST s -> [a] -> [StructureF s a]
 generateF O _            = []
 generateF I []           = [Const 1]
 generateF I _            = []
@@ -74,6 +75,8 @@ generateF (OfSize f p) xs | p (genericLength xs) = generateF f xs
                           | otherwise     = []
 generateF (OfSizeExactly f n) xs | genericLength xs == n = generateF f xs
                                  | otherwise = []
+generateF (NonEmpty f) [] = []
+generateF (NonEmpty f) xs = generateF f xs
 
 -- | @pSet xs@ generates the power set of @xs@, yielding a list of
 --   subsets of @xs@ paired with their complements.
@@ -125,37 +128,113 @@ instance Functor Structure where
 extractStructure :: (Typeable1 f, Typeable a) => Structure a -> Maybe (f a)
 extractStructure (Structure s) = cast s
 
--- | We can generate structures from a 'SpeciesAlg' (which is an
---   instance of 'Species') only if we existentially quantify over the
---   output type.  However, we have guaranteed that the structures
---   will be Showable.  For example:
+-- | @generate s ls@ generates a complete list of all s-structures
+--   over the underlying set of labels @ls@.  For example:
 --
 -- > > generate octopi ([1,2,3] :: [Int])
--- > [{{*,1,2,3}},{{*,1,3,2}},{{*,2,1,3}},{{*,2,3,1}},{{*,3,1,2}},{{*,3,2,1}},
--- >  {{*,1,2},{*,3}},{{*,2,1},{*,3}},{{*,1,3},{*,2}},{{*,3,1},{*,2}},{{*,1},
--- >  {*,2,3}},{{*,1},{*,3,2}},{{*,1},{*,2},{*,3}},{{*,1},{*,3},{*,2}}]
+-- > [<<*,1,2,3>>,<<*,1,3,2>>,<<*,2,1,3>>,<<*,2,3,1>>,<<*,3,1,2>>,<<*,3,2,1>>,
+-- >  <<*,1,2>,<*,3>>,<<*,2,1>,<*,3>>,<<*,1,3>,<*,2>>,<<*,3,1>,<*,2>>,<<*,1>,
+-- >  <*,2,3>>,<<*,1>,<*,3,2>>,<<*,1>,<*,2>,<*,3>>,<<*,1>,<*,3>,<*,2>>]
+-- >
+-- > > generate subsets "abc"
+-- > [{'a','b','c'},{'a','b'},{'a','c'},{'a'},{'b','c'},{'b'},{'c'},{}]
 --
--- Of course, this is not the output we might hope for; octopi are
--- cycles of lists, but above we are seeing the fact that lists are
--- implemented as the derivative of cycles, so each list is
--- represented by a cycle containing *.  In a future version of this
--- library I plan to implement a system for automatically converting
--- between isomorphic structures during species generation.
-generate :: SpeciesAlg -> [a] -> [Structure a]
+-- > > generate simpleGraphs ([1,2,3] :: [Int])
+-- > [{{1,2},{1,3},{2,3}},{{1,2},{1,3}},{{1,2},{2,3}},{{1,2}},{{1,3},{2,3}},
+-- >  {{1,3}},{{2,3}},{}]
+--
+--   There is one caveat: since the type of the generated structures
+--   is different for each species, it must be existentially
+--   quantified!  The output of 'generate' can always be Shown, but
+--   not much else.
+--
+--   However!  All is not lost.  It's possible, by the magic of
+--   "Data.Typeable", to yank the type information (kicking and
+--   screaming) back into the open, so that you can then manipulate
+--   the generated structures to your heart's content.  To see how,
+--   consult 'structureType' and 'generateTyped'.
+generate :: SpeciesAST -> [a] -> [Structure a]
 generate (SA s) xs = map Structure (generateF s xs)
 
-generate' :: (Typeable1 f, Typeable a) => SpeciesAlg -> [a] -> [f a]
-generate' s xs = case (mapM extractStructure . generate s $ xs) of
-                   Nothing -> error "wrong structure type."
-                   Just ys -> ys
+-- | @generateTyped s ls@ generates a complete list of all s-structures
+--   over the underlying set of labels @ls@, where the type of the
+--   generated structures is known ('structureType' may be used to
+--   compute this type).  For example:
+--
+-- > > structureType subsets
+-- > "Set"
+-- > > generateTyped subsets ([1,2,3] :: [Int]) :: [Set Int]
+-- > [{1,2,3},{1,2},{1,3},{1},{2,3},{2},{3},{}]
+-- > > map (sum . getSet) $ it
+-- > [6,3,4,1,5,2,3,0]
+--
+--   Although the output from 'generate' appears the same, trying to
+--   compute the subset sums fails spectacularly if we use 'generate'
+--   instead of 'generateTyped':
+--
+-- > > generate subsets ([1..3] :: [Int])
+-- > [{1,2,3},{1,2},{1,3},{1},{2,3},{2},{3},{}]
+-- > > map (sum . getSet) $ it
+-- > <interactive>:1:21:
+-- >     Couldn't match expected type `Set a'
+-- >            against inferred type `Math.Combinatorics.Species.Generate.Structure
+-- >                                     Int'
+-- >       Expected type: [Set a]
+-- >       Inferred type: [Math.Combinatorics.Species.Generate.Structure Int]
+-- >     In the second argument of `($)', namely `it'
+-- >     In the expression: map (sum . getSet) $ it
+-- 
+--   If we use the wrong type, we get a nice error message:
+--
+-- > > generateTyped octopi ([1..3] :: [Int]) :: [Set Int]
+-- > *** Exception: structure type mismatch.
+-- >   Expected: Set Int
+-- >   Inferred: Comp Cycle (Comp Cycle Star) Int
+generateTyped :: forall f a. (Typeable1 f, Typeable a) => SpeciesAST -> [a] -> [f a]
+generateTyped s xs = 
+  case (mapM extractStructure . generate s $ xs) of
+    Nothing -> error $ 
+          "structure type mismatch.\n"
+       ++ "  Expected: " ++ showStructureType (typeOf (undefined :: f a)) ++ "\n"
+       ++ "  Inferred: " ++ structureType s ++ " " ++ show (typeOf (undefined :: a))
+    Just ys -> ys
 
--- Stuff for figuring out what type is generated by a species.
-structureType :: SpeciesAlg -> String
-structureType s = adjust . show . extractType $ generate s [()]
-  where extractType []              = typeOf ()
-        extractType (Structure x:_) = typeOf1 x
-        adjust = unwords . map prune . words  -- XXX deal with parens.
-        prune  = reverse . takeWhile (/= '.') . reverse
+-- | @'structureType' s@ returns a String representation of the
+--   functor type which represents the structure of the species @s@.
+--   In particular, if @structureType s@ prints @\"T\"@, then you can
+--   safely use 'generateTyped' by writing
+--
+-- > generateTyped s ls :: [T L]
+--
+--   where @ls :: [L]@.
+structureType :: SpeciesAST -> String
+structureType (SA s) = showStructureType . extractType $ s
+  where extractType :: forall s. Typeable1 (StructureF s) => SpeciesTypedAST s -> TypeRep
+        extractType _ = typeOf1 (undefined :: StructureF s ())
+
+-- | Show a TypeRep while stripping off qualifier portions of TyCon
+--   names.  This is essentially copied and pasted from the
+--   Data.Typeable source, with a number of cases taken out that we
+--   don't care about (special cases for (->), tuples, etc.).
+showStructureType :: TypeRep -> String
+showStructureType t = showsPrecST 0 t ""
+  where showsPrecST :: Int -> TypeRep -> ShowS
+        showsPrecST p t =
+          case splitTyConApp t of
+            (tycon, [])   -> showString (dropQuals $ tyConString tycon)
+            (tycon, args) -> showParen (p > 9)
+                           $ showString (dropQuals $ tyConString tycon)
+                           . showChar ' '
+                           . showArgsST args
+
+        showArgsST :: [TypeRep] -> ShowS
+        showArgsST []     = id
+        showArgsST [t]    = showsPrecST 10 t
+        showArgsST (t:ts) = showsPrecST 10 t . showChar ' ' . showArgsST ts
+
+        dropQuals :: String -> String
+        dropQuals = reverse . takeWhile (/= '.') . reverse
+
 
 -- Experimental stuff below, automatically converting between
 -- isomorphic structures.
@@ -176,5 +255,48 @@ structureType s = adjust . show . extractType $ generate s [()]
 -- instance (Iso f1 f2, Iso g1 g2) => Iso (Prod f1 g1) (Prod f2 g2) where
 --   iso (Prod (x,y)) = Prod (iso x, iso y)
 
--- generateFI :: (Iso (StructureF s) f) => SpeciesAlgT s -> [a] -> [f a]
+-- generateFI :: (Iso (StructureF s) f) => SpeciesTypedAST s -> [a] -> [f a]
 -- generateFI s xs = map iso $ generateF s xs
+
+
+
+-- More old code below: a first try at *unlabelled* generation, but
+-- it's not quite so easy---for exactly the same reasons that ordinary
+-- generating function composition/derivative etc. don't correspond to
+-- species operations.
+
+-- | Given an AST describing a species, with a phantom type parameter
+--   describing the species at the type level, and the size of the
+--   underlying set, generate a list of all possible unlabelled
+--   structures built by the species.
+-- generateFU :: SpeciesTypedAST s -> Integer -> [StructureF s ()]
+-- generateFU O _  = []
+-- generateFU I 0  = [Const 1]
+-- generateFU I _  = []
+-- generateFU X 1  = [Identity ()]
+-- generateFU X _  = []
+-- generateFU (f :+: g) n = map (Sum . Left ) (generateFU f n)
+--                       ++ map (Sum . Right) (generateFU g n)
+-- generateFU (f :*: g) n = [ Prod (x, y) | n1 <- [0..n]
+--                                        , x  <- generateFU f n1
+--                                        , y  <- generateFU g (n - n1)
+--                          ]
+-- generateFU (f :.: g) n = [ Comp y | p  <- intPartitions n
+--                                   , xs <- mapM (generateFU g) $ expandPartition p
+--                                   , y  <- generateF f xs
+--                          ]
+-- -- generateFU (Der f) n = map    -- XXX how to do this?
+-- generateFU E n = [Set $ genericReplicate n ()]
+-- generateFU C 0 = []
+-- generateFU C n = [Cycle $ genericReplicate n ()]
+-- generateFU (OfSize f p) n | p n = generateFU f n
+--                           | otherwise = []
+-- generateFU (OfSizeExactly f s) n | s == n = generateFU f n
+--                                  | otherwise = []
+-- generateFU (f :><: g) n = [ Prod (x,y) | x <- generateFU f n
+--                                        , y <- generateFU g n
+--                           ]
+
+-- expandPartition :: [(Integer, Integer)] -> [Integer]
+-- expandPartition = concatMap (uncurry (flip genericReplicate))
+
