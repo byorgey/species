@@ -7,7 +7,8 @@
            , DeriveDataTypeable
   #-}
 
--- | Some common types used by the species library.
+-- | Some common types used by the species library, along with some
+--   utility functions.
 module Math.Combinatorics.Species.Types
     ( -- * Miscellaneous
 
@@ -206,7 +207,10 @@ instance Show RawString where
 --------------------------------------------------------------------------------
 
 -- $struct
--- Functors used in building up structures for species generation.
+-- Functors used in building up structures for species
+-- generation. Many of these functors are already defined elsewhere,
+-- in other packages; but to avoid a plethora of imports, inconsistent
+-- naming/instance schemes, etc., we just redefine them here.
 
 -- | The constant functor.
 newtype Const x a = Const x

@@ -94,9 +94,9 @@ import Math.Combinatorics.Species.AST
 -- sets@.
 
 -- $types
--- Many of these functors are defined elsewhere; but to avoid a
--- plethora of imports, inconsistent naming/instance schemes, we just
--- redefine them here.
+-- Many of these functors are already defined elsewhere, in other
+-- packages; but to avoid a plethora of imports, inconsistent
+-- naming/instance schemes, we just redefine them here.
 
 -- $ast
 -- Species can be converted to and from 'SpeciesAST' via the functions

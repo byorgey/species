@@ -13,8 +13,8 @@ module Math.Combinatorics.Species.Generate
     ( generateF
     , Structure(..)
     , generate
-    , structureType
     , generateTyped
+    , structureType
 
     ) where
 
@@ -34,7 +34,7 @@ import PreludeBase hiding (cycle)
 -- | Given an AST describing a species, with a phantom type parameter
 --   describing the species at the type level, and an underlying set,
 --   generate a list of all possible structures built over the
---   underlying set.  Of course, the type of the output list is a
+--   underlying set; the type of the output list is a
 --   function of the species structure.  (Of course, it would be
 --   really nice to have a real dependently-typed language for this!)
 --
@@ -43,7 +43,8 @@ import PreludeBase hiding (cycle)
 --   an expression of the 'Species' DSL as input, we must take
 --   'SpeciesAST' as input, which existentially wraps the phantom
 --   structure type---but this means that the output list type must be
---   existentially quantified as well; see 'generate' below.
+--   existentially quantified as well; see 'generate' and
+--   'generateTyped' below.
 generateF :: SpeciesTypedAST s -> [a] -> [StructureF s a]
 generateF O _            = []
 generateF I []           = [Const 1]
@@ -111,11 +112,9 @@ select :: [a] -> [(a,[a])]
 select [] = []
 select (x:xs) = (x,xs) : map (second (x:)) (select xs)
 
--- | An existential wrapper for structures.  For now we just ensure
---   that they are Showable; in a future version of the library I hope
---   to be able to add a Typeable constraint as well, so that we can
---   actually usefully recover the generated values if we know what
---   type we are expecting.
+-- | An existential wrapper for structures, ensuring that the
+--   structure functor results in something Showable and Typeable (when
+--   applied to a Showable and Typeable argument type).
 data Structure a where
   Structure :: (ShowF f, Typeable1 f, Functor f) => f a -> Structure a
 
