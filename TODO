@@ -1,7 +1,3 @@
-- 0.2:
-  * release np-extras 0.2
-  * make Typeable generation stuff nicer, add more docs
-
 - other features:
   * virtual species
   * add a Field constraint: species division  (derangements, coverings)
