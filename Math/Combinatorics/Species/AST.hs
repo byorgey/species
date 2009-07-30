@@ -42,6 +42,7 @@ data SpeciesTypedAST s where
    X        :: SpeciesTypedAST X
    E        :: SpeciesTypedAST E
    C        :: SpeciesTypedAST C
+   L        :: SpeciesTypedAST L
    Subset   :: SpeciesTypedAST Sub
    KSubset  :: Integer -> SpeciesTypedAST Sub
    Elt      :: SpeciesTypedAST Elt
@@ -66,6 +67,7 @@ instance Show (SpeciesTypedAST s) where
   showsPrec _ X                   = showChar 'X'
   showsPrec _ E                   = showChar 'E'
   showsPrec _ C                   = showChar 'C'
+  showsPrec _ L                   = showChar 'L'
   showsPrec _ Subset              = showChar 'p'
   showsPrec _ (KSubset n)         = showChar 'p' . shows n
   showsPrec _ (Elt)               = showChar 'e'
@@ -126,6 +128,7 @@ instance Species SpeciesAST where
   singleton               = SA X
   set                     = SA E
   cycle                   = SA C
+  list                    = SA L
   subset                  = SA Subset
   ksubset k               = SA (KSubset k)
   element                 = SA Elt
@@ -141,7 +144,7 @@ instance Species SpeciesAST where
 --   example:
 --
 -- > > reify octopus
--- > C . C'+
+-- > C . L+
 -- > > reify (ksubset 3)
 -- > E3 * E
 
@@ -154,6 +157,7 @@ reflectT (N n)               = fromInteger n
 reflectT X                   = singleton
 reflectT E                   = set
 reflectT C                   = cycle
+reflectT L                   = list
 reflectT Subset              = subset
 reflectT (KSubset k)         = ksubset k
 reflectT Elt                 = element

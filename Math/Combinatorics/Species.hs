@@ -32,6 +32,7 @@ module Math.Combinatorics.Species
     , madeOf
     , (><), (@@)
     , x, sets, cycles
+    , lists
     , subsets
     , ksubsets
     , elements
@@ -40,7 +41,6 @@ module Math.Combinatorics.Species
     , pointed
 
       -- ** Derived species
-    , list, lists
     , octopus, octopi
     , partition, partitions
     , permutation, permutations

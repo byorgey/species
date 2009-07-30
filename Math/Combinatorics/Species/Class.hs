@@ -17,6 +17,7 @@ module Math.Combinatorics.Species.Class
     , x
     , sets
     , cycles
+    , lists
     , subsets
     , ksubsets
     , elements
@@ -29,7 +30,6 @@ module Math.Combinatorics.Species.Class
       -- * Derived species
       -- $derived
 
-    , list, lists
     , octopus, octopi
     , partition, partitions
     , permutation, permutations
@@ -79,6 +79,13 @@ class (Differential.C s) => Species s where
 
   -- | The species C of cyclical orderings (cycles/rings).
   cycle     :: s
+
+  -- | The species L of linear orderings (lists): since lists are
+  --   isomorphic to cycles with a hole, we may take L = C' as the
+  --   default implementation; list is included in the 'Species' class
+  --   so it can be special-cased for generation.
+  list :: s
+  list  = oneHole cycle
 
   -- | The species p of subsets is given by p = E * E. 'subset' has a
   --   default implementation of @set * set@, but is included in the
@@ -186,11 +193,6 @@ pointed = (x *) . Differential.differentiate
 -- $derived
 -- Some species that can be defined in terms of the primitive species
 -- operations.
-
--- | The species L of linear orderings (lists): since lists are
---   isomorphic to cycles with a hole, we may take L = C'.
-list :: Species s => s
-list  = oneHole cycle
 
 lists :: Species s => s
 lists = list

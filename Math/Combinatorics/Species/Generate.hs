@@ -53,6 +53,7 @@ generateF X _            = []
 generateF E xs           = [Set xs]
 generateF C []           = []
 generateF C (x:xs)       = map (Cycle . (x:)) (sPermutations xs)
+generateF L xs           = sPermutations xs
 generateF Subset xs      = map (Set . fst) (pSet xs)
 generateF (KSubset k) xs = map Set (sKSubsets k xs)
 generateF Elt xs         = map Identity xs
@@ -220,6 +221,8 @@ showStructureType t = showsPrecST 0 t ""
         showsPrecST p t =
           case splitTyConApp t of
             (tycon, [])   -> showString (dropQuals $ tyConString tycon)
+            (tycon, [x])  | tyConString tycon == "[]" 
+                          -> showChar '[' . showsPrecST 11 x . showChar ']'
             (tycon, args) -> showParen (p > 9)
                            $ showString (dropQuals $ tyConString tycon)
                            . showChar ' '
