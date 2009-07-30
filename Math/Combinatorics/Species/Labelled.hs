@@ -39,11 +39,12 @@ instance Species EGF where
   ofSizeExactly s n = (liftEGF . PS.lift1 $ selectIndex n) s
 
 -- | Extract the coefficients of an exponential generating function as
---   a list of Integers.  Since 'EGF' is an instance of
---   'Species', the idea is that 'labelled' can be applied directly to
---   an expression of the Species DSL.  In particular, @labelled s !!
---   n@ is the number of labelled s-structures on an underlying set of
---   size n.  For example:
+--   a list of Integers.  Since 'EGF' is an instance of 'Species', the
+--   idea is that 'labelled' can be applied directly to an expression
+--   of the Species DSL.  In particular, @labelled s !!  n@ is the
+--   number of labelled s-structures on an underlying set of size n
+--   (note that @labelled s@ is guaranteed to be an infinite list).
+--   For example:
 --
 -- > > take 10 $ labelled octopi
 -- > [0,1,3,14,90,744,7560,91440,1285200,20603520]
@@ -51,7 +52,10 @@ instance Species EGF where
 --   gives the number of labelled octopi on 0, 1, 2, 3, ... 9 elements.
 
 labelled :: EGF -> [Integer]
-labelled (EGF f) = map numerator . zipWith (*) (map fromInteger facts) . map unLR 
+labelled (EGF f) = (++repeat 0) 
+                 . map numerator 
+                 . zipWith (*) (map fromInteger facts) 
+                 . map unLR 
                  $ PS.coeffs f
 
 -- A previous version of this module used an EGF library which

@@ -38,8 +38,7 @@ import PreludeBase hiding (cycle)
 --   for that purpose the existential wrapper 'SpeciesAST' is
 --   provided.
 data SpeciesTypedAST s where
-   O        :: SpeciesTypedAST Z
-   I        :: SpeciesTypedAST (S Z)
+   N        :: Integer -> SpeciesTypedAST Z
    X        :: SpeciesTypedAST X
    E        :: SpeciesTypedAST E
    C        :: SpeciesTypedAST C
@@ -63,8 +62,7 @@ data SpeciesTypedAST s where
    NonEmpty :: SpeciesTypedAST f -> SpeciesTypedAST f
 
 instance Show (SpeciesTypedAST s) where
-  showsPrec _ O                   = showChar '0'
-  showsPrec _ I                   = showChar '1'
+  showsPrec _ (N n)               = shows n
   showsPrec _ X                   = showChar 'X'
   showsPrec _ E                   = showChar 'E'
   showsPrec _ C                   = showChar 'C'
@@ -112,13 +110,14 @@ instance Show SpeciesAST where
   show (SA f) = show f
 
 instance Additive.C SpeciesAST where
-  zero   = SA O
+  zero   = SA (N 0)
   (SA f) + (SA g) = SA (f :+: g)
   negate = error "negation is not implemented yet!  wait until virtual species..."
 
 instance Ring.C SpeciesAST where
   (SA f) * (SA g) = SA (f :*: g)
-  one = SA I
+  one = SA (N 1)
+  fromInteger n = SA (N n)
 
 instance Differential.C SpeciesAST where
   differentiate (SA f) = SA (Der f)
@@ -151,8 +150,7 @@ reify = id
 
 -- | Reflect an AST back into any instance of the 'Species' class.
 reflectT :: Species s => SpeciesTypedAST f -> s
-reflectT O                   = zero
-reflectT I                   = one
+reflectT (N n)               = fromInteger n
 reflectT X                   = singleton
 reflectT E                   = set
 reflectT C                   = cycle

@@ -60,7 +60,7 @@ module Math.Combinatorics.Species.Types
       -- * Type-level species
       -- $typespecies
 
-    , Z, S, X, E, C, Sub, Elt, (:+:), (:*:), (:.:), (:><:), (:@:), Der
+    , Z, X, E, C, Sub, Elt, (:+:), (:*:), (:.:), (:><:), (:@:), Der
     , StructureF
     ) where
 
@@ -327,7 +327,6 @@ instance ShowF Star where
 -- dependently typed language.
 
 data Z
-data S n
 data X
 data E
 data C
@@ -346,7 +345,6 @@ data Der f
 --   @a@, has type @StructureF s a@.
 type family StructureF t :: * -> *
 type instance StructureF Z            = Const Integer
-type instance StructureF (S s)        = Const Integer
 type instance StructureF X            = Identity
 type instance StructureF E            = Set
 type instance StructureF C            = Cycle

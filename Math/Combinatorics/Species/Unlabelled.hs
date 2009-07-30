@@ -32,12 +32,12 @@ instance Species GF where
   ofSizeExactly s n = (liftGF . PS.lift1 $ selectIndex n) s
 
 unlabelledCoeffs :: GF -> [Integer]
-unlabelledCoeffs (GF p) = PS.coeffs p
+unlabelledCoeffs (GF p) = PS.coeffs p ++ repeat 0
 
 -- | Extract the coefficients of an ordinary generating function as a
 --   list of Integers.  In particular, @unlabelled s !!  n@ is the
---   number of unlabelled s-structures on an underlying set of size n.
---   For example:
+--   number of unlabelled s-structures on an underlying set of size n
+--   (@unlabelled s@ is guaranteed to be infinite).  For example:
 --
 -- > > take 10 $ unlabelled octopi
 -- > [0,1,2,3,5,7,13,19,35,59]

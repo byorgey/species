@@ -46,9 +46,8 @@ import PreludeBase hiding (cycle)
 --   existentially quantified as well; see 'generate' and
 --   'generateTyped' below.
 generateF :: SpeciesTypedAST s -> [a] -> [StructureF s a]
-generateF O _            = []
-generateF I []           = [Const 1]
-generateF I _            = []
+generateF (N n) []       = map Const [1..n]
+generateF (N _) _        = []
 generateF X [x]          = [Identity x]
 generateF X _            = []
 generateF E xs           = [Set xs]
