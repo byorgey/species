@@ -120,6 +120,10 @@ instance Ring.C SpeciesAST where
   (SA f) * (SA g) = SA (f :*: g)
   one = SA (N 1)
   fromInteger n = SA (N n)
+  _ ^ 0 = one
+  (SA f) ^ 1 = SA f
+  (SA f) ^ n = case (SA f) ^ (n-1) of
+                 (SA f') -> SA (f :*: f')
 
 instance Differential.C SpeciesAST where
   differentiate (SA f) = SA (Der f)
