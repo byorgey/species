@@ -238,7 +238,7 @@ simpleGraph = subset @@ (ksubset 2)
 simpleGraphs = simpleGraph
 
 -- | A directed graph (with loops) is a subset of all pairs drawn
---   (without replacement) from the set of vertices: D = p \@\@ (e ><
+--   (with replacement) from the set of vertices: D = p \@\@ (e ><
 --   e).  It can also be thought of as the species of binary relations.
 directedGraphs, directedGraph :: Species s => s
 directedGraph = subset @@ (element >< element)
