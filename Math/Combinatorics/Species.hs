@@ -12,7 +12,11 @@
 --   For a friendly introduction to combinatorial species in general
 --   and this library in particular, see my series of blog posts:
 --
---     <http://byorgey.wordpress.com/2009/07/24/introducing-math-combinatorics-species/>
+--    * <http://byorgey.wordpress.com/2009/07/24/introducing-math-combinatorics-species/>
+--
+--    * <http://byorgey.wordpress.com/2009/07/30/primitive-species-and-species-operations/>
+--
+--    * <http://byorgey.wordpress.com/2009/07/31/primitive-species-and-species-operations-part-ii/>
 --
 --   For a good reference (really, the
 --   only English-language reference!) on combinatorial species, see
