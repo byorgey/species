@@ -2,6 +2,10 @@
            , GADTs
            , TypeOperators
            , FlexibleContexts
+           , TypeFamilies
+           , KindSignatures
+           , DeriveDataTypeable
+           , FlexibleInstances
   #-}
 
 -- | A data structure to reify combinatorial species.
@@ -15,6 +19,9 @@ module Math.Combinatorics.Species.AST
     , reflectT
     , reflect
 
+    , List(..)
+    , BTree(..)
+    , HOFunctor(..)
     ) where
 
 import Math.Combinatorics.Species.Class
@@ -37,30 +44,44 @@ import PreludeBase hiding (cycle)
 --   'SpeciesTypedAST' cannot be an instance of the 'Species' class;
 --   for that purpose the existential wrapper 'SpeciesAST' is
 --   provided.
-data SpeciesTypedAST s where
-   N        :: Integer -> SpeciesTypedAST Z
-   X        :: SpeciesTypedAST X
-   E        :: SpeciesTypedAST E
-   C        :: SpeciesTypedAST C
-   L        :: SpeciesTypedAST L
-   Subset   :: SpeciesTypedAST Sub
-   KSubset  :: Integer -> SpeciesTypedAST Sub
-   Elt      :: SpeciesTypedAST Elt
-   (:+:)    :: (ShowF (StructureF f), ShowF (StructureF g))
-            => SpeciesTypedAST f -> SpeciesTypedAST g -> SpeciesTypedAST (f :+: g)
-   (:*:)    :: (ShowF (StructureF f), ShowF (StructureF g))
-            => SpeciesTypedAST f -> SpeciesTypedAST g -> SpeciesTypedAST (f :*: g)
-   (:.:)    :: (ShowF (StructureF f), ShowF (StructureF g))
-            => SpeciesTypedAST f -> SpeciesTypedAST g -> SpeciesTypedAST (f :.: g)
-   (:><:)   :: (ShowF (StructureF f), ShowF (StructureF g))
-            => SpeciesTypedAST f -> SpeciesTypedAST g -> SpeciesTypedAST (f :><: g)
-   (:@:)   :: (ShowF (StructureF f), ShowF (StructureF g))
-            => SpeciesTypedAST f -> SpeciesTypedAST g -> SpeciesTypedAST (f :@: g)
-   Der      :: (ShowF (StructureF f))
-            => SpeciesTypedAST f -> SpeciesTypedAST (Der f)
+data SpeciesTypedAST (s :: * -> *) where
+   N        :: Integer -> SpeciesTypedAST (Const Integer)
+   X        :: SpeciesTypedAST Identity
+   E        :: SpeciesTypedAST Set
+   C        :: SpeciesTypedAST Cycle
+   L        :: SpeciesTypedAST []
+   Subset   :: SpeciesTypedAST Set
+   KSubset  :: Integer -> SpeciesTypedAST Set
+   Elt      :: SpeciesTypedAST Identity
+   (:+:)    :: SpeciesTypedAST f -> SpeciesTypedAST g -> SpeciesTypedAST (Sum f g)
+   (:*:)    :: SpeciesTypedAST f -> SpeciesTypedAST g -> SpeciesTypedAST (Prod f g)
+   (:.:)    :: SpeciesTypedAST f -> SpeciesTypedAST g -> SpeciesTypedAST (Comp f g)
+   (:><:)   :: SpeciesTypedAST f -> SpeciesTypedAST g -> SpeciesTypedAST (Prod f g)
+   (:@:)    :: SpeciesTypedAST f -> SpeciesTypedAST g -> SpeciesTypedAST (Comp f g)
+   Der      :: SpeciesTypedAST f -> SpeciesTypedAST (Comp f Star)
    OfSize   :: SpeciesTypedAST f -> (Integer -> Bool) -> SpeciesTypedAST f
    OfSizeExactly :: SpeciesTypedAST f -> Integer -> SpeciesTypedAST f
    NonEmpty :: SpeciesTypedAST f -> SpeciesTypedAST f
+   Rec      :: HOFunctor f => f -> SpeciesTypedAST (Mu f)
+
+-- XXX just for testing
+class HOFunctor f where
+  unfold :: f -> SpeciesTypedAST g -> SpeciesTypedAST (Res f g)
+
+data List = List deriving Typeable
+type instance Res List self = Sum (Const Integer) (Prod Identity self)
+instance HOFunctor List where
+  unfold _ self = N 1 :+: (X :*: self)
+
+instance Show a => Show (Mu List a) where
+  show = show . unMu
+
+data BTree = BTree deriving Typeable
+type instance Res BTree self = Sum (Const Integer) (Prod Identity (Prod self self))
+instance HOFunctor BTree where
+  unfold _ self = N 1 :+: (X :*: (self :*: self))
+instance Show a => Show (Mu BTree a) where
+  show = show . unMu
 
 instance Show (SpeciesTypedAST s) where
   showsPrec _ (N n)               = shows n
@@ -101,7 +122,7 @@ needsZT _            = False
 -- | An existential wrapper to hide the phantom type parameter to
 --   'SpeciesTypedAST', so we can make it an instance of 'Species'.
 data SpeciesAST where
-  SA :: (ShowF (StructureF s), Typeable1 (StructureF s)) 
+  SA :: (Typeable1 s)
      => SpeciesTypedAST s -> SpeciesAST
 
 -- | A version of 'needsZT' for 'SpeciesAST'.

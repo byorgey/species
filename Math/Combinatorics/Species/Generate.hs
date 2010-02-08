@@ -4,6 +4,9 @@
            , FlexibleInstances
            , FlexibleContexts
            , ScopedTypeVariables
+           , KindSignatures
+           , TypeFamilies
+           , DeriveDataTypeable
   #-}
 
 -- | Generation of species: given a species and an underlying set of
@@ -15,6 +18,8 @@ module Math.Combinatorics.Species.Generate
     , generate
     , generateTyped
     , structureType
+
+    , generateI
 
     ) where
 
@@ -45,7 +50,7 @@ import PreludeBase hiding (cycle)
 --   structure type---but this means that the output list type must be
 --   existentially quantified as well; see 'generate' and
 --   'generateTyped' below.
-generateF :: SpeciesTypedAST s -> [a] -> [StructureF s a]
+generateF :: SpeciesTypedAST s -> [a] -> [s a]
 generateF (N n) []       = map Const [1..n]
 generateF (N _) _        = []
 generateF X [x]          = [Identity x]
@@ -78,6 +83,7 @@ generateF (OfSizeExactly f n) xs | genericLength xs == n = generateF f xs
                                  | otherwise = []
 generateF (NonEmpty f) [] = []
 generateF (NonEmpty f) xs = generateF f xs
+generateF (Rec f) xs = map Mu $ generateF (unfold f (Rec f)) xs
 
 -- | @pSet xs@ generates the power set of @xs@, yielding a list of
 --   subsets of @xs@ paired with their complements.
@@ -116,13 +122,7 @@ select (x:xs) = (x,xs) : map (second (x:)) (select xs)
 --   structure functor results in something Showable and Typeable (when
 --   applied to a Showable and Typeable argument type).
 data Structure a where
-  Structure :: (ShowF f, Typeable1 f, Functor f) => f a -> Structure a
-
-instance (Show a) => Show (Structure a) where
-  show (Structure t) = showF t
-
-instance Functor Structure where
-  fmap f (Structure fa) = Structure (fmap f fa)
+  Structure :: Typeable1 f => f a -> Structure a
 
 extractStructure :: (Typeable1 f, Typeable a) => Structure a -> Maybe (f a)
 extractStructure (Structure s) = cast s
@@ -182,7 +182,7 @@ generate (SA s) xs = map Structure (generateF s xs)
 -- >       Inferred type: [Math.Combinatorics.Species.Generate.Structure Int]
 -- >     In the second argument of `($)', namely `it'
 -- >     In the expression: map (sum . getSet) $ it
--- 
+--
 --   If we use the wrong type, we get a nice error message:
 --
 -- > > generateTyped octopi ([1..3] :: [Int]) :: [Set Int]
@@ -190,9 +190,9 @@ generate (SA s) xs = map Structure (generateF s xs)
 -- >   Expected: Set Int
 -- >   Inferred: Comp Cycle (Comp Cycle Star) Int
 generateTyped :: forall f a. (Typeable1 f, Typeable a) => SpeciesAST -> [a] -> [f a]
-generateTyped s xs = 
+generateTyped s xs =
   case (mapM extractStructure . generate s $ xs) of
-    Nothing -> error $ 
+    Nothing -> error $
           "structure type mismatch.\n"
        ++ "  Expected: " ++ showStructureType (typeOf (undefined :: f a)) ++ "\n"
        ++ "  Inferred: " ++ structureType s ++ " " ++ show (typeOf (undefined :: a))
@@ -208,8 +208,8 @@ generateTyped s xs =
 --   where @ls :: [L]@.
 structureType :: SpeciesAST -> String
 structureType (SA s) = showStructureType . extractType $ s
-  where extractType :: forall s. Typeable1 (StructureF s) => SpeciesTypedAST s -> TypeRep
-        extractType _ = typeOf1 (undefined :: StructureF s ())
+  where extractType :: forall s. Typeable1 s => SpeciesTypedAST s -> TypeRep
+        extractType _ = typeOf1 (undefined :: s ())
 
 -- | Show a TypeRep while stripping off qualifier portions of TyCon
 --   names.  This is essentially copied and pasted from the
@@ -221,7 +221,7 @@ showStructureType t = showsPrecST 0 t ""
         showsPrecST p t =
           case splitTyConApp t of
             (tycon, [])   -> showString (dropQuals $ tyConString tycon)
-            (tycon, [x])  | tyConString tycon == "[]" 
+            (tycon, [x])  | tyConString tycon == "[]"
                           -> showChar '[' . showsPrecST 11 x . showChar ']'
             (tycon, args) -> showParen (p > 9)
                            $ showString (dropQuals $ tyConString tycon)
@@ -237,29 +237,26 @@ showStructureType t = showsPrecST 0 t ""
         dropQuals = reverse . takeWhile (/= '.') . reverse
 
 
--- Experimental stuff below, automatically converting between
--- isomorphic structures.
---
--- class Iso f g where
---   iso :: f a -> g a
+-- XXX comment me
 
--- instance Iso (Comp Cycle Star) [] where
---   iso (Comp (Cycle (_:xs))) = map (\(Original x) -> x) xs
+class Typeable1 (SType f) => Iso (f :: * -> *) where
+  type SType f :: * -> *
+  iso :: SType f a -> f a
 
--- instance (Iso f g, Functor h) => Iso (Comp h f) (Comp h g) where
---   iso (Comp h) = Comp (fmap iso h)
+generateI :: (Iso f, Typeable a) => SpeciesAST -> [a] -> Maybe [f a]
+generateI s = fmap (map iso) . mapM extractStructure . generate s
 
--- instance (Iso f1 f2, Iso g1 g2) => Iso (Sum f1 g1) (Sum f2 g2) where
---   iso (Sum (Left x)) = Sum (Left (iso x))
---   iso (Sum (Right x)) = Sum (Right (iso x))
+data BinTree a = Empty | Node (BinTree a) a (BinTree a)
+  deriving (Typeable)
 
--- instance (Iso f1 f2, Iso g1 g2) => Iso (Prod f1 g1) (Prod f2 g2) where
---   iso (Prod (x,y)) = Prod (iso x, iso y)
+instance Show a => Show (BinTree a) where
+  show Empty = ""
+  show (Node l a r) = "(" ++ show l ++ show a ++ show r ++ ")"
 
--- generateFI :: (Iso (StructureF s) f) => SpeciesTypedAST s -> [a] -> [f a]
--- generateFI s xs = map iso $ generateF s xs
-
-
+instance Iso BinTree where
+  type SType BinTree = Mu BTree
+  iso (Mu (Sum (Left _))) = Empty
+  iso (Mu (Sum (Right (Prod (Identity a, Prod (l, r)))))) = Node (iso l) a (iso r)
 
 -- More old code below: a first try at *unlabelled* generation, but
 -- it's not quite so easy---for exactly the same reasons that ordinary

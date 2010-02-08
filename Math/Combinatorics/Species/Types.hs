@@ -5,6 +5,7 @@
            , FlexibleContexts
            , GeneralizedNewtypeDeriving
            , DeriveDataTypeable
+           , UndecidableInstances
   #-}
 
 -- | Some common types used by the species library, along with some
@@ -40,11 +41,6 @@ module Math.Combinatorics.Species.Types
     , filterCoeffs
     , selectIndex
 
-      -- * Higher-order Show
-
-    , ShowF(..)
-    , RawString(..)
-
       -- * Structure functors
       -- $struct
 
@@ -57,11 +53,8 @@ module Math.Combinatorics.Species.Types
     , Set(..)
     , Star(..)
 
-      -- * Type-level species
-      -- $typespecies
+    , Mu(..), Res
 
-    , Z, X, E, C, L, Sub, Elt, (:+:), (:*:), (:.:), (:><:), (:@:), Der
-    , StructureF
     ) where
 
 import Data.List (intercalate, genericReplicate)
@@ -182,27 +175,6 @@ selectIndex n xs = xs'
                   _      -> []
 
 --------------------------------------------------------------------------------
---  Higher-order Show  ---------------------------------------------------------
---------------------------------------------------------------------------------
-
--- | When generating species, we build up a functor representing
---   structures of that species; in order to display generated
---   structures, we need to know that applying the computed functor to
---   a Showable type will also yield something Showable.
-class Functor f => ShowF f where
-  showF :: (Show a) => f a -> String
-
-instance ShowF [] where
-  showF = show
-
--- | 'RawString' is like String, but with a Show instance that doesn't
---   add quotes or do any escaping.  This is a (somewhat silly) hack
---   needed to implement a 'ShowF' instance for 'Comp'.
-newtype RawString = RawString String
-instance Show RawString where
-  show (RawString s) = s
-
---------------------------------------------------------------------------------
 --  Structure functors  --------------------------------------------------------
 --------------------------------------------------------------------------------
 
@@ -218,8 +190,6 @@ instance Functor (Const x) where
   fmap _ (Const x) = Const x
 instance (Show x) => Show (Const x a) where
   show (Const x) = show x
-instance (Show x) => ShowF (Const x) where
-  showF = show
 instance Typeable2 Const where
   typeOf2 _ = mkTyConApp (mkTyCon "Const") []
 instance Typeable x => Typeable1 (Const x) where
@@ -232,8 +202,6 @@ instance Functor Identity where
   fmap f (Identity x) = Identity (f x)
 instance (Show a) => Show (Identity a) where
   show (Identity x) = show x
-instance ShowF Identity where
-  showF = show
 
 -- | Functor coproduct.
 newtype Sum f g a = Sum  { unSum  :: Either (f a) (g a) }
@@ -243,9 +211,6 @@ instance (Functor f, Functor g) => Functor (Sum f g) where
 instance (Show (f a), Show (g a)) => Show (Sum f g a) where
   show (Sum (Left fa)) = "inl(" ++ show fa ++ ")"
   show (Sum (Right ga)) = "inr(" ++ show ga ++ ")"
-instance (ShowF f, ShowF g) => ShowF (Sum f g) where
-  showF (Sum (Left fa)) = "inl(" ++ showF fa ++ ")"
-  showF (Sum (Right ga)) = "inr(" ++ showF ga ++ ")"
 instance (Typeable1 f, Typeable1 g) => Typeable1 (Sum f g) where
   typeOf1 x = mkTyConApp (mkTyCon "Math.Combinatorics.Species.Types.Sum") [typeOf1 (getF x), typeOf1 (getG x)]
     where getF :: Sum f g a -> f a
@@ -259,8 +224,6 @@ instance (Functor f, Functor g) => Functor (Prod f g) where
   fmap f (Prod (fa, ga)) = Prod (fmap f fa, fmap f ga)
 instance (Show (f a), Show (g a)) => Show (Prod f g a) where
   show (Prod x) = show x
-instance (ShowF f, ShowF g) => ShowF (Prod f g) where
-  showF (Prod (fa, ga)) = "(" ++ showF fa ++ "," ++ showF ga ++ ")"
 instance (Typeable1 f, Typeable1 g) => Typeable1 (Prod f g) where
   typeOf1 x = mkTyConApp (mkTyCon "Math.Combinatorics.Species.Types.Prod") [typeOf1 (getF x), typeOf1 (getG x)]
     where getF :: Prod f g a -> f a
@@ -274,8 +237,6 @@ instance (Functor f, Functor g) => Functor (Comp f g) where
   fmap f (Comp fga) = Comp (fmap (fmap f) fga)
 instance (Show (f (g a))) => Show (Comp f g a) where
   show (Comp x) = show x
-instance (ShowF f, ShowF g) => ShowF (Comp f g) where
-  showF (Comp fga) = showF (fmap (RawString . showF) fga)
 instance (Typeable1 f, Typeable1 g) => Typeable1 (Comp f g) where
   typeOf1 x = mkTyConApp (mkTyCon "Math.Combinatorics.Species.Types.Comp") [typeOf1 (getF x), typeOf1 (getG x)]
     where getF :: Comp f g a -> f a
@@ -289,9 +250,6 @@ newtype Cycle a = Cycle { getCycle :: [a] }
   deriving (Functor, Typeable)
 instance (Show a) => Show (Cycle a) where
   show (Cycle xs) = "<" ++ intercalate "," (map show xs) ++ ">"
-instance ShowF Cycle where
-  showF = show
-
 
 -- | Set structure.  A value of type 'Set a' is implemented as '[a]',
 --   but thought of as an unordered set.
@@ -299,8 +257,6 @@ newtype Set a = Set { getSet :: [a] }
   deriving (Functor, Typeable)
 instance (Show a) => Show (Set a) where
   show (Set xs) = "{" ++ intercalate "," (map show xs) ++ "}"
-instance ShowF Set where
-  showF = show
 
 -- | 'Star' is isomorphic to 'Maybe', but with a more useful 'Show'
 --   instance for our purposes.  Used to implement species
@@ -313,49 +269,11 @@ instance Functor Star where
 instance (Show a) => Show (Star a) where
   show Star = "*"
   show (Original a) = show a
-instance ShowF Star where
-  showF = show
 
---------------------------------------------------------------------------------
---  Type-level species  --------------------------------------------------------
---------------------------------------------------------------------------------
+-- Recursive species.
 
--- $typespecies
--- Some constructor-less data types used as indices to
--- 'SpeciesTypedAST' to reflect the species structure at the type
--- level.  This is the point at which we wish we were doing this in a
--- dependently typed language.
+data Mu f a = Mu { unMu :: Res f (Mu f) a }
+  deriving Typeable
 
-data Z
-data X
-data E
-data C
-data L
-data Sub
-data Elt
-data (:+:) f g
-data (:*:) f g
-data (:.:) f g
-data (:><:) f g
-data (:@:) f g
-data Der f
-
--- | 'StructureF' is a type function which maps type-level species
---   descriptions to structure functors.  That is, a structure of the
---   species with type-level representation @s@, on the underlying set
---   @a@, has type @StructureF s a@.
-type family StructureF t :: * -> *
-type instance StructureF Z            = Const Integer
-type instance StructureF X            = Identity
-type instance StructureF E            = Set
-type instance StructureF C            = Cycle
-type instance StructureF L            = []
-type instance StructureF Sub          = Set
-type instance StructureF Elt          = Identity
-type instance StructureF (f :+: g)    = Sum (StructureF f) (StructureF g)
-type instance StructureF (f :*: g)    = Prod (StructureF f) (StructureF g)
-type instance StructureF (f :.: g)    = Comp (StructureF f) (StructureF g)
-type instance StructureF (f :><: g)   = Prod (StructureF f) (StructureF g)
-type instance StructureF (f :@: g)    = Comp (StructureF f) (StructureF g)
-type instance StructureF (Der f)      = Comp (StructureF f) Star
+type family Res f self :: * -> *
 
