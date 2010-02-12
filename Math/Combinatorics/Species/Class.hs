@@ -149,7 +149,7 @@ class (Differential.C s) => Species s where
   -- | @rec n s f@ is the species which puts an s-structure on label
   --   sets of size <= n, and which are described recusively by (fix
   --   f) for larger label sets.
-  -- rec :: Integer -> s -> (s -> s) -> s  
+  -- rec ::
 
 
 

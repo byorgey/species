@@ -27,6 +27,7 @@ import Math.Combinatorics.Species.Class
 import Math.Combinatorics.Species.Types
 import Math.Combinatorics.Species.AST
 import Math.Combinatorics.Species.CycleIndex (intPartitions)
+import Math.Combinatorics.Species.Structures
 
 import Control.Arrow (first, second)
 import Data.List (genericLength, genericReplicate)

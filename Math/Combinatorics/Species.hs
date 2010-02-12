@@ -77,10 +77,10 @@ module Math.Combinatorics.Species
 
     ) where
 
-import Math.Combinatorics.Species.Types
 import Math.Combinatorics.Species.Class
 import Math.Combinatorics.Species.Labelled
 import Math.Combinatorics.Species.Unlabelled
+import Math.Combinatorics.Species.Structures
 import Math.Combinatorics.Species.Generate
 import Math.Combinatorics.Species.AST
 

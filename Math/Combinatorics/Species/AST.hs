@@ -19,13 +19,12 @@ module Math.Combinatorics.Species.AST
     , reflectT
     , reflect
 
-    , List(..)
     , BTree(..)
     , HOFunctor(..)
     ) where
 
 import Math.Combinatorics.Species.Class
-import Math.Combinatorics.Species.Types
+import Math.Combinatorics.Species.Structures
 
 import qualified Algebra.Additive as Additive
 import qualified Algebra.Ring as Ring
@@ -66,18 +65,10 @@ data SpeciesTypedAST (s :: * -> *) where
 
 -- XXX just for testing
 class HOFunctor f where
-  unfold :: f -> SpeciesTypedAST g -> SpeciesTypedAST (Res f g)
-
-data List = List deriving Typeable
-type instance Res List self = Sum (Const Integer) (Prod Identity self)
-instance HOFunctor List where
-  unfold _ self = N 1 :+: (X :*: self)
-
-instance Show a => Show (Mu List a) where
-  show = show . unMu
+  unfold :: f -> SpeciesTypedAST g -> SpeciesTypedAST (Interp f g)
 
 data BTree = BTree deriving Typeable
-type instance Res BTree self = Sum (Const Integer) (Prod Identity (Prod self self))
+type instance Interp BTree self = Sum (Const Integer) (Prod Identity (Prod self self))
 instance HOFunctor BTree where
   unfold _ self = N 1 :+: (X :*: (self :*: self))
 instance Show a => Show (Mu BTree a) where
@@ -196,6 +187,8 @@ reflectT (Der f)             = oneHole (reflectT f)
 reflectT (OfSize f p)        = ofSize (reflectT f) p
 reflectT (OfSizeExactly f n) = ofSizeExactly (reflectT f) n
 reflectT (NonEmpty f)        = nonEmpty (reflectT f)
+reflectT (Rec f)             = undefined -- XXX
+                               -- reflectT (unfold f (Rec f)) -- loops
 
 -- | Reflect an AST back into any instance of the 'Species' class.
 reflect :: Species s => SpeciesAST -> s
