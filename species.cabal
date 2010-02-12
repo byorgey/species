@@ -15,8 +15,8 @@ description:    A DSL for describing and computing with combinatorial species,
                 a list of all labeled structures for a species.
 
 Library
-  build-depends: base >= 3.0 && < 4.2, numeric-prelude >= 0.1.1 && < 0.2,
-                 np-extras >= 0.2 && < 0.3, containers >= 0.2 && < 0.3,
+  build-depends: base >= 3.0 && < 4.3, numeric-prelude >= 0.1.1 && < 0.2,
+                 np-extras >= 0.2 && < 0.3, containers >= 0.2 && < 0.4,
                  lub >= 0.0.5 && < 0.1
   exposed-modules:
     Math.Combinatorics.Species
