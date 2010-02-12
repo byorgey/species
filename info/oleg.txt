@@ -1,0 +1,73 @@
+
+Brent Yorgey wrote:
+> This email is literate Haskell.  I'm struggling to come up with the
+> right way to add a fixpoint constructor to an expression language
+> described by a type-indexed GADT (details below).
+>
+> but since Haskell doesn't have type-level lambdas, I don't see how
+> to make that work.
+
+John Reynolds showed long ago that any higher-order language can be
+encoded in first-order. We witness this every day: higher-order
+language like Haskell is encoded in first-order language (machine
+code). The trick is just to add a layer of interpretive overhead -- I
+mean, a layer of interpretation. The closure conversion on type level
+was shown in
+  http://okmij.org/ftp/Computation/lambda-calc.html#haskell-type-level
+
+Here's how a similar technique applies to the problem at hand. There is
+an alternative solution: encode higher-order functors by means of SKI
+combinators. Somehow I prefer the pointed solution.
+
+The complete code follows.
+
+{-# LANGUAGE TypeFamilies, KindSignatures, GADTs, FlexibleInstances #-}
+
+data U  :: (* -> *) -> * where
+  Unit  :: U None
+  Var   :: U Id
+  (:+:) :: U f -> U g -> U (Sum f g)
+  (:*:) :: U f -> U g -> U (Prod f g)
+  Mu    :: HOFunctor f => f -> U (MU f)
+
+data None a = None deriving Show
+data Id a = Id a deriving Show
+data Sum f g a = Inl (f a) | Inr (g a) deriving Show
+data Prod f g a = Prod (f a) (g a) deriving Show
+
+newtype MU f a = MU (Res f (MU f) a)
+
+type family Res f self :: * -> *
+type instance Res List self = Sum None (Prod Id self)
+
+data List = List -- the code for the HO functor
+
+class HOFunctor f where
+    fn :: f -> U g -> U (Res f g)
+
+instance HOFunctor List where
+    fn _ self = Unit :+: (Var :*: self)
+
+enumShapes :: Int -> U f -> [f ()]
+enumShapes 0 Unit = [None]
+enumShapes _ Unit = []
+enumShapes 1 Var  = [Id ()]
+enumShapes _ Var  = []
+enumShapes n (f :+: g) = map Inl (enumShapes n f) ++ map Inr (enumShapes n g)
+enumShapes n (f :*: g) = [ Prod x y | x <- enumShapes n f, y <- enumShapes n g]
+
+enumShapes n self@(Mu f) = map MU $ enumShapes (n-1) (fn f self)
+
+test0 = enumShapes 0 (Unit :+: (Var :*: Var))
+-- [Inl None]
+test1 = enumShapes 1 (Unit :+: (Var :*: Var))
+-- [Inr (Prod (Id ()) (Id ()))]
+
+test2 = enumShapes 1 (Mu List)
+-- [Inl None]
+test3 = enumShapes 2 (Mu List)
+-- [Inr (Prod (Id ()) Inl None)]
+
+instance Show (MU List ()) where
+    show (MU x) = show x
+
