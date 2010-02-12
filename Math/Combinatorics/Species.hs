@@ -83,6 +83,7 @@ import Math.Combinatorics.Species.Unlabelled
 import Math.Combinatorics.Species.Structures
 import Math.Combinatorics.Species.Generate
 import Math.Combinatorics.Species.AST
+import Math.Combinatorics.Species.AST.Instances
 
 -- $DSL
 -- The combinatorial species DSL consists of the 'Species' type class,

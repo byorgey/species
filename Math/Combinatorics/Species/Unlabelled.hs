@@ -1,11 +1,12 @@
 -- | An interpretation of species as ordinary generating functions,
 --   which count unlabelled structures.
-module Math.Combinatorics.Species.Unlabelled 
+module Math.Combinatorics.Species.Unlabelled
     ( unlabelled ) where
 
 import Math.Combinatorics.Species.Types
 import Math.Combinatorics.Species.Class
 import Math.Combinatorics.Species.AST
+import Math.Combinatorics.Species.AST.Instances (reflect)
 import Math.Combinatorics.Species.CycleIndex
 
 import qualified MathObj.PowerSeries as PS
@@ -59,6 +60,6 @@ unlabelledCoeffs (GF p) = PS.coeffs p ++ repeat 0
 --   with cycle index series or directly with (much faster) ordinary
 --   generating functions as appropriate.
 unlabelled :: SpeciesAST -> [Integer]
-unlabelled s 
+unlabelled s
   | needsZ s  = unlabelledCoeffs . zToGF . reflect $ s
   | otherwise = unlabelledCoeffs . reflect $ s
