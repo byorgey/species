@@ -108,6 +108,7 @@ instance Show (SpeciesTypedAST s) where
 --   product, and functor composition), and hence need cycle index
 --   series.
 needsZT :: SpeciesTypedAST s -> Bool
+needsZT L            = True
 needsZT (f :+: g)    = needsZT f || needsZT g
 needsZT (f :*: g)    = needsZT f || needsZT g
 needsZT (_ :.: _)    = True
