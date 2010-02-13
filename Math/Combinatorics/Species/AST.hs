@@ -2,8 +2,6 @@
            , GADTs
            , TypeFamilies
            , KindSignatures
-           , DeriveDataTypeable
-           , FlexibleInstances
            , FlexibleContexts
   #-}
 
