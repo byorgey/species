@@ -1,10 +1,10 @@
-{-# LANGUAGE NoImplicitPrelude 
+{-# LANGUAGE NoImplicitPrelude
            , GeneralizedNewtypeDeriving
            , PatternGuards
   #-}
 -- | An interpretation of species as exponential generating functions,
 --   which count labelled structures.
-module Math.Combinatorics.Species.Labelled 
+module Math.Combinatorics.Species.Labelled
     ( labelled
     ) where
 
@@ -30,8 +30,8 @@ instance Species EGF where
   o                 = liftEGF2 PS.compose
   cartesian         = liftEGF2 . PS.lift2 $ \xs ys -> zipWith3 mult xs ys (map fromIntegral facts)
     where mult x y z = x * y * z
-  fcomp             = liftEGF2 . PS.lift2 $ \fs gs -> map (\(n,gn) -> let gn' = numerator . unLR $ gn 
-                                                                       in (fs `safeIndex` gn') 
+  fcomp             = liftEGF2 . PS.lift2 $ \fs gs -> map (\(n,gn) -> let gn' = numerator . unLR $ gn
+                                                                       in (fs `safeIndex` gn')
                                                                             * LR (toRational (FQ.factorial gn' / FQ.factorial n)))
                                                           (zip [0..] $ zipWith (*) (map fromIntegral facts) gs)
     where safeIndex [] _     = 0
@@ -57,10 +57,10 @@ instance Species EGF where
 --   gives the number of labelled octopi on 0, 1, 2, 3, ... 9 elements.
 
 labelled :: EGF -> [Integer]
-labelled (EGF f) = (++repeat 0) 
-                 . map numerator 
-                 . zipWith (*) (map fromInteger facts) 
-                 . map unLR 
+labelled (EGF f) = (++repeat 0)
+                 . map numerator
+                 . zipWith (*) (map fromInteger facts)
+                 . map unLR
                  $ PS.coeffs f
 
 -- A previous version of this module used an EGF library which
