@@ -66,16 +66,16 @@ generateF (KSubset k) xs = map Set (sKSubsets k xs)
 generateF Elt xs         = map Id xs
 generateF (f :+: g) xs   = map Inl (generateF f xs)
                         ++ map Inr (generateF g xs)
-generateF (f :*: g) xs   = [ Prod (x, y) | (s1,s2) <- pSet xs
-                                         ,       x <- generateF f s1
-                                         ,       y <- generateF g s2
+generateF (f :*: g) xs   = [ Prod x y | (s1,s2) <- pSet xs
+                                      ,       x <- generateF f s1
+                                      ,       y <- generateF g s2
                            ]
 generateF (f :.: g) xs   = [ Comp y | p  <- sPartitions xs
                                     , xs <- mapM (generateF g) p
                                     , y  <- generateF f xs
                            ]
-generateF (f :><: g) xs  = [ Prod (x,y) | x <- generateF f xs
-                                        , y <- generateF g xs ]
+generateF (f :><: g) xs  = [ Prod x y | x <- generateF f xs
+                                      , y <- generateF g xs ]
 generateF (f :@: g) xs   = map Comp $ generateF f (generateF g xs)
 generateF (Der f) xs     = map Comp $ generateF f (Star : map Original xs)
 

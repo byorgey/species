@@ -74,11 +74,11 @@ instance (Typeable1 f, Typeable1 g) => Typeable1 (Sum f g) where
           getG = undefined
 
 -- | Functor product.
-newtype Prod f g a = Prod { unProd :: (f a, g a) }
+data Prod f g a = Prod (f a) (g a)
 instance (Functor f, Functor g) => Functor (Prod f g) where
-  fmap f (Prod (fa, ga)) = Prod (fmap f fa, fmap f ga)
+  fmap f (Prod fa ga) = Prod (fmap f fa) (fmap f ga)
 instance (Show (f a), Show (g a)) => Show (Prod f g a) where
-  show (Prod x) = show x
+  show (Prod x y) = show (x,y)
 instance (Typeable1 f, Typeable1 g) => Typeable1 (Prod f g) where
   typeOf1 x = mkTyConApp (mkTyCon "Math.Combinatorics.Species.Types.Prod") [typeOf1 (getF x), typeOf1 (getG x)]
     where getF :: Prod f g a -> f a
