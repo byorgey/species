@@ -59,13 +59,13 @@ instance (Show a) => Show (Identity a) where
   show (Id x) = show x
 
 -- | Functor coproduct.
-newtype Sum f g a = Sum  { unSum  :: Either (f a) (g a) }
+data Sum f g a = Inl (f a) | Inr (g a)
 instance (Functor f, Functor g) => Functor (Sum f g) where
-  fmap f (Sum (Left fa))  = Sum (Left (fmap f fa))
-  fmap f (Sum (Right ga)) = Sum (Right (fmap f ga))
+  fmap f (Inl fa) = Inl (fmap f fa)
+  fmap f (Inr ga) = Inr (fmap f ga)
 instance (Show (f a), Show (g a)) => Show (Sum f g a) where
-  show (Sum (Left fa)) = "inl(" ++ show fa ++ ")"
-  show (Sum (Right ga)) = "inr(" ++ show ga ++ ")"
+  show (Inl fa) = "inl(" ++ show fa ++ ")"
+  show (Inr ga) = "inr(" ++ show ga ++ ")"
 instance (Typeable1 f, Typeable1 g) => Typeable1 (Sum f g) where
   typeOf1 x = mkTyConApp (mkTyCon "Math.Combinatorics.Species.Types.Sum") [typeOf1 (getF x), typeOf1 (getG x)]
     where getF :: Sum f g a -> f a

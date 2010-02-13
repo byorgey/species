@@ -64,8 +64,8 @@ generateF L xs           = sPermutations xs
 generateF Subset xs      = map (Set . fst) (pSet xs)
 generateF (KSubset k) xs = map Set (sKSubsets k xs)
 generateF Elt xs         = map Id xs
-generateF (f :+: g) xs   = map (Sum . Left ) (generateF f xs)
-                         ++ map (Sum . Right) (generateF g xs)
+generateF (f :+: g) xs   = map Inl (generateF f xs)
+                        ++ map Inr (generateF g xs)
 generateF (f :*: g) xs   = [ Prod (x, y) | (s1,s2) <- pSet xs
                                          ,       x <- generateF f s1
                                          ,       y <- generateF g s2
