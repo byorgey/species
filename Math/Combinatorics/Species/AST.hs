@@ -14,7 +14,7 @@ module Math.Combinatorics.Species.AST
     , needsZT, needsZ
 
     , BTree(..)
-    , HOFunctor(..)
+    , ASTFunctor(..)
     ) where
 
 import Math.Combinatorics.Species.Structures
@@ -51,16 +51,17 @@ data SpeciesTypedAST (s :: * -> *) where
    OfSize   :: SpeciesTypedAST f -> (Integer -> Bool) -> SpeciesTypedAST f
    OfSizeExactly :: SpeciesTypedAST f -> Integer -> SpeciesTypedAST f
    NonEmpty :: SpeciesTypedAST f -> SpeciesTypedAST f
-   Rec      :: HOFunctor f => f -> SpeciesTypedAST (Mu f)
+   Rec      :: ASTFunctor f => f -> SpeciesTypedAST (Mu f)
 
--- XXX just for testing
-class HOFunctor f where
-  unfold :: f -> SpeciesTypedAST g -> SpeciesTypedAST (Interp f g)
+-- | Type class for codes which can be interpreted as higher-order
+--   functors.
+class ASTFunctor f where
+  apply :: f -> SpeciesTypedAST g -> SpeciesTypedAST (Interp f g)
 
 data BTree = BTree deriving Typeable
 type instance Interp BTree self = Sum (Const Integer) (Prod Identity (Prod self self))
-instance HOFunctor BTree where
-  unfold _ self = N 1 :+: (X :*: (self :*: self))
+instance ASTFunctor BTree where
+  apply _ self = N 1 :+: (X :*: (self :*: self))
 instance Show a => Show (Mu BTree a) where
   show = show . unMu
 

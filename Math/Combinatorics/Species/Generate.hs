@@ -84,7 +84,7 @@ generateF (OfSizeExactly f n) xs | genericLength xs == n = generateF f xs
                                  | otherwise = []
 generateF (NonEmpty f) [] = []
 generateF (NonEmpty f) xs = generateF f xs
-generateF (Rec f) xs = map Mu $ generateF (unfold f (Rec f)) xs
+generateF (Rec f) xs = map Mu $ generateF (apply f (Rec f)) xs
 
 -- | @pSet xs@ generates the power set of @xs@, yielding a list of
 --   subsets of @xs@ paired with their complements.
