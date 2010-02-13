@@ -19,7 +19,7 @@ module Math.Combinatorics.Species.Generate
     , generateTyped
     , structureType
 
-    , generateI
+    , Iso(..), generateI
 
     ) where
 
@@ -246,18 +246,6 @@ class Typeable1 (SType f) => Iso (f :: * -> *) where
 
 generateI :: (Iso f, Typeable a) => ESpeciesAST -> [a] -> Maybe [f a]
 generateI s = fmap (map iso) . mapM extractStructure . generate s
-
-data BinTree a = Empty | Node (BinTree a) a (BinTree a)
-  deriving (Typeable)
-
-instance Show a => Show (BinTree a) where
-  show Empty = ""
-  show (Node l a r) = "(" ++ show l ++ show a ++ show r ++ ")"
-
-instance Iso BinTree where
-  type SType BinTree = Mu BTree
-  iso (Mu (Sum (Left _))) = Empty
-  iso (Mu (Sum (Right (Prod (Identity a, Prod (l, r)))))) = Node (iso l) a (iso r)
 
 -- More old code below: a first try at *unlabelled* generation, but
 -- it's not quite so easy---for exactly the same reasons that ordinary

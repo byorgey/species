@@ -11,10 +11,10 @@ module Math.Combinatorics.Species.AST
     (
       SpeciesAST(..)
     , ESpeciesAST(..)
+    , ASTFunctor(..)
+
     , needsZ, needsZE
 
-    , BTree(..)
-    , ASTFunctor(..)
     ) where
 
 import Math.Combinatorics.Species.Structures
@@ -58,13 +58,6 @@ data SpeciesAST (s :: * -> *) where
 class ASTFunctor f where
   apply :: f -> SpeciesAST g -> SpeciesAST (Interp f g)
 
-data BTree = BTree deriving Typeable
-type instance Interp BTree self = Sum (Const Integer) (Prod Identity (Prod self self))
-instance ASTFunctor BTree where
-  apply _ self = N 1 :+: (X :*: (self :*: self))
-instance Show a => Show (Mu BTree a) where
-  show = show . unMu
-
 -- | 'needsZ' is a predicate which checks whether a species uses any
 --   of the operations which are not supported directly by ordinary
 --   generating functions (composition, differentiation, cartesian
@@ -92,4 +85,3 @@ data ESpeciesAST where
 -- | A version of 'needsZ' for 'ESpeciesAST'.
 needsZE :: ESpeciesAST -> Bool
 needsZE (SA s) = needsZ s
-

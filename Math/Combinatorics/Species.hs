@@ -75,6 +75,10 @@ module Math.Combinatorics.Species
     , reify
     , reflect
 
+      -- * Recursive species
+      -- $rec
+    , BTree(..), BTreeC(..)   -- XXX ?
+
     ) where
 
 import Math.Combinatorics.Species.Class
@@ -84,6 +88,7 @@ import Math.Combinatorics.Species.Structures
 import Math.Combinatorics.Species.Generate
 import Math.Combinatorics.Species.AST
 import Math.Combinatorics.Species.AST.Instances
+import Math.Combinatorics.Species.Rec
 
 -- $DSL
 -- The combinatorial species DSL consists of the 'Species' type class,
@@ -106,3 +111,8 @@ import Math.Combinatorics.Species.AST.Instances
 -- $ast
 -- Species can be converted to and from 'ESpeciesAST' via the functions
 -- 'reify' and 'reflect'.
+
+-- $rec
+-- Some common recursive species, provided as a convenience.  For
+-- details on how to define your own recursive species, see the
+-- "Math.Combinatorics.Species.Rec" module.
