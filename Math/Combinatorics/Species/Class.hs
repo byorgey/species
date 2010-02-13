@@ -64,7 +64,7 @@ import PreludeBase hiding (cycle)
 --   'EGF' (exponential generating functions, for counting labelled
 --   structures), 'GF' (ordinary generating function, for counting
 --   unlabelled structures), 'CycleIndex' (cycle index series, a
---   generalization of both 'EGF' and 'GF'), and 'SpeciesAST' (reified
+--   generalization of both 'EGF' and 'GF'), and 'ESpeciesAST' (reified
 --   species expressions).
 class (Differential.C s) => Species s where
 

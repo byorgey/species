@@ -44,14 +44,14 @@ import PreludeBase hiding (cycle)
 --   function of the species structure.  (Of course, it would be
 --   really nice to have a real dependently-typed language for this!)
 --
---   Unfortunately, 'SpeciesTypedAST' cannot be made an instance of
+--   Unfortunately, 'SpeciesAST' cannot be made an instance of
 --   'Species', so if we want to be able to generate structures given
 --   an expression of the 'Species' DSL as input, we must take
---   'SpeciesAST' as input, which existentially wraps the phantom
+--   'ESpeciesAST' as input, which existentially wraps the phantom
 --   structure type---but this means that the output list type must be
 --   existentially quantified as well; see 'generate' and
 --   'generateTyped' below.
-generateF :: SpeciesTypedAST s -> [a] -> [s a]
+generateF :: SpeciesAST s -> [a] -> [s a]
 generateF (N n) []       = map Const [1..n]
 generateF (N _) _        = []
 generateF X [x]          = [Identity x]
@@ -153,7 +153,7 @@ extractStructure (Structure s) = cast s
 --   screaming) back into the open, so that you can then manipulate
 --   the generated structures to your heart's content.  To see how,
 --   consult 'structureType' and 'generateTyped'.
-generate :: SpeciesAST -> [a] -> [Structure a]
+generate :: ESpeciesAST -> [a] -> [Structure a]
 generate (SA s) xs = map Structure (generateF s xs)
 
 -- | @generateTyped s ls@ generates a complete list of all s-structures
@@ -190,7 +190,7 @@ generate (SA s) xs = map Structure (generateF s xs)
 -- > *** Exception: structure type mismatch.
 -- >   Expected: Set Int
 -- >   Inferred: Comp Cycle (Comp Cycle Star) Int
-generateTyped :: forall f a. (Typeable1 f, Typeable a) => SpeciesAST -> [a] -> [f a]
+generateTyped :: forall f a. (Typeable1 f, Typeable a) => ESpeciesAST -> [a] -> [f a]
 generateTyped s xs =
   case (mapM extractStructure . generate s $ xs) of
     Nothing -> error $
@@ -207,9 +207,9 @@ generateTyped s xs =
 -- > generateTyped s ls :: [T L]
 --
 --   where @ls :: [L]@.
-structureType :: SpeciesAST -> String
+structureType :: ESpeciesAST -> String
 structureType (SA s) = showStructureType . extractType $ s
-  where extractType :: forall s. Typeable1 s => SpeciesTypedAST s -> TypeRep
+  where extractType :: forall s. Typeable1 s => SpeciesAST s -> TypeRep
         extractType _ = typeOf1 (undefined :: s ())
 
 -- | Show a TypeRep while stripping off qualifier portions of TyCon
@@ -244,7 +244,7 @@ class Typeable1 (SType f) => Iso (f :: * -> *) where
   type SType f :: * -> *
   iso :: SType f a -> f a
 
-generateI :: (Iso f, Typeable a) => SpeciesAST -> [a] -> Maybe [f a]
+generateI :: (Iso f, Typeable a) => ESpeciesAST -> [a] -> Maybe [f a]
 generateI s = fmap (map iso) . mapM extractStructure . generate s
 
 data BinTree a = Empty | Node (BinTree a) a (BinTree a)
@@ -268,7 +268,7 @@ instance Iso BinTree where
 --   describing the species at the type level, and the size of the
 --   underlying set, generate a list of all possible unlabelled
 --   structures built by the species.
--- generateFU :: SpeciesTypedAST s -> Integer -> [StructureF s ()]
+-- generateFU :: SpeciesAST s -> Integer -> [StructureF s ()]
 -- generateFU O _  = []
 -- generateFU I 0  = [Const 1]
 -- generateFU I _  = []

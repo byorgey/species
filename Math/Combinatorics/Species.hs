@@ -70,8 +70,8 @@ module Math.Combinatorics.Species
 
       -- * Species AST
       -- $ast
-    , SpeciesTypedAST(..)
     , SpeciesAST(..)
+    , ESpeciesAST(..)
     , reify
     , reflect
 
@@ -104,5 +104,5 @@ import Math.Combinatorics.Species.AST.Instances
 -- naming/instance schemes, etc., we just redefine them here.
 
 -- $ast
--- Species can be converted to and from 'SpeciesAST' via the functions
+-- Species can be converted to and from 'ESpeciesAST' via the functions
 -- 'reify' and 'reflect'.

@@ -47,7 +47,7 @@ unlabelledCoeffs (GF p) = PS.coeffs p ++ repeat 0
 --
 --   Actually, the above is something of a white lie, as you may have
 --   already realized by looking at the input type of 'unlabelled',
---   which is 'SpeciesAST' rather than the expected 'GF'.  The reason
+--   which is 'ESpeciesAST' rather than the expected 'GF'.  The reason
 --   is that although products and sums of unlabelled species
 --   correspond to products and sums of ordinary generating functions,
 --   other operations such as composition and differentiation do not!
@@ -59,7 +59,7 @@ unlabelledCoeffs (GF p) = PS.coeffs p ++ repeat 0
 --   operations are used in its definition, and then choosing to work
 --   with cycle index series or directly with (much faster) ordinary
 --   generating functions as appropriate.
-unlabelled :: SpeciesAST -> [Integer]
+unlabelled :: ESpeciesAST -> [Integer]
 unlabelled s
-  | needsZ s  = unlabelledCoeffs . zToGF . reflect $ s
+  | needsZE s  = unlabelledCoeffs . zToGF . reflect $ s
   | otherwise = unlabelledCoeffs . reflect $ s

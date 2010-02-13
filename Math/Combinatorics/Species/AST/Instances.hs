@@ -1,6 +1,6 @@
 {-# LANGUAGE GADTs #-}
 
--- | Type class instances for 'SpeciesAST' and 'SpeciesTypedAST', in a
+-- | Type class instances for 'ESpeciesAST' and 'SpeciesAST', in a
 --   separate module to avoid a dependency cycle between M.C.S.AST and
 --   M.C.S.Class.
 module Math.Combinatorics.Species.AST.Instances
@@ -17,7 +17,7 @@ import qualified Algebra.Additive as Additive
 import qualified Algebra.Ring as Ring
 import qualified Algebra.Differential as Differential
 
-instance Show (SpeciesTypedAST s) where
+instance Show (SpeciesAST s) where
   showsPrec _ (N n)               = shows n
   showsPrec _ X                   = showChar 'X'
   showsPrec _ E                   = showChar 'E'
@@ -36,15 +36,15 @@ instance Show (SpeciesTypedAST s) where
   showsPrec _ (OfSizeExactly f n) = showsPrec 11 f . shows n
   showsPrec _ (NonEmpty f)        = showsPrec 11 f . showChar '+'
 
-instance Show SpeciesAST where
+instance Show ESpeciesAST where
   show (SA f) = show f
 
-instance Additive.C SpeciesAST where
+instance Additive.C ESpeciesAST where
   zero   = SA (N 0)
   (SA f) + (SA g) = SA (f :+: g)
   negate = error "negation is not implemented yet!  wait until virtual species..."
 
-instance Ring.C SpeciesAST where
+instance Ring.C ESpeciesAST where
   (SA f) * (SA g) = SA (f :*: g)
   one = SA (N 1)
   fromInteger n = SA (N n)
@@ -53,10 +53,10 @@ instance Ring.C SpeciesAST where
   (SA f) ^ n = case (SA f) ^ (n-1) of
                  (SA f') -> SA (f :*: f')
 
-instance Differential.C SpeciesAST where
+instance Differential.C ESpeciesAST where
   differentiate (SA f) = SA (Der f)
 
-instance Species SpeciesAST where
+instance Species ESpeciesAST where
   singleton               = SA X
   set                     = SA E
   cycle                   = SA C
@@ -80,11 +80,11 @@ instance Species SpeciesAST where
 -- > > reify (ksubset 3)
 -- > E3 * E
 
-reify :: SpeciesAST -> SpeciesAST
+reify :: ESpeciesAST -> ESpeciesAST
 reify = id
 
 -- | Reflect an AST back into any instance of the 'Species' class.
-reflectT :: Species s => SpeciesTypedAST f -> s
+reflectT :: Species s => SpeciesAST f -> s
 reflectT (N n)               = fromInteger n
 reflectT X                   = singleton
 reflectT E                   = set
@@ -106,5 +106,5 @@ reflectT (Rec f)             = undefined -- XXX
                                -- reflectT (unfold f (Rec f)) -- loops
 
 -- | Reflect an AST back into any instance of the 'Species' class.
-reflect :: Species s => SpeciesAST -> s
+reflect :: Species s => ESpeciesAST -> s
 reflect (SA f) = reflectT f
