@@ -42,7 +42,7 @@ data BTree a = Empty | Node (BTree a) a (BTree a)
 instance Iso BTree where
   type SType BTree = Mu BTreeC
   iso (Mu (Sum (Left _))) = Empty
-  iso (Mu (Sum (Right (Prod (Identity a, Prod (l, r)))))) = Node (iso l) a (iso r)
+  iso (Mu (Sum (Right (Prod (Id a, Prod (l, r)))))) = Node (iso l) a (iso r)
 
 bTree :: Species s => s
 bTree = rec BTreeC

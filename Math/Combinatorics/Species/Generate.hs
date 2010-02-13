@@ -55,7 +55,7 @@ import PreludeBase hiding (cycle)
 generateF :: SpeciesAST s -> [a] -> [s a]
 generateF (N n) []       = map Const [1..n]
 generateF (N _) _        = []
-generateF X [x]          = [Identity x]
+generateF X [x]          = [Id x]
 generateF X _            = []
 generateF E xs           = [Set xs]
 generateF C []           = []
@@ -63,7 +63,7 @@ generateF C (x:xs)       = map (Cycle . (x:)) (sPermutations xs)
 generateF L xs           = sPermutations xs
 generateF Subset xs      = map (Set . fst) (pSet xs)
 generateF (KSubset k) xs = map Set (sKSubsets k xs)
-generateF Elt xs         = map Identity xs
+generateF Elt xs         = map Id xs
 generateF (f :+: g) xs   = map (Sum . Left ) (generateF f xs)
                          ++ map (Sum . Right) (generateF g xs)
 generateF (f :*: g) xs   = [ Prod (x, y) | (s1,s2) <- pSet xs

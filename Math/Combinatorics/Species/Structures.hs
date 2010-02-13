@@ -51,12 +51,12 @@ instance Typeable x => Typeable1 (Const x) where
   typeOf1 = typeOf1Default
 
 -- | The identity functor.
-newtype Identity a = Identity a
+newtype Identity a = Id a
   deriving Typeable
 instance Functor Identity where
-  fmap f (Identity x) = Identity (f x)
+  fmap f (Id x) = Id (f x)
 instance (Show a) => Show (Identity a) where
-  show (Identity x) = show x
+  show (Id x) = show x
 
 -- | Functor coproduct.
 newtype Sum f g a = Sum  { unSum  :: Either (f a) (g a) }
