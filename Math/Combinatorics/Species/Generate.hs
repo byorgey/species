@@ -31,6 +31,7 @@ import Math.Combinatorics.Species.Structures
 
 import Control.Arrow (first, second)
 import Data.List (genericLength, genericReplicate)
+import Data.Maybe (fromJust)
 
 import Data.Typeable
 
@@ -244,8 +245,8 @@ class Typeable1 (SType f) => Iso (f :: * -> *) where
   type SType f :: * -> *
   iso :: SType f a -> f a
 
-generateI :: (Iso f, Typeable a) => ESpeciesAST -> [a] -> Maybe [f a]
-generateI s = fmap (map iso) . mapM extractStructure . generate s
+generateI :: (Iso f, Typeable a) => ESpeciesAST -> [a] -> [f a]
+generateI s = fromJust . fmap (map iso) . mapM extractStructure . generate s
 
 -- More old code below: a first try at *unlabelled* generation, but
 -- it's not quite so easy---for exactly the same reasons that ordinary

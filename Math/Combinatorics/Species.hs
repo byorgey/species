@@ -62,6 +62,8 @@ module Math.Combinatorics.Species
     , generateTyped
     , structureType
 
+    , generateI
+
       -- ** Types used for generation
       -- $types
     , Identity(..), Const(..)
