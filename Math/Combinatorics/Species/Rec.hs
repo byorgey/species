@@ -7,7 +7,7 @@
 module Math.Combinatorics.Species.Rec
        (
          -- Binary trees
-         BTreeC(..), BTree(..)
+         BTreeC(..), BTree(..), bTree
 
        ) where
 
@@ -16,12 +16,16 @@ import PreludeBase
 
 import Data.Typeable
 
+import Math.Combinatorics.Species.Class
 import Math.Combinatorics.Species.Structures
 import Math.Combinatorics.Species.AST
 import Math.Combinatorics.Species.Generate
 
 -- | Code for binary trees with data at internal nodes.
 data BTreeC = BTreeC deriving Typeable
+
+instance Show BTreeC where
+  show _ = "BTree"
 
 type instance Interp BTreeC self = Sum (Const Integer) (Prod Identity (Prod self self))
 
@@ -43,3 +47,6 @@ instance Iso BTree where
   type SType BTree = Mu BTreeC
   iso (Mu (Sum (Left _))) = Empty
   iso (Mu (Sum (Right (Prod (Identity a, Prod (l, r)))))) = Node (iso l) a (iso r)
+
+bTree :: Species s => s
+bTree = rec BTreeC

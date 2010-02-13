@@ -4,6 +4,7 @@
            , KindSignatures
            , DeriveDataTypeable
            , FlexibleInstances
+           , FlexibleContexts
   #-}
 
 -- | A data structure to reify combinatorial species.
@@ -55,7 +56,7 @@ data SpeciesAST (s :: * -> *) where
 
 -- | Type class for codes which can be interpreted as higher-order
 --   functors.
-class ASTFunctor f where
+class (Typeable f, Show f, Typeable1 (Interp f (Mu f))) => ASTFunctor f where
   apply :: f -> SpeciesAST g -> SpeciesAST (Interp f g)
 
 -- | 'needsZ' is a predicate which checks whether a species uses any

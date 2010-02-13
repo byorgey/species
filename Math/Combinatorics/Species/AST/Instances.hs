@@ -35,6 +35,7 @@ instance Show (SpeciesAST s) where
   showsPrec _ (OfSize f p)        = showChar '<' .  showsPrec 0 f . showChar '>'
   showsPrec _ (OfSizeExactly f n) = showsPrec 11 f . shows n
   showsPrec _ (NonEmpty f)        = showsPrec 11 f . showChar '+'
+  showsPrec _ (Rec f)             = shows f
 
 instance Show ESpeciesAST where
   show (SA f) = show f
@@ -70,6 +71,7 @@ instance Species ESpeciesAST where
   ofSize (SA f) p         = SA (OfSize f p)
   ofSizeExactly (SA f) n  = SA (OfSizeExactly f n)
   nonEmpty (SA f)         = SA (NonEmpty f)
+  rec f                   = SA (Rec f)
 
 -- | Reify a species expression into an AST.  Of course, this is just
 --   the identity function with a usefully restricted type.  For
@@ -102,8 +104,7 @@ reflectT (Der f)             = oneHole (reflectT f)
 reflectT (OfSize f p)        = ofSize (reflectT f) p
 reflectT (OfSizeExactly f n) = ofSizeExactly (reflectT f) n
 reflectT (NonEmpty f)        = nonEmpty (reflectT f)
-reflectT (Rec f)             = undefined -- XXX
-                               -- reflectT (unfold f (Rec f)) -- loops
+reflectT (Rec f)             = rec f
 
 -- | Reflect an AST back into any instance of the 'Species' class.
 reflect :: Species s => ESpeciesAST -> s

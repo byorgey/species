@@ -11,6 +11,9 @@ module Math.Combinatorics.Species.Labelled
 import Math.Combinatorics.Species.Types
 import Math.Combinatorics.Species.Class
 
+import Math.Combinatorics.Species.AST
+import Math.Combinatorics.Species.AST.Instances
+
 import qualified MathObj.PowerSeries as PS
 import qualified MathObj.FactoredRational as FQ
 
@@ -37,6 +40,8 @@ instance Species EGF where
 
   ofSize s p        = (liftEGF . PS.lift1 $ filterCoeffs p) s
   ofSizeExactly s n = (liftEGF . PS.lift1 $ selectIndex n) s
+
+  rec f = reflect (SA (apply f (Rec f)))
 
 -- | Extract the coefficients of an exponential generating function as
 --   a list of Integers.  Since 'EGF' is an instance of 'Species', the

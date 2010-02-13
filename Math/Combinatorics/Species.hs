@@ -77,7 +77,7 @@ module Math.Combinatorics.Species
 
       -- * Recursive species
       -- $rec
-    , BTree(..), BTreeC(..)   -- XXX ?
+    , BTree(..), BTreeC(..), bTree   -- XXX ?
 
     ) where
 

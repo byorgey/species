@@ -44,6 +44,8 @@ import qualified Algebra.Differential as Differential
 import NumericPrelude
 import PreludeBase hiding (cycle)
 
+import Math.Combinatorics.Species.AST
+
 -- | The Species type class.  Note that the @Differential@ constraint
 --   requires s to be a differentiable ring, which means that every
 --   instance must also implement instances for "Algebra.Additive"
@@ -146,12 +148,9 @@ class (Differential.C s) => Species s where
   nonEmpty  :: s -> s
   nonEmpty = flip ofSize (>0)
 
-  -- | @rec n s f@ is the species which puts an s-structure on label
-  --   sets of size <= n, and which are described recusively by (fix
-  --   f) for larger label sets.
-  -- rec ::
-
-
+  -- | 'rec f' is the least fixpoint of (the interpretation of) the
+  --   higher-order species constructor 'f'.
+  rec :: ASTFunctor f => f -> s
 
 -- | A convenient synonym for differentiation.  F'-structures look
 --   like F-structures on a set formed by adjoining a distinguished
