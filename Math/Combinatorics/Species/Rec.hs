@@ -37,11 +37,7 @@ instance Show a => Show (Mu BTreeC a) where
 
 -- | Type of binary trees with data at internal nodes.
 data BTree a = Empty | Node (BTree a) a (BTree a)
-  deriving (Typeable)
-
-instance Show a => Show (BTree a) where
-  show Empty = ""
-  show (Node l a r) = "(" ++ show l ++ show a ++ show r ++ ")"
+  deriving (Typeable, Eq, Read, Show)
 
 instance Iso BTree where
   type SType BTree = Mu BTreeC
