@@ -90,8 +90,18 @@ type LazyZ = LazyRing Integer
 --------------------------------------------------------------------------------
 
 -- | Exponential generating functions, for counting labelled species.
-newtype EGF = EGF (PS.T LazyQ)
-  deriving (Additive.C, Ring.C, Differential.C, Show)
+newtype EGF = EGF { unEGF :: PS.T LazyQ }
+  deriving (Additive.C, Differential.C, Show)
+
+instance HasLub EGF where
+  lub = flatLub
+
+instance Ring.C EGF where
+  (*) = parCommute lazyEGFTimes
+    where lazyEGFTimes (EGF (PS.Cons (0:xs))) y
+            = EGF (PS.Cons (0 : (PS.coeffs (unEGF (egfFromCoeffs xs * y)))))
+          lazyEGFTimes x y = liftEGF2 (*) x y
+  fromInteger = EGF . fromInteger
 
 egfFromCoeffs :: [LazyQ] -> EGF
 egfFromCoeffs = EGF . PS.fromCoeffs
