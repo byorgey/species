@@ -100,6 +100,7 @@ instance Ring.C EGF where
   (*) = parCommute lazyEGFTimes
     where lazyEGFTimes (EGF (PS.Cons (0:xs))) y
             = EGF (PS.Cons (0 : (PS.coeffs (unEGF (egfFromCoeffs xs * y)))))
+--          lazyEGFTimes (EGF (PS.Cons [1])) y = y  -- this makes things *worse*!
           lazyEGFTimes x y = liftEGF2 (*) x y
   fromInteger = EGF . fromInteger
 
