@@ -13,7 +13,7 @@
 --   labels, generate a list of all structures built from the
 --   underlying set.
 module Math.Combinatorics.Species.Generate
-    ( generateF
+    ( generateT
     , Structure(..)
     , generate
     , generateTyped
@@ -39,11 +39,10 @@ import NumericPrelude
 import PreludeBase hiding (cycle)
 
 -- | Given an AST describing a species, with a phantom type parameter
---   describing the species at the type level, and an underlying set,
+--   representing the structure of the species, and an underlying set,
 --   generate a list of all possible structures built over the
---   underlying set; the type of the output list is a
---   function of the species structure.  (Of course, it would be
---   really nice to have a real dependently-typed language for this!)
+--   underlying set.  (Of course, it would be really nice to have a
+--   real dependently-typed language for this!)
 --
 --   Unfortunately, 'SpeciesAST' cannot be made an instance of
 --   'Species', so if we want to be able to generate structures given
@@ -52,40 +51,40 @@ import PreludeBase hiding (cycle)
 --   structure type---but this means that the output list type must be
 --   existentially quantified as well; see 'generate' and
 --   'generateTyped' below.
-generateF :: SpeciesAST s -> [a] -> [s a]
-generateF (N n) []       = map Const [1..n]
-generateF (N _) _        = []
-generateF X [x]          = [Id x]
-generateF X _            = []
-generateF E xs           = [Set xs]
-generateF C []           = []
-generateF C (x:xs)       = map (Cycle . (x:)) (sPermutations xs)
-generateF L xs           = sPermutations xs
-generateF Subset xs      = map (Set . fst) (pSet xs)
-generateF (KSubset k) xs = map Set (sKSubsets k xs)
-generateF Elt xs         = map Id xs
-generateF (f :+: g) xs   = map Inl (generateF f xs)
-                        ++ map Inr (generateF g xs)
-generateF (f :*: g) xs   = [ Prod x y | (s1,s2) <- pSet xs
-                                      ,       x <- generateF f s1
-                                      ,       y <- generateF g s2
+generateT :: SpeciesAST s -> [a] -> [s a]
+generateT (N n) []       = map Const [1..n]
+generateT (N _) _        = []
+generateT X [x]          = [Id x]
+generateT X _            = []
+generateT E xs           = [Set xs]
+generateT C []           = []
+generateT C (x:xs)       = map (Cycle . (x:)) (sPermutations xs)
+generateT L xs           = sPermutations xs
+generateT Subset xs      = map (Set . fst) (pSet xs)
+generateT (KSubset k) xs = map Set (sKSubsets k xs)
+generateT Elt xs         = map Id xs
+generateT (f :+: g) xs   = map Inl (generateT f xs)
+                        ++ map Inr (generateT g xs)
+generateT (f :*: g) xs   = [ Prod x y | (s1,s2) <- pSet xs
+                                      ,       x <- generateT f s1
+                                      ,       y <- generateT g s2
                            ]
-generateF (f :.: g) xs   = [ Comp y | p  <- sPartitions xs
-                                    , xs <- mapM (generateF g) p
-                                    , y  <- generateF f xs
+generateT (f :.: g) xs   = [ Comp y | p  <- sPartitions xs
+                                    , xs <- mapM (generateT g) p
+                                    , y  <- generateT f xs
                            ]
-generateF (f :><: g) xs  = [ Prod x y | x <- generateF f xs
-                                      , y <- generateF g xs ]
-generateF (f :@: g) xs   = map Comp $ generateF f (generateF g xs)
-generateF (Der f) xs     = map Comp $ generateF f (Star : map Original xs)
+generateT (f :><: g) xs  = [ Prod x y | x <- generateT f xs
+                                      , y <- generateT g xs ]
+generateT (f :@: g) xs   = map Comp $ generateT f (generateT g xs)
+generateT (Der f) xs     = map Comp $ generateT f (Star : map Original xs)
 
-generateF (OfSize f p) xs | p (genericLength xs) = generateF f xs
+generateT (OfSize f p) xs | p (genericLength xs) = generateT f xs
                           | otherwise     = []
-generateF (OfSizeExactly f n) xs | genericLength xs == n = generateF f xs
+generateT (OfSizeExactly f n) xs | genericLength xs == n = generateT f xs
                                  | otherwise = []
-generateF (NonEmpty f) [] = []
-generateF (NonEmpty f) xs = generateF f xs
-generateF (Rec f) xs = map Mu $ generateF (apply f (Rec f)) xs
+generateT (NonEmpty f) [] = []
+generateT (NonEmpty f) xs = generateT f xs
+generateT (Rec f) xs = map Mu $ generateT (apply f (Rec f)) xs
 
 -- | @pSet xs@ generates the power set of @xs@, yielding a list of
 --   subsets of @xs@ paired with their complements.
@@ -112,7 +111,7 @@ sPermutations :: [a] -> [[a]]
 sPermutations [] = [[]]
 sPermutations xs = [ y:p | (y,ys) <- select xs
                          , p      <- sPermutations ys
-                  ]
+                   ]
 
 -- | Select each element of a list in turn, yielding a list of
 --   elements, each paired with a list of the remaining elements.
@@ -155,7 +154,7 @@ extractStructure (Structure s) = cast s
 --   the generated structures to your heart's content.  To see how,
 --   consult 'structureType' and 'generateTyped'.
 generate :: ESpeciesAST -> [a] -> [Structure a]
-generate (SA s) xs = map Structure (generateF s xs)
+generate (SA s) xs = map Structure (generateT s xs)
 
 -- | @generateTyped s ls@ generates a complete list of all s-structures
 --   over the underlying set of labels @ls@, where the type of the
@@ -271,7 +270,7 @@ generateI s = fromJust . fmap (map iso) . mapM extractStructure . generate s
 --                          ]
 -- generateFU (f :.: g) n = [ Comp y | p  <- intPartitions n
 --                                   , xs <- mapM (generateFU g) $ expandPartition p
---                                   , y  <- generateF f xs
+--                                   , y  <- generateT f xs
 --                          ]
 -- -- generateFU (Der f) n = map    -- XXX how to do this?
 -- generateFU E n = [Set $ genericReplicate n ()]
