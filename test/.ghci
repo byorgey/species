@@ -1,0 +1,4 @@
+:set -XNoImplicitPrelude
+:m -Prelude
+:m +MyPrelude Math.Combinatorics.Species
+:set prompt "> "
