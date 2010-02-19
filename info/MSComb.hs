@@ -1,7 +1,8 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 import Data.List (genericReplicate, nub, sort)
-import Control.Arrow (second)
+import Control.Arrow (first, second)
+import Data.Maybe (catMaybes)
 
 import Test.QuickCheck
 
@@ -100,3 +101,95 @@ prop_perms_distinct m = length ps == length (nub ps)
 prop_perms_are_perms :: MultiSet Char Count -> Bool
 prop_perms_are_perms m = all ((==l') . sort) (permutations m)
   where l' = sort (toList m)
+
+---------------------
+-- Partitions
+---------------------
+
+-- | Element count vector.
+type Counts n = [n]
+
+-- | Componentwise comparison of count vectors.
+(<|=) :: Ord n => Counts n -> Counts n -> Bool
+xs <|= ys = and $ zipWith (<=) xs ys
+
+-- | 'vUnit v' produces a unit vector of the same length as @v@.
+vUnit :: Num n => Counts n -> Counts n
+vUnit []     = []
+vUnit [_]    = [1]
+vUnit (_:xs) = 0 : vUnit xs
+
+-- | 'vZero v' produces a zero vector of the same length as @v@.
+vZero :: Num n => Counts n -> Counts n
+vZero = map (const 0)
+
+-- | Test for the zero vector.
+vIsZero :: Num n => Counts n -> Bool
+vIsZero = all (==0)
+
+-- | Do vector arithmetic componentwise.
+(.+.), (.-.) :: Num n => Counts n -> Counts n -> Counts n
+(.+.) = zipWith (+)
+(.-.) = zipWith (-)
+
+-- | Multiply a count vector by a scalar.
+(*.) :: Num n => n -> Counts n -> Counts n
+(*.) n = map (n*)
+
+vDiv :: Integral n => Counts n -> Counts n -> n
+vDiv v1 v2 = minimum . catMaybes $ zipWith zdiv v1 v2
+  where zdiv _ 0 = Nothing
+        zdiv x y = Just $ x `div` y
+
+vInc :: (Num n, Ord n) => Counts n -> Counts n -> Counts n
+vInc lim v = reverse (vInc' (reverse lim) (reverse v))
+  where vInc' _ []          = []
+        vInc' [] (x:xs)     = x+1 : xs
+        vInc' (l:ls) (x:xs) | x < l     = x+1 : xs
+                            | otherwise = 0 : vInc' ls xs
+
+vPartitions :: Integral n => Counts n -> [MultiSet (Counts n) n]
+vPartitions v = vPart v (vZero v) where
+  vPart v _ | vIsZero v = [[]]
+  vPart v vL
+    | v <= vL   = []
+    | otherwise = [(v,1)] : [ (v',k) : p' | v' <- withinFromTo v (vHalf v) (vInc v vL)
+                                          , k  <- [1 .. (v `vDiv` v')]
+                                          , p' <- vPart (v .-. (k *. v')) v' ]
+
+vHalf :: Integral n => Counts n -> Counts n
+vHalf [] = []
+vHalf (x:xs) | (even x) = (x `div` 2) : vHalf xs
+             | otherwise = (x `div` 2) : xs
+
+downFrom :: (Num n, Enum n) => n -> [n]
+downFrom n = [n,(n-1)..0]
+
+-- | 'within m' generates a decreasing list of vectors 'v <|= m'.
+within :: (Num n, Enum n) => Counts n -> [Counts n]
+within = sequence . map downFrom
+
+clip :: Ord n => Counts n -> Counts n -> Counts n
+clip = zipWith min
+
+withinFromTo :: (Num n, Enum n, Ord n) =>
+                Counts n -> Counts n -> Counts n -> [Counts n]
+withinFromTo m s e | not (s <|= m) = withinFromTo m (clip m s) e
+withinFromTo m s e | e > s = []
+withinFromTo m s e = wFT m s e True True
+  where
+    wFT [] _ _ _ _ = [[]]
+    wFT (m:ms) (s:ss) (e:es) useS useE =
+        let start = if useS then s else m
+            end   = if useE then e else 0
+        in
+          [x:xs | x <- [start,(start-1)..end],
+                  let useS' = useS && x==s,
+                  let useE' = useE && x==e,
+                  xs <- wFT ms ss es useS' useE' ]
+
+partitions :: Integral n => MultiSet a n -> [MultiSet (MultiSet a n) n]
+partitions [] = [[]]
+partitions m  = (map . map . first) (combine elts) $ vPartitions counts
+  where (elts, counts) = unzip m
+        combine es cs  = filter ((/=0) . snd) $ zip es cs
