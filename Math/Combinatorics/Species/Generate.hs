@@ -23,6 +23,8 @@ module Math.Combinatorics.Species.Generate
 
     , generateTU
 
+    , generateT'
+
     ) where
 
 import Math.Combinatorics.Species.Class
@@ -31,9 +33,13 @@ import Math.Combinatorics.Species.AST
 import Math.Combinatorics.Species.CycleIndex (intPartitions)
 import Math.Combinatorics.Species.Structures
 
-import Control.Arrow (first, second)
+import qualified Math.Combinatorics.Multiset as MS
+import Math.Combinatorics.Multiset (Multiset(..), (+:))
+
+import Control.Arrow (first, second, (***))
 import Data.List (genericLength, genericReplicate)
 import Data.Maybe (fromJust)
+import qualified Data.Map as M
 
 import Data.Typeable
 
@@ -87,6 +93,61 @@ generateT (OfSizeExactly f n) xs | genericLength xs == n = generateT f xs
 generateT (NonEmpty f) [] = []
 generateT (NonEmpty f) xs = generateT f xs
 generateT (Rec f) xs = map Mu $ generateT (apply f (Rec f)) xs
+
+-- Experimental!  Unified labelled + unlabelled generation, with
+-- repetition counts
+--
+-- invariant: the second argument is sorted in decreasing order by
+-- count, and the counts are all positive.
+generateT' :: SpeciesAST s -> Multiset a -> [s a]
+generateT' (N n) (MS [])     = map Const [1..n]
+generateT' (N _) _           = []
+generateT' X (MS [(x,1)])    = [Id x]
+generateT' X _               = []
+generateT' E xs              = [Set (MS.toList xs)]
+  -- XXX this is wrong!  Need to figure out how to generate cycles.
+generateT' C (MS [])         = []
+generateT' C (MS ((x,1):xs)) = map (Cycle . (x:)) (MS.permutations (MS xs))
+generateT' C (MS ((x,n):xs)) = map (Cycle . (x:)) (MS.permutations (MS ((x,n-1):xs)))
+generateT' L xs              = MS.permutations xs
+generateT' Subset xs         = map (Set . MS.toList . fst) (MS.splits xs)
+generateT' (KSubset k) xs    = map (Set . MS.toList) (MS.kSubsets (fromIntegral k) xs)
+generateT' Elt xs            = map (Id . fst) . MS.toCounts $ xs
+generateT' (f :+: g) xs      = map Inl (generateT' f xs)
+                            ++ map Inr (generateT' g xs)
+generateT' (f :*: g) xs      = [ Prod x y
+                               | (s1,s2) <- MS.splits xs
+                               ,       x <- generateT' f s1
+                               ,       y <- generateT' g s2
+                               ]
+generateT' (f :.: g) xs      = [ Comp y
+                               | p   <- MS.partitions xs
+                               , xs' <- MS.sequenceMS . fmap (generateT' g) $ p
+                               , y   <- generateT' f xs'
+                               ]
+generateT' (f :><: g) xs     = [ Prod x y
+                               | x <- generateT' f xs
+                               , y <- generateT' g xs
+                               ]
+generateT' (f :@: g) xs      = map Comp
+                               . generateT' f
+                               . MS.fromDistinctList
+                               . generateT' g
+                               $ xs
+generateT' (Der f) xs        = map Comp
+                               . generateT' f
+                               $ (Star,1) +: fmap Original xs
+generateT' (OfSize f p) xs
+  | p (fromIntegral . sum . MS.getCounts $ xs)
+    = generateT' f xs
+  | otherwise = []
+generateT' (OfSizeExactly f n) xs
+  | (fromIntegral . sum . MS.getCounts $ xs) == n
+    = generateT' f xs
+  | otherwise = []
+generateT' (NonEmpty f) (MS []) = []
+generateT' (NonEmpty f) xs   = generateT' f xs
+generateT' (Rec f) xs        = map Mu $ generateT' (apply f (Rec f)) xs
 
 -- | @pSet xs@ generates the power set of @xs@, yielding a list of
 --   subsets of @xs@ paired with their complements.
