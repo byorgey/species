@@ -127,7 +127,7 @@ class (Differential.C s) => Species s where
 
   -- | Functor composition of two species.  An (F \@\@ G)-structure
   --   consists of an F-structure on the set of all G-structures.
-  fcomp :: s -> s -> s
+  fcomp     :: s -> s -> s
 
   -- | Only put a structure on underlying sets whose size satisfies
   --   the predicate.
