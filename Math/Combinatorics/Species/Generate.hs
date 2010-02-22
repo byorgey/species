@@ -77,9 +77,9 @@ generateT (f :*: g) xs   = [ Prod x y | (s1,s2) <- pSet xs
                                       ,       x <- generateT f s1
                                       ,       y <- generateT g s2
                            ]
-generateT (f :.: g) xs   = [ Comp y | p  <- sPartitions xs
-                                    , xs <- mapM (generateT g) p
-                                    , y  <- generateT f xs
+generateT (f :.: g) xs   = [ Comp y | p   <- sPartitions xs
+                                    , xs' <- mapM (generateT g) p
+                                    , y   <- generateT f xs'
                            ]
 generateT (f :><: g) xs  = [ Prod x y | x <- generateT f xs
                                       , y <- generateT g xs ]
