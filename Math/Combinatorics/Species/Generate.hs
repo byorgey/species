@@ -105,10 +105,7 @@ generateT' (N _) _           = []
 generateT' X (MS [(x,1)])    = [Id x]
 generateT' X _               = []
 generateT' E xs              = [Set (MS.toList xs)]
-  -- XXX this is wrong!  Need to figure out how to generate cycles.
-generateT' C (MS [])         = []
-generateT' C (MS ((x,1):xs)) = map (Cycle . (x:)) (MS.permutations (MS xs))
-generateT' C (MS ((x,n):xs)) = map (Cycle . (x:)) (MS.permutations (MS ((x,n-1):xs)))
+generateT' C m               = map Cycle (MS.cycles m)
 generateT' L xs              = MS.permutations xs
 generateT' Subset xs         = map (Set . MS.toList . fst) (MS.splits xs)
 generateT' (KSubset k) xs    = map (Set . MS.toList) (MS.kSubsets (fromIntegral k) xs)
