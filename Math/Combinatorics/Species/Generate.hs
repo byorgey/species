@@ -233,6 +233,10 @@ class Typeable1 (SType f) => Iso (f :: * -> *) where
   type SType f :: * -> *
   iso :: SType f a -> f a
 
+instance Iso Set where
+  type SType Set = Set
+  iso = id
+
 generateI :: (Iso f, Typeable a) => ESpeciesAST -> [a] -> [f a]
 generateI s = fromJust . fmap (map iso) . mapM extractStructure . generate s
 
