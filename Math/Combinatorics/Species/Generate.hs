@@ -21,8 +21,6 @@ module Math.Combinatorics.Species.Generate
 
     , Iso(..), generateI
 
-    , generateTU
-
     , generateT'
 
     ) where
@@ -306,47 +304,3 @@ class Typeable1 (SType f) => Iso (f :: * -> *) where
 
 generateI :: (Iso f, Typeable a) => ESpeciesAST -> [a] -> [f a]
 generateI s = fromJust . fmap (map iso) . mapM extractStructure . generate s
-
--- More old code below: a first try at *unlabelled* generation, but
--- it's not quite so easy---for exactly the same reasons that ordinary
--- generating function composition/derivative etc. don't correspond to
--- species operations.
-
--- | Given an AST describing a *regular* species, with a phantom type
---   parameter representing the structure of the species, and the size
---   of the underlying set, generate a list of all possible unlabelled
---   structures built by the species.
-generateTU :: SpeciesAST s -> Integer -> [s ()]
-generateTU (N _) 0  = [Const 1]
-generateTU (N _) _  = []
-generateTU X 1  = [Id ()]
-generateTU X _  = []
-generateTU (f :+: g) n = map Inl (generateTU f n)
-                      ++ map Inr (generateTU g n)
-generateTU (f :*: g) n = [ Prod x y | n1 <- [0..n]
-                                    , x  <- generateTU f n1
-                                    , y  <- generateTU g (n - n1)
-                         ]
-generateTU (f :.: g) n = [ Comp y | p  <- intPartitions n
-                                  , xs <- mapM (generateTU g) $ expandPartition p
-                                  , y  <- generateT f xs
-                         ]
--- generateTU (Der f) n = map    -- XXX how to do this?
--- generateTU E n = [Set $ genericReplicate n ()]
--- generateTU C 0 = []
--- generateTU C n = [Cycle $ genericReplicate n ()]
-generateTU L n = [genericReplicate n ()]
-generateTU (OfSize f p) n | p n = generateTU f n
-                          | otherwise = []
-generateTU (OfSizeExactly f s) n | s == n = generateTU f n
-                                 | otherwise = []
-generateTU (NonEmpty f) n | n > 0 = generateTU f n
-                          | otherwise = []
-generateTU (f :><: g) n = [ Prod x y | x <- generateTU f n
-                                     , y <- generateTU g n
-                          ]
-generateTU (Rec f) n = map Mu $ generateTU (apply f (Rec f)) n
-
-expandPartition :: [(Integer, Integer)] -> [Integer]
-expandPartition = concatMap (uncurry (flip genericReplicate))
-
