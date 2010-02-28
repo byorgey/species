@@ -15,11 +15,10 @@
 module Math.Combinatorics.Species.Generate
     ( generateT
     , Structure(..)
-    , generate
     , generateTyped
     , structureType
 
-    , Iso(..), generateI
+    , Iso(..), generate
 
     ) where
 
@@ -114,9 +113,12 @@ generateT (OfSizeExactly f n) xs
 data Structure a where
   Structure :: Typeable1 f => f a -> Structure a
 
+-- | Extract the contents from a 'Structure' wrapper, if we know the
+--   type.
 extractStructure :: (Typeable1 f, Typeable a) => Structure a -> Maybe (f a)
 extractStructure (Structure s) = cast s
 
+-- XXX change this comment
 -- | @generate s ls@ generates a complete list of all s-structures
 --   over the underlying set of labels @ls@.  For example:
 --
@@ -142,9 +144,12 @@ extractStructure (Structure s) = cast s
 --   screaming) back into the open, so that you can then manipulate
 --   the generated structures to your heart's content.  To see how,
 --   consult 'structureType' and 'generateTyped'.
-generate :: ESpeciesAST -> [a] -> [Structure a]
-generate (SA s) xs = map Structure (generateT s (MS.fromDistinctList xs))
 
+-- |  XXX comment me
+generateS :: ESpeciesAST -> [a] -> [Structure a]
+generateS (SA s) xs = map Structure (generateT s (MS.fromDistinctList xs))
+
+-- XXX move this comment + edit?
 -- | @generateTyped s ls@ generates a complete list of all s-structures
 --   over the underlying set of labels @ls@, where the type of the
 --   generated structures is known ('structureType' may be used to
@@ -181,7 +186,7 @@ generate (SA s) xs = map Structure (generateT s (MS.fromDistinctList xs))
 -- >   Inferred: Comp Cycle (Comp Cycle Star) Int
 generateTyped :: forall f a. (Typeable1 f, Typeable a) => ESpeciesAST -> [a] -> [f a]
 generateTyped s xs =
-  case (mapM extractStructure . generate s $ xs) of
+  case (mapM extractStructure . generateS s $ xs) of
     Nothing -> error $
           "structure type mismatch.\n"
        ++ "  Expected: " ++ showStructureType (typeOf (undefined :: f a)) ++ "\n"
@@ -226,19 +231,22 @@ showStructureType t = showsPrecST 0 t ""
         dropQuals :: String -> String
         dropQuals = reverse . takeWhile (/= '.') . reverse
 
-
 -- XXX comment me
 
 class Typeable1 (SType f) => Iso (f :: * -> *) where
   type SType f :: * -> *
   iso :: SType f a -> f a
 
+-- XXX better name for this class?
 instance Iso Set where
   type SType Set = Set
   iso = id
 
-generateI :: (Iso f, Typeable a) => ESpeciesAST -> [a] -> [f a]
-generateI s = fromJust . fmap (map iso) . mapM extractStructure . generate s
+-- XXX comment me, and better error handling
+generate :: (Iso f, Typeable a) => ESpeciesAST -> [a] -> [f a]
+generate s = fromJust . fmap (map iso) . mapM extractStructure . generateS s
+
+-- XXX add a generateU function with Iso constraint for unlabelled generation
 
 
 -- Old code for doing only labelled generation:

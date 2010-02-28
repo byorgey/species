@@ -57,12 +57,10 @@ module Math.Combinatorics.Species
     , unlabelled
 
       -- * Generating species structures
-    , generate
-
     , generateTyped
     , structureType
 
-    , generateI
+    , generate
 
       -- ** Types used for generation
       -- $types
