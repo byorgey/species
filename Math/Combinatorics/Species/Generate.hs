@@ -232,14 +232,49 @@ showStructureType t = showsPrecST 0 t ""
         dropQuals = reverse . takeWhile (/= '.') . reverse
 
 -- XXX comment me
-
+-- XXX better name for this class?
 class Typeable1 (SType f) => Iso (f :: * -> *) where
   type SType f :: * -> *
   iso :: SType f a -> f a
 
--- XXX better name for this class?
+instance Typeable a => Iso (Const a) where
+  type SType (Const a) = Const a
+  iso = id
+
+instance Iso Identity where
+  type SType Identity = Identity
+  iso = id
+
+instance (Typeable1 f, Typeable1 g) => Iso (Sum f g) where
+  type SType (Sum f g) = Sum f g
+  iso = id
+
+instance (Typeable1 f, Typeable1 g) => Iso (Prod f g) where
+  type SType (Prod f g) = Prod f g
+  iso = id
+
+instance (Typeable1 f, Typeable1 g) => Iso (Comp f g) where
+  type SType (Comp f g) = Comp f g
+  iso = id
+
+instance Iso [] where
+  type SType [] = []
+  iso = id
+
+instance Iso Cycle where
+  type SType Cycle = Cycle
+  iso = id
+
 instance Iso Set where
   type SType Set = Set
+  iso = id
+
+instance Iso Star where
+  type SType Star = Star
+  iso = id
+
+instance Typeable f => Iso (Mu f) where
+  type SType (Mu f) = Mu f
   iso = id
 
 -- XXX comment me, and better error handling
