@@ -74,7 +74,7 @@ ezCoeff js = toRational $ 1 / aut js
 aut :: CycleType -> FQ.T
 aut = product . map (\(b,e) -> FQ.factorial e * (fromInteger b)^e)
 
--- | Generate all partitions of an integer.  In particular, if @p@ is
+-- | Enumerate all partitions of an integer.  In particular, if @p@ is
 --   an element of the list output by @intPartitions n@, then @sum
 --   . map (uncurry (*)) $ p == n@.  The result type is @[CycleType]@
 --   since each integer partition of @n@ corresponds to the cycle type

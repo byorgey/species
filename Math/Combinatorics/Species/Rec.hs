@@ -19,7 +19,7 @@ import Data.Typeable
 import Math.Combinatorics.Species.Class
 import Math.Combinatorics.Species.Structures
 import Math.Combinatorics.Species.AST
-import Math.Combinatorics.Species.Generate
+import Math.Combinatorics.Species.Enumerate
 
 -- | Code for binary trees with data at internal nodes.
 data BTreeC = BTreeC deriving Typeable

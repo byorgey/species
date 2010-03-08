@@ -10,23 +10,23 @@
   #-}
 -- XXX clean up these language extensions (if possible)?
 
--- | Generation of species: given a species and an underlying set of
---   labels, generate a list of all structures built from the
---   underlying set.
-module Math.Combinatorics.Species.Generate
+-- | Enumeration of species: given a species and an underlying set of
+--   labels, compute a list of all structures built from the underlying
+--   set.
+module Math.Combinatorics.Species.Enumerate
     (
       -- * XXX
 
       Iso(..)
 
-    , generate
+    , enumerate
 
-    , generateLM, generateL
-    , generateUM, generateU
-    , generateMM, generateM
+    , enumerateLM, enumerateL
+    , enumerateUM, enumerateU
+    , enumerateMM, enumerateM
 
     -- * XXX
-    , generate', generateE
+    , enumerate', enumerateE
 
     -- * XXX
     , Structure(..), extractStructure
@@ -51,12 +51,12 @@ import PreludeBase hiding (cycle)
 
 -- | Given an AST describing a species, with a phantom type parameter
 --   representing the structure of the species, and an underlying
---   multiset of elements, generate a list of all possible structures
+--   multiset of elements, compute a list of all possible structures
 --   built over the underlying multiset.  (Of course, it would be
 --   really nice to have a real dependently-typed language for this!)
 --
 --   Unfortunately, 'SpeciesAST' cannot be made an instance of
---   'Species', so if we want to be able to generate structures given
+--   'Species', so if we want to be able to enumerate structures given
 --   an expression of the 'Species' DSL as input, we must take
 --   'ESpeciesAST' as input, which existentially wraps the phantom
 --   structure type---but this means that the output list type must be
@@ -64,61 +64,61 @@ import PreludeBase hiding (cycle)
 --
 --   Generating structures over base elements from a /multiset/
 --   unifies labelled and unlabelled generation into one framework.
---   To generate labelled structures, use a multiset where each
---   element occurs exactly once; to generate unlabelled structures,
+--   To enumerate labelled structures, use a multiset where each
+--   element occurs exactly once; to enumerate unlabelled structures,
 --   use a multiset with the desired number of copies of a single
 --   element.  To do labelled generation we could get away without the
 --   generality of multisets, but to do unlabelled generation we need
 --   the full generality anyway.
 --
---   'generate'' does all the actual work, but is not meant to be used
+--   'enumerate'' does all the actual work, but is not meant to be used
 --   directly; see XXX for more specialized versions.
-generate' :: SpeciesAST s -> Multiset a -> [s a]
-generate' (N n) (MS [])        = map Const [1..n]
-generate' (N _) _              = []
-generate' X (MS [(x,1)])       = [Id x]
-generate' X _                  = []
-generate' E xs                 = [Set (MS.toList xs)]
-generate' C m                  = map Cycle (MS.cycles m)
-generate' L xs                 = MS.permutations xs
-generate' Subset xs            = map (Set . MS.toList . fst) (MS.splits xs)
-generate' (KSubset k) xs       = map (Set . MS.toList)
+enumerate' :: SpeciesAST s -> Multiset a -> [s a]
+enumerate' (N n) (MS [])        = map Const [1..n]
+enumerate' (N _) _              = []
+enumerate' X (MS [(x,1)])       = [Id x]
+enumerate' X _                  = []
+enumerate' E xs                 = [Set (MS.toList xs)]
+enumerate' C m                  = map Cycle (MS.cycles m)
+enumerate' L xs                 = MS.permutations xs
+enumerate' Subset xs            = map (Set . MS.toList . fst) (MS.splits xs)
+enumerate' (KSubset k) xs       = map (Set . MS.toList)
                                      (MS.kSubsets (fromIntegral k) xs)
-generate' Elt xs               = map (Id . fst) . MS.toCounts $ xs
-generate' (f :+: g) xs         = map Inl (generate' f xs)
-                              ++ map Inr (generate' g xs)
-generate' (f :*: g) xs         = [ Prod x y
+enumerate' Elt xs               = map (Id . fst) . MS.toCounts $ xs
+enumerate' (f :+: g) xs         = map Inl (enumerate' f xs)
+                              ++ map Inr (enumerate' g xs)
+enumerate' (f :*: g) xs         = [ Prod x y
                                  | (s1,s2) <- MS.splits xs
-                                 ,       x <- generate' f s1
-                                 ,       y <- generate' g s2
+                                 ,       x <- enumerate' f s1
+                                 ,       y <- enumerate' g s2
                                  ]
-generate' (f :.: g) xs         = [ Comp y
+enumerate' (f :.: g) xs         = [ Comp y
                                  | p   <- MS.partitions xs
-                                 , xs' <- MS.sequenceMS . fmap (generate' g) $ p
-                                 , y   <- generate' f xs'
+                                 , xs' <- MS.sequenceMS . fmap (enumerate' g) $ p
+                                 , y   <- enumerate' f xs'
                                  ]
-generate' (f :><: g) xs        = [ Prod x y
-                                 | x <- generate' f xs
-                                 , y <- generate' g xs
+enumerate' (f :><: g) xs        = [ Prod x y
+                                 | x <- enumerate' f xs
+                                 , y <- enumerate' g xs
                                  ]
-generate' (f :@: g) xs         = map Comp
-                                 . generate' f
+enumerate' (f :@: g) xs         = map Comp
+                                 . enumerate' f
                                  . MS.fromDistinctList
-                                 . generate' g
+                                 . enumerate' g
                                  $ xs
-generate' (Der f) xs           = map Comp
-                                 . generate' f
+enumerate' (Der f) xs           = map Comp
+                                 . enumerate' f
                                  $ (Star,1) +: fmap Original xs
-generate' (NonEmpty f) (MS []) = []
-generate' (NonEmpty f) xs      = generate' f xs
-generate' (Rec f) xs           = map Mu $ generate' (apply f (Rec f)) xs
-generate' (OfSize f p) xs
+enumerate' (NonEmpty f) (MS []) = []
+enumerate' (NonEmpty f) xs      = enumerate' f xs
+enumerate' (Rec f) xs           = map Mu $ enumerate' (apply f (Rec f)) xs
+enumerate' (OfSize f p) xs
   | p (fromIntegral . sum . MS.getCounts $ xs)
-    = generate' f xs
+    = enumerate' f xs
   | otherwise = []
-generate' (OfSizeExactly f n) xs
+enumerate' (OfSizeExactly f n) xs
   | (fromIntegral . sum . MS.getCounts $ xs) == n
-    = generate' f xs
+    = enumerate' f xs
   | otherwise = []
 
 -- | An existential wrapper for structures, ensuring that the
@@ -160,41 +160,41 @@ extractStructure (Structure s) = fmap iso $ cast s
 --   the generated structures to your heart's content.  To see how,
 --   consult 'structureType' and 'generateTyped'.
 
--- | 'generateE' is a variant of 'generate'' which takes an
+-- | 'enumerateE' is a variant of 'enumerate'' which takes an
 --   (existentially quantified) 'ESpeciesAST' and returns a list of
 --   structures wrapped in the (also existentially quantified)
 --   'Structure' type.  This is also not meant to be used directly.
 --   Instead, you should use one of XXX instead.
-generateE :: ESpeciesAST -> Multiset a -> [Structure a]
-generateE (SA s) m = map Structure (generate' s m)
+enumerateE :: ESpeciesAST -> Multiset a -> [Structure a]
+enumerateE (SA s) m = map Structure (enumerate' s m)
 
 -- | XXX
-generateLM :: (Iso f, Typeable a) => ESpeciesAST -> [a] -> Maybe [f a]
-generateLM s = generateMM s . MS.fromDistinctList
+enumerateLM :: (Iso f, Typeable a) => ESpeciesAST -> [a] -> Maybe [f a]
+enumerateLM s = enumerateMM s . MS.fromDistinctList
 
 -- | XXX
-generateL :: (Iso f, Typeable a) =>  ESpeciesAST -> [a] -> [f a]
-generateL = maybeToCastError generateLM
+enumerateL :: (Iso f, Typeable a) =>  ESpeciesAST -> [a] -> [f a]
+enumerateL = maybeToCastError enumerateLM
 
 -- | XXX
-generateUM :: Iso f => ESpeciesAST -> Int -> Maybe [f ()]
-generateUM s n = generateMM s (MS.fromCounts [((),n)])
+enumerateUM :: Iso f => ESpeciesAST -> Int -> Maybe [f ()]
+enumerateUM s n = enumerateMM s (MS.fromCounts [((),n)])
 
 -- | XXX
-generateU ::  Iso f => ESpeciesAST -> Int -> [f ()]
-generateU = maybeToCastError generateUM
+enumerateU ::  Iso f => ESpeciesAST -> Int -> [f ()]
+enumerateU = maybeToCastError enumerateUM
 
 -- | XXX
-generateMM :: (Iso f, Typeable a) => ESpeciesAST -> Multiset a -> Maybe [f a]
-generateMM s m = mapM extractStructure $ generateE s m
+enumerateMM :: (Iso f, Typeable a) => ESpeciesAST -> Multiset a -> Maybe [f a]
+enumerateMM s m = mapM extractStructure $ enumerateE s m
 
 -- | XXX
-generateM :: (Iso f, Typeable a) => ESpeciesAST -> Multiset a -> [f a]
-generateM = maybeToCastError generateMM
+enumerateM :: (Iso f, Typeable a) => ESpeciesAST -> Multiset a -> [f a]
+enumerateM = maybeToCastError enumerateMM
 
 -- | XXX
-generate :: (Iso f, Typeable a, Eq a) => ESpeciesAST -> [a] -> [f a]
-generate s = generateM s . MS.fromListEq
+enumerate :: (Iso f, Typeable a, Eq a) => ESpeciesAST -> [a] -> [f a]
+enumerate s = enumerateM s . MS.fromListEq
 
 -- | XXX
 maybeToCastError :: forall f a l. (Iso f, Typeable a) =>
@@ -229,10 +229,10 @@ maybeToCastError gen s ls =
 -- > > map (sum . getSet) $ it
 -- > <interactive>:1:21:
 -- >     Couldn't match expected type `Set a'
--- >            against inferred type `Math.Combinatorics.Species.Generate.Structure
+-- >            against inferred type `Math.Combinatorics.Species.Enumerate.Structure
 -- >                                     Int'
 -- >       Expected type: [Set a]
--- >       Inferred type: [Math.Combinatorics.Species.Generate.Structure Int]
+-- >       Inferred type: [Math.Combinatorics.Species.Enumerate.Structure Int]
 -- >     In the second argument of `($)', namely `it'
 -- >     In the expression: map (sum . getSet) $ it
 --
@@ -395,14 +395,14 @@ instance Typeable f => Iso (Mu f) where
 -- sKSubsets _ []     = []
 -- sKSubsets n (x:xs) = map (x:) (sKSubsets (n-1) xs) ++ sKSubsets n xs
 --
--- -- | Generate all partitions of a set.
+-- -- | Enumerate all partitions of a set.
 -- sPartitions :: [a] -> [[[a]]]
 -- sPartitions [] = [[]]
 -- sPartitions (s:s') = do (sub,compl) <- pSet s'
 --                         let firstSubset = s:sub
 --                         map (firstSubset:) $ sPartitions compl
 --
--- -- | Generate all permutations of a list.
+-- -- | Enumerate all permutations of a list.
 -- sPermutations :: [a] -> [[a]]
 -- sPermutations [] = [[]]
 -- sPermutations xs = [ y:p | (y,ys) <- select xs

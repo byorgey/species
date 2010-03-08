@@ -52,17 +52,19 @@ module Math.Combinatorics.Species
     , simpleGraph, simpleGraphs
     , directedGraph, directedGraphs
 
-      -- * Computing with species
+      -- * Counting species structures
+      -- $counting
     , labelled
     , unlabelled
 
-      -- * Generating species structures
+      -- * Enumerating species structures
+      -- $enum
     , Iso(..)
     , structureType
-    , generate
-    , generateLM, generateL
-    , generateUM, generateU
-    , generateMM, generateM
+    , enumerate
+    , enumerateLM, enumerateL
+    , enumerateUM, enumerateU
+    , enumerateMM, enumerateM
 
       -- ** Types used for generation
       -- $types
@@ -87,7 +89,7 @@ import Math.Combinatorics.Species.Class
 import Math.Combinatorics.Species.Labelled
 import Math.Combinatorics.Species.Unlabelled
 import Math.Combinatorics.Species.Structures
-import Math.Combinatorics.Species.Generate
+import Math.Combinatorics.Species.Enumerate
 import Math.Combinatorics.Species.AST
 import Math.Combinatorics.Species.AST.Instances
 import Math.Combinatorics.Species.Rec
@@ -104,6 +106,12 @@ import Math.Combinatorics.Species.Rec
 -- gramatically it can often be convenient to have both the singular
 -- and plural versions of species, for example, @set \`o\` nonEmpty
 -- sets@.
+
+-- $counting
+-- XXX
+
+-- $enum
+-- XXX
 
 -- $types
 -- Many of these functors are already defined elsewhere, in other
