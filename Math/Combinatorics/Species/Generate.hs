@@ -8,17 +8,29 @@
            , TypeFamilies
            , DeriveDataTypeable
   #-}
+-- XXX clean up these language extensions (if possible)?
 
 -- | Generation of species: given a species and an underlying set of
 --   labels, generate a list of all structures built from the
 --   underlying set.
 module Math.Combinatorics.Species.Generate
-    ( generateT
-    , Structure(..)
-    , generateTyped
-    , structureType
+    (
+      -- * XXX
 
-    , Iso(..), generate
+      Iso(..)
+
+    , generate
+
+    , generateLM, generateL
+    , generateUM, generateU
+    , generateMM, generateM
+
+    -- * XXX
+    , generate', generateE
+
+    -- * XXX
+    , Structure(..), extractStructure
+    , structureType, showStructureType
 
     ) where
 
@@ -48,8 +60,7 @@ import PreludeBase hiding (cycle)
 --   an expression of the 'Species' DSL as input, we must take
 --   'ESpeciesAST' as input, which existentially wraps the phantom
 --   structure type---but this means that the output list type must be
---   existentially quantified as well; see 'generate' and
---   'generateTyped' below.
+--   existentially quantified as well. XXX
 --
 --   Generating structures over base elements from a /multiset/
 --   unifies labelled and unlabelled generation into one framework.
@@ -59,52 +70,55 @@ import PreludeBase hiding (cycle)
 --   element.  To do labelled generation we could get away without the
 --   generality of multisets, but to do unlabelled generation we need
 --   the full generality anyway.
-generateT :: SpeciesAST s -> Multiset a -> [s a]
-generateT (N n) (MS [])        = map Const [1..n]
-generateT (N _) _              = []
-generateT X (MS [(x,1)])       = [Id x]
-generateT X _                  = []
-generateT E xs                 = [Set (MS.toList xs)]
-generateT C m                  = map Cycle (MS.cycles m)
-generateT L xs                 = MS.permutations xs
-generateT Subset xs            = map (Set . MS.toList . fst) (MS.splits xs)
-generateT (KSubset k) xs       = map (Set . MS.toList)
+--
+--   'generate'' does all the actual work, but is not meant to be used
+--   directly; see XXX for more specialized versions.
+generate' :: SpeciesAST s -> Multiset a -> [s a]
+generate' (N n) (MS [])        = map Const [1..n]
+generate' (N _) _              = []
+generate' X (MS [(x,1)])       = [Id x]
+generate' X _                  = []
+generate' E xs                 = [Set (MS.toList xs)]
+generate' C m                  = map Cycle (MS.cycles m)
+generate' L xs                 = MS.permutations xs
+generate' Subset xs            = map (Set . MS.toList . fst) (MS.splits xs)
+generate' (KSubset k) xs       = map (Set . MS.toList)
                                      (MS.kSubsets (fromIntegral k) xs)
-generateT Elt xs               = map (Id . fst) . MS.toCounts $ xs
-generateT (f :+: g) xs         = map Inl (generateT f xs)
-                              ++ map Inr (generateT g xs)
-generateT (f :*: g) xs         = [ Prod x y
+generate' Elt xs               = map (Id . fst) . MS.toCounts $ xs
+generate' (f :+: g) xs         = map Inl (generate' f xs)
+                              ++ map Inr (generate' g xs)
+generate' (f :*: g) xs         = [ Prod x y
                                  | (s1,s2) <- MS.splits xs
-                                 ,       x <- generateT f s1
-                                 ,       y <- generateT g s2
+                                 ,       x <- generate' f s1
+                                 ,       y <- generate' g s2
                                  ]
-generateT (f :.: g) xs         = [ Comp y
+generate' (f :.: g) xs         = [ Comp y
                                  | p   <- MS.partitions xs
-                                 , xs' <- MS.sequenceMS . fmap (generateT g) $ p
-                                 , y   <- generateT f xs'
+                                 , xs' <- MS.sequenceMS . fmap (generate' g) $ p
+                                 , y   <- generate' f xs'
                                  ]
-generateT (f :><: g) xs        = [ Prod x y
-                                 | x <- generateT f xs
-                                 , y <- generateT g xs
+generate' (f :><: g) xs        = [ Prod x y
+                                 | x <- generate' f xs
+                                 , y <- generate' g xs
                                  ]
-generateT (f :@: g) xs         = map Comp
-                                 . generateT f
+generate' (f :@: g) xs         = map Comp
+                                 . generate' f
                                  . MS.fromDistinctList
-                                 . generateT g
+                                 . generate' g
                                  $ xs
-generateT (Der f) xs           = map Comp
-                                 . generateT f
+generate' (Der f) xs           = map Comp
+                                 . generate' f
                                  $ (Star,1) +: fmap Original xs
-generateT (NonEmpty f) (MS []) = []
-generateT (NonEmpty f) xs      = generateT f xs
-generateT (Rec f) xs           = map Mu $ generateT (apply f (Rec f)) xs
-generateT (OfSize f p) xs
+generate' (NonEmpty f) (MS []) = []
+generate' (NonEmpty f) xs      = generate' f xs
+generate' (Rec f) xs           = map Mu $ generate' (apply f (Rec f)) xs
+generate' (OfSize f p) xs
   | p (fromIntegral . sum . MS.getCounts $ xs)
-    = generateT f xs
+    = generate' f xs
   | otherwise = []
-generateT (OfSizeExactly f n) xs
+generate' (OfSizeExactly f n) xs
   | (fromIntegral . sum . MS.getCounts $ xs) == n
-    = generateT f xs
+    = generate' f xs
   | otherwise = []
 
 -- | An existential wrapper for structures, ensuring that the
@@ -114,9 +128,10 @@ data Structure a where
   Structure :: Typeable1 f => f a -> Structure a
 
 -- | Extract the contents from a 'Structure' wrapper, if we know the
---   type.
-extractStructure :: (Typeable1 f, Typeable a) => Structure a -> Maybe (f a)
-extractStructure (Structure s) = cast s
+--   type. XXX
+extractStructure :: (Iso f, Typeable a) => Structure a -> Maybe (f a)
+extractStructure (Structure s) = fmap iso $ cast s
+
 
 -- XXX change this comment
 -- | @generate s ls@ generates a complete list of all s-structures
@@ -145,9 +160,52 @@ extractStructure (Structure s) = cast s
 --   the generated structures to your heart's content.  To see how,
 --   consult 'structureType' and 'generateTyped'.
 
--- |  XXX comment me
-generateS :: ESpeciesAST -> [a] -> [Structure a]
-generateS (SA s) xs = map Structure (generateT s (MS.fromDistinctList xs))
+-- | 'generateE' is a variant of 'generate'' which takes an
+--   (existentially quantified) 'ESpeciesAST' and returns a list of
+--   structures wrapped in the (also existentially quantified)
+--   'Structure' type.  This is also not meant to be used directly.
+--   Instead, you should use one of XXX instead.
+generateE :: ESpeciesAST -> Multiset a -> [Structure a]
+generateE (SA s) m = map Structure (generate' s m)
+
+-- | XXX
+generateLM :: (Iso f, Typeable a) => ESpeciesAST -> [a] -> Maybe [f a]
+generateLM s = generateMM s . MS.fromDistinctList
+
+-- | XXX
+generateL :: (Iso f, Typeable a) =>  ESpeciesAST -> [a] -> [f a]
+generateL = maybeToCastError generateLM
+
+-- | XXX
+generateUM :: Iso f => ESpeciesAST -> Int -> Maybe [f ()]
+generateUM s n = generateMM s (MS.fromCounts [((),n)])
+
+-- | XXX
+generateU ::  Iso f => ESpeciesAST -> Int -> [f ()]
+generateU = maybeToCastError generateUM
+
+-- | XXX
+generateMM :: (Iso f, Typeable a) => ESpeciesAST -> Multiset a -> Maybe [f a]
+generateMM s m = mapM extractStructure $ generateE s m
+
+-- | XXX
+generateM :: (Iso f, Typeable a) => ESpeciesAST -> Multiset a -> [f a]
+generateM = maybeToCastError generateMM
+
+-- | XXX
+generate :: (Iso f, Typeable a, Eq a) => ESpeciesAST -> [a] -> [f a]
+generate s = generateM s . MS.fromListEq
+
+-- | XXX
+maybeToCastError :: forall f a l. (Iso f, Typeable a) =>
+                    (ESpeciesAST -> l -> Maybe [f a]) -> ESpeciesAST -> l -> [f a]
+maybeToCastError gen s ls =
+  case gen s ls of
+    Nothing -> error $
+          "structure type mismatch.\n"
+       ++ "  Expected: " ++ showStructureType (typeOf (undefined :: SType f a)) ++ "\n"
+       ++ "  Inferred: " ++ structureType s ++ " " ++ show (typeOf (undefined :: a))
+    Just ys -> ys
 
 -- XXX move this comment + edit?
 -- | @generateTyped s ls@ generates a complete list of all s-structures
@@ -184,23 +242,33 @@ generateS (SA s) xs = map Structure (generateT s (MS.fromDistinctList xs))
 -- > *** Exception: structure type mismatch.
 -- >   Expected: Set Int
 -- >   Inferred: Comp Cycle (Comp Cycle Star) Int
-generateTyped :: forall f a. (Typeable1 f, Typeable a) => ESpeciesAST -> [a] -> [f a]
-generateTyped s xs =
-  case (mapM extractStructure . generateS s $ xs) of
-    Nothing -> error $
-          "structure type mismatch.\n"
-       ++ "  Expected: " ++ showStructureType (typeOf (undefined :: f a)) ++ "\n"
-       ++ "  Inferred: " ++ structureType s ++ " " ++ show (typeOf (undefined :: a))
-    Just ys -> ys
+-- generateTyped :: forall f a. (Typeable1 f, Typeable a) => ESpeciesAST -> [a] -> [f a]
+-- generateTyped s xs =
+--   case (mapM extractStructure . generateS s $ xs) of
+--     Nothing -> error $
+--           "structure type mismatch.\n"
+--        ++ "  Expected: " ++ showStructureType (typeOf (undefined :: f a)) ++ "\n"
+--        ++ "  Inferred: " ++ structureType s ++ " " ++ show (typeOf (undefined :: a))
+--     Just ys -> ys
 
 -- | @'structureType' s@ returns a String representation of the
 --   functor type which represents the structure of the species @s@.
 --   In particular, if @structureType s@ prints @\"T\"@, then you can
---   safely use 'generateTyped' by writing
+--   safely use 'generate' by writing
 --
--- > generateTyped s ls :: [T L]
+-- > generate s ls :: [T L]
 --
 --   where @ls :: [L]@.
+--
+--   For example,
+--
+-- > > structureType octopus
+-- > "Comp Cycle []"
+-- > > generate octopus [1,2,3] :: [Comp Cycle [] Int]
+-- > [<[3,2,1]>,<[3,1,2]>,<[2,3,1]>,<[2,1,3]>,<[1,3,2]>
+-- > ,<[1,2,3]>,<[1],[3,2]>,<[1],[2,3]>,<[3,1],[2]>
+-- > ,<[1,3],[2]>,<[2,1],[3]>,<[1,2],[3]>,<[2],[1],[3]>
+-- > ,<[1],[2],[3]>]
 structureType :: ESpeciesAST -> String
 structureType (SA s) = showStructureType . extractType $ s
   where extractType :: forall s. Typeable1 s => SpeciesAST s -> TypeRep
@@ -276,13 +344,6 @@ instance Iso Star where
 instance Typeable f => Iso (Mu f) where
   type SType (Mu f) = Mu f
   iso = id
-
--- XXX comment me, and better error handling
-generate :: (Iso f, Typeable a) => ESpeciesAST -> [a] -> [f a]
-generate s = fromJust . fmap (map iso) . mapM extractStructure . generateS s
-
--- XXX add a generateU function with Iso constraint for unlabelled generation
-
 
 -- Old code for doing only labelled generation:
 --
