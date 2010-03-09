@@ -34,5 +34,5 @@ instance Iso (ListN Z) where
   iso _ = ListN []
 
 instance Iso (ListN n) => Iso (ListN (S n)) where
-  type SType (ListN (S n)) = Prod Identity (SType (ListN n))
+  type SType (ListN (S n)) = Prod Id (SType (ListN n))
   iso (Prod (Id x) xs) = x `cons` iso xs

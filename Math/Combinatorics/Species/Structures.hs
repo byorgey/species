@@ -14,7 +14,7 @@ module Math.Combinatorics.Species.Structures
       Void
     , Unit(..)
     , Const(..)
-    , Identity(..)
+    , Id(..)
     , Sum(..)
     , Prod(..)
     , Comp(..)
@@ -68,11 +68,11 @@ instance Typeable x => Typeable1 (Const x) where
   typeOf1 = typeOf1Default
 
 -- | The identity functor.
-newtype Identity a = Id a
+newtype Id a = Id a
   deriving Typeable
-instance Functor Identity where
+instance Functor Id where
   fmap f (Id x) = Id (f x)
-instance (Show a) => Show (Identity a) where
+instance (Show a) => Show (Id a) where
   show (Id x) = show x
 
 -- | Functor coproduct.

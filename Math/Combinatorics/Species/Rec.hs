@@ -27,10 +27,10 @@ data BTreeC = BTreeC deriving Typeable
 instance Show BTreeC where
   show _ = "BTree"
 
-type instance Interp BTreeC self = Sum (Const Integer) (Prod Identity (Prod self self))
+type instance Interp BTreeC self = Sum Unit (Prod Id (Prod self self))
 
 instance ASTFunctor BTreeC where
-  apply _ self = N 1 :+: (X :*: (self :*: self))
+  apply _ self = One :+: (X :*: (self :*: self))
 
 instance Show a => Show (Mu BTreeC a) where
   show = show . unMu

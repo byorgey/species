@@ -320,8 +320,8 @@ instance Typeable a => Iso (Const a) where
   type SType (Const a) = Const a
   iso = id
 
-instance Iso Identity where
-  type SType Identity = Identity
+instance Iso Id where
+  type SType Id = Id
   iso = id
 
 instance (Typeable1 f, Typeable1 g) => Iso (Sum f g) where

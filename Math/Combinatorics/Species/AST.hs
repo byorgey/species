@@ -36,13 +36,13 @@ data SpeciesAST (s :: * -> *) where
    Zero     :: SpeciesAST Void
    One      :: SpeciesAST Unit
    N        :: Integer -> SpeciesAST (Const Integer)
-   X        :: SpeciesAST Identity
+   X        :: SpeciesAST Id
    E        :: SpeciesAST Set
    C        :: SpeciesAST Cycle
    L        :: SpeciesAST []
    Subset   :: SpeciesAST Set
    KSubset  :: Integer -> SpeciesAST Set
-   Elt      :: SpeciesAST Identity
+   Elt      :: SpeciesAST Id
    (:+:)    :: SpeciesAST f -> SpeciesAST g -> SpeciesAST (Sum f g)
    (:*:)    :: SpeciesAST f -> SpeciesAST g -> SpeciesAST (Prod f g)
    (:.:)    :: SpeciesAST f -> SpeciesAST g -> SpeciesAST (Comp f g)
