@@ -319,6 +319,7 @@ class Typeable1 (SType f) => Iso (f :: * -> *) where
   type SType f :: * -> *
   iso :: SType f a -> f a
 
+-- Some identity isomorphisms
 instance Iso Void where
   type SType Void = Void
   iso = id
@@ -335,17 +336,18 @@ instance Iso Id where
   type SType Id = Id
   iso = id
 
-instance (Typeable1 f, Typeable1 g) => Iso (Sum f g) where
-  type SType (Sum f g) = Sum f g
-  iso = id
+instance (Iso f, Iso g) => Iso (Sum f g) where
+  type SType (Sum f g) = Sum (SType f) (SType g)
+  iso (Inl x) = Inl (iso x)
+  iso (Inr y) = Inr (iso y)
 
-instance (Typeable1 f, Typeable1 g) => Iso (Prod f g) where
-  type SType (Prod f g) = Prod f g
-  iso = id
+instance (Iso f, Iso g) => Iso (Prod f g) where
+  type SType (Prod f g) = Prod (SType f) (SType g)
+  iso (Prod x y) = Prod (iso x) (iso y)
 
-instance (Typeable1 f, Typeable1 g) => Iso (Comp f g) where
-  type SType (Comp f g) = Comp f g
-  iso = id
+instance (Iso f, Functor f, Iso g) => Iso (Comp f g) where
+  type SType (Comp f g) = Comp (SType f) (SType g)
+  iso (Comp fgx) = Comp (fmap iso (iso fgx))
 
 instance Iso [] where
   type SType [] = []
