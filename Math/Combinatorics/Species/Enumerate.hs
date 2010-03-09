@@ -7,12 +7,10 @@
            , DeriveDataTypeable
   #-}
 
--- | Enumeration of species: given a species and an underlying set of
---   labels, compute a list of all structures built from the underlying
---   set.
+-- | Enumeration of labelled and unlabelled species.
 module Math.Combinatorics.Species.Enumerate
     (
-      -- * XXX
+      -- * Enumeration methods
 
       Iso(..)
 
@@ -25,10 +23,11 @@ module Math.Combinatorics.Species.Enumerate
     , enumerateAll
     , enumerateAllU
 
-    -- * XXX
+    -- * The guts of enumeration
+
     , enumerate', enumerateE
 
-    -- * XXX
+    -- * Tools for dealing with structure types
     , Structure(..), extractStructure
     , structureType, showStructureType
 
@@ -60,7 +59,7 @@ import PreludeBase hiding (cycle)
 --   an expression of the 'Species' DSL as input, we must take
 --   'ESpeciesAST' as input, which existentially wraps the phantom
 --   structure type---but this means that the output list type must be
---   existentially quantified as well. XXX
+--   existentially quantified as well; see 'enumerateE'.
 --
 --   Generating structures over base elements from a /multiset/
 --   unifies labelled and unlabelled generation into one framework.
@@ -72,7 +71,7 @@ import PreludeBase hiding (cycle)
 --   the full generality anyway.
 --
 --   'enumerate'' does all the actual work, but is not meant to be used
---   directly; see XXX for more specialized versions.
+--   directly; use one of the specialized @enumerateXX@ methods.
 enumerate' :: SpeciesAST s -> Multiset a -> [s a]
 enumerate' Zero _               = []
 enumerate' One (MS [])          = [Unit]
@@ -86,32 +85,32 @@ enumerate' C m                  = map Cycle (MS.cycles m)
 enumerate' L xs                 = MS.permutations xs
 enumerate' Subset xs            = map (Set . MS.toList . fst) (MS.splits xs)
 enumerate' (KSubset k) xs       = map (Set . MS.toList)
-                                     (MS.kSubsets (fromIntegral k) xs)
+                                      (MS.kSubsets (fromIntegral k) xs)
 enumerate' Elt xs               = map (Id . fst) . MS.toCounts $ xs
 enumerate' (f :+: g) xs         = map Inl (enumerate' f xs)
-                              ++ map Inr (enumerate' g xs)
+                               ++ map Inr (enumerate' g xs)
 enumerate' (f :*: g) xs         = [ Prod x y
-                                 | (s1,s2) <- MS.splits xs
-                                 ,       x <- enumerate' f s1
-                                 ,       y <- enumerate' g s2
-                                 ]
+                                  | (s1,s2) <- MS.splits xs
+                                  ,       x <- enumerate' f s1
+                                  ,       y <- enumerate' g s2
+                                  ]
 enumerate' (f :.: g) xs         = [ Comp y
-                                 | p   <- MS.partitions xs
-                                 , xs' <- MS.sequenceMS . fmap (enumerate' g) $ p
-                                 , y   <- enumerate' f xs'
-                                 ]
+                                  | p   <- MS.partitions xs
+                                  , xs' <- MS.sequenceMS . fmap (enumerate' g) $ p
+                                  , y   <- enumerate' f xs'
+                                  ]
 enumerate' (f :><: g) xs        = [ Prod x y
-                                 | x <- enumerate' f xs
-                                 , y <- enumerate' g xs
-                                 ]
+                                  | x <- enumerate' f xs
+                                  , y <- enumerate' g xs
+                                  ]
 enumerate' (f :@: g) xs         = map Comp
-                                 . enumerate' f
-                                 . MS.fromDistinctList
-                                 . enumerate' g
-                                 $ xs
+                                  . enumerate' f
+                                  . MS.fromDistinctList
+                                  . enumerate' g
+                                  $ xs
 enumerate' (Der f) xs           = map Comp
-                                 . enumerate' f
-                                 $ (Star,1) +: fmap Original xs
+                                  . enumerate' f
+                                  $ (Star,1) +: fmap Original xs
 enumerate' (NonEmpty f) (MS []) = []
 enumerate' (NonEmpty f) xs      = enumerate' f xs
 enumerate' (Rec f) xs           = map Mu $ enumerate' (apply f (Rec f)) xs
@@ -124,20 +123,25 @@ enumerate' (OfSizeExactly f n) xs
     = enumerate' f xs
   | otherwise = []
 
--- | An existential wrapper for structures, ensuring that the
---   structure functor results in something Showable and Typeable (when
---   applied to a Showable and Typeable argument type).
+-- | An existential wrapper for structures, hiding the structure
+--   functor and ensuring that it is 'Typeable'.
 data Structure a where
   Structure :: Typeable1 f => f a -> Structure a
 
 -- | Extract the contents from a 'Structure' wrapper, if we know the
---   type. XXX
+--   type, and map it into an isomorphic type.
 extractStructure :: (Iso f, Typeable a) => Structure a -> Maybe (f a)
 extractStructure (Structure s) = fmap iso $ cast s
 
+-- | 'enumerateE' is a variant of 'enumerate'' which takes an
+--   (existentially quantified) 'ESpeciesAST' and returns a list of
+--   structures wrapped in the (also existentially quantified)
+--   'Structure' type.  This is also not meant to be used directly.
+--   Instead, you should use one of the other @enumerateXX@ methods.
+enumerateE :: ESpeciesAST -> Multiset a -> [Structure a]
+enumerateE (SA s) m = map Structure (enumerate' s m)
 
--- XXX change this comment
--- | @generate s ls@ generates a complete list of all s-structures
+-- @generate s ls@ generates a complete list of all s-structures
 --   over the underlying set of labels @ls@.  For example:
 --
 -- > > generate octopi ([1,2,3] :: [Int])
@@ -163,39 +167,52 @@ extractStructure (Structure s) = fmap iso $ cast s
 --   the generated structures to your heart's content.  To see how,
 --   consult 'structureType' and 'generateTyped'.
 
--- | 'enumerateE' is a variant of 'enumerate'' which takes an
---   (existentially quantified) 'ESpeciesAST' and returns a list of
---   structures wrapped in the (also existentially quantified)
---   'Structure' type.  This is also not meant to be used directly.
---   Instead, you should use one of XXX instead.
-enumerateE :: ESpeciesAST -> Multiset a -> [Structure a]
-enumerateE (SA s) m = map Structure (enumerate' s m)
+-- XXX add examples to all of these.
+-- XXX change Maybe versions to Either String
+-- XXX change 'enumerate' documentation to be more stand-alone
 
--- | XXX
+-- | Labelled enumeration: given a species expression and a list of
+--   labels (which are assumed to be distinct), compute the list of
+--   all structures built from the given labels.  If the type given
+--   for the enumeration does not match the species expression (via an
+--   'Iso' instance), 'Nothing' is returned.
 enumerateLM :: (Iso f, Typeable a) => ESpeciesAST -> [a] -> Maybe [f a]
 enumerateLM s = enumerateMM s . MS.fromDistinctList
 
--- | XXX
+-- | Like 'enumerateLM', except that instead of returning 'Nothing' if
+--   the types do not match, a helpful error message is printed.  This
+--   version is generally more useful in practice, but those who like
+--   their functions to be total should stick with 'enumerateLM'.
 enumerateL :: (Iso f, Typeable a) =>  ESpeciesAST -> [a] -> [f a]
 enumerateL = maybeToCastError enumerateLM
 
--- | XXX
+-- | Unlabelled enumeration: given a species expression and an integer
+--   indicating the number of labels to use, compute the list of all
+--   unlabelled structures of the given size.  If the type given for
+--   the enumeration does not match the species expression, 'Nothing'
+--   is returned.
 enumerateUM :: Iso f => ESpeciesAST -> Int -> Maybe [f ()]
 enumerateUM s n = enumerateMM s (MS.fromCounts [((),n)])
 
--- | XXX
+-- | Like 'enumerateUM', except that instead of returning 'Nothing' if
+--   the types do not match, a helpful error message is printed.
 enumerateU ::  Iso f => ESpeciesAST -> Int -> [f ()]
 enumerateU = maybeToCastError enumerateUM
 
--- | XXX
+-- | General enumeration: given a species expression and a multiset of
+--   labels, compute the list of all distinct structures built from
+--   the given labels. If the type given for the enumeration does not
+--   match the species expression, 'Nothing' is returned.
 enumerateMM :: (Iso f, Typeable a) => ESpeciesAST -> Multiset a -> Maybe [f a]
 enumerateMM s m = mapM extractStructure $ enumerateE s m
 
--- | XXX
+-- | Like 'enumerateM', except that instead of returning 'Nothing' if
+--   the types do not match, a helpful error message is printed.
 enumerateM :: (Iso f, Typeable a) => ESpeciesAST -> Multiset a -> [f a]
 enumerateM = maybeToCastError enumerateMM
 
--- | XXX
+-- | Like 'enumerateM', except taking a list of labels with decidable
+-- equality instead of an explicit multiset of labels.
 enumerate :: (Iso f, Typeable a, Eq a) => ESpeciesAST -> [a] -> [f a]
 enumerate s = enumerateM s . MS.fromListEq
 
@@ -219,7 +236,7 @@ maybeToCastError gen s ls =
     Just ys -> ys
 
 -- XXX move this comment + edit?
--- | @generateTyped s ls@ generates a complete list of all s-structures
+-- @generateTyped s ls@ generates a complete list of all s-structures
 --   over the underlying set of labels @ls@, where the type of the
 --   generated structures is known ('structureType' may be used to
 --   compute this type).  For example:
@@ -310,8 +327,12 @@ showStructureType t = showsPrecST 0 t ""
         dropQuals :: String -> String
         dropQuals = reverse . takeWhile (/= '.') . reverse
 
--- XXX comment me
--- XXX better name for this class?
+-- | The 'Iso' class allows you to generate structures of any type, by
+--   declaring an instance of 'Iso'.  The 'Iso' instance requires you
+--   to declare a standard structure type (see
+--   "Math.Combinatorics.Species.Structure") associated with your
+--   type, and a mapping 'iso' from the standard type to your custom
+--   one.
 class Typeable1 (SType f) => Iso (f :: * -> *) where
   type SType f :: * -> *
   iso :: SType f a -> f a
