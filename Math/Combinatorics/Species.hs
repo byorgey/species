@@ -65,6 +65,7 @@ module Math.Combinatorics.Species
     , enumerateLM, enumerateL
     , enumerateUM, enumerateU
     , enumerateMM, enumerateM
+    , enumerateAll, enumerateAllU
 
       -- ** Types used for generation
       -- $types

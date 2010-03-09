@@ -25,6 +25,9 @@ module Math.Combinatorics.Species.Enumerate
     , enumerateUM, enumerateU
     , enumerateMM, enumerateM
 
+    , enumerateAll
+    , enumerateAllU
+
     -- * XXX
     , enumerate', enumerateE
 
@@ -198,6 +201,14 @@ enumerateM = maybeToCastError enumerateMM
 -- | XXX
 enumerate :: (Iso f, Typeable a, Eq a) => ESpeciesAST -> [a] -> [f a]
 enumerate s = enumerateM s . MS.fromListEq
+
+-- | XXX
+enumerateAllU :: Iso f => ESpeciesAST -> [f ()]
+enumerateAllU s = concatMap (enumerateU s) [0..]
+
+-- | XXX
+enumerateAll :: (Iso f, Typeable a) => ESpeciesAST -> [a] -> [f a]
+enumerateAll s ls = concatMap (\n -> enumerateL s (take n ls)) [0..]
 
 -- | XXX
 maybeToCastError :: forall f a l. (Iso f, Typeable a) =>
