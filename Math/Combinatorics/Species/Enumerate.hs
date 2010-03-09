@@ -1,14 +1,11 @@
 {-# LANGUAGE NoImplicitPrelude
            , GADTs
-           , MultiParamTypeClasses
-           , FlexibleInstances
            , FlexibleContexts
            , ScopedTypeVariables
            , KindSignatures
            , TypeFamilies
            , DeriveDataTypeable
   #-}
--- XXX clean up these language extensions (if possible)?
 
 -- | Enumeration of species: given a species and an underlying set of
 --   labels, compute a list of all structures built from the underlying
