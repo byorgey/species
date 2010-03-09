@@ -74,6 +74,9 @@ import PreludeBase hiding (cycle)
 --   'enumerate'' does all the actual work, but is not meant to be used
 --   directly; see XXX for more specialized versions.
 enumerate' :: SpeciesAST s -> Multiset a -> [s a]
+enumerate' Zero _               = []
+enumerate' One (MS [])          = [Unit]
+enumerate' One _                = []
 enumerate' (N n) (MS [])        = map Const [1..n]
 enumerate' (N _) _              = []
 enumerate' X (MS [(x,1)])       = [Id x]
@@ -304,6 +307,14 @@ showStructureType t = showsPrecST 0 t ""
 class Typeable1 (SType f) => Iso (f :: * -> *) where
   type SType f :: * -> *
   iso :: SType f a -> f a
+
+instance Iso Void where
+  type SType Void = Void
+  iso = id
+
+instance Iso Unit where
+  type SType Unit = Unit
+  iso = id
 
 instance Typeable a => Iso (Const a) where
   type SType (Const a) = Const a

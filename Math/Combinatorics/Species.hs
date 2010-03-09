@@ -68,6 +68,7 @@ module Math.Combinatorics.Species
 
       -- ** Types used for generation
       -- $types
+    , Void, Unit(..)
     , Identity(..), Const(..)
     , Sum(..), Prod(..), Comp(..)
     , Star(..), Cycle(..), Set(..)

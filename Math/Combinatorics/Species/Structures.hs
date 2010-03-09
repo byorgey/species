@@ -3,6 +3,7 @@
            , FlexibleContexts
            , DeriveDataTypeable
            , TypeFamilies
+           , EmptyDataDecls
   #-}
 
 -- | Types used for expressing generic structures when generating species.
@@ -10,7 +11,9 @@ module Math.Combinatorics.Species.Structures
     ( -- * Structure functors
       -- $struct
 
-      Const(..)
+      Void
+    , Unit(..)
+    , Const(..)
     , Identity(..)
     , Sum(..)
     , Prod(..)
@@ -38,6 +41,20 @@ import Data.Typeable
 -- generation. Many of these functors are already defined elsewhere,
 -- in other packages; but to avoid a plethora of imports, inconsistent
 -- naming/instance schemes, etc., we just redefine them here.
+
+-- | The (constantly) void functor.
+data Void a
+  deriving Typeable
+instance Functor Void where
+  fmap _ _ = undefined
+instance Show (Void a) where
+  show _   = undefined
+
+-- | The (constantly) unit functor.
+data Unit a = Unit
+  deriving (Typeable, Show)
+instance Functor Unit where
+  fmap _ Unit = Unit
 
 -- | The constant functor.
 newtype Const x a = Const x

@@ -33,6 +33,8 @@ import PreludeBase hiding (cycle)
 --   for that purpose the existential wrapper 'ESpeciesAST' is
 --   provided.
 data SpeciesAST (s :: * -> *) where
+   Zero     :: SpeciesAST Void
+   One      :: SpeciesAST Unit
    N        :: Integer -> SpeciesAST (Const Integer)
    X        :: SpeciesAST Identity
    E        :: SpeciesAST Set

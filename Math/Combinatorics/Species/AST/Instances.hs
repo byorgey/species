@@ -18,6 +18,8 @@ import qualified Algebra.Ring as Ring
 import qualified Algebra.Differential as Differential
 
 instance Show (SpeciesAST s) where
+  showsPrec _ Zero                = shows (0 :: Int)
+  showsPrec _ One                 = shows (1 :: Int)
   showsPrec _ (N n)               = shows n
   showsPrec _ X                   = showChar 'X'
   showsPrec _ E                   = showChar 'E'
@@ -41,13 +43,15 @@ instance Show ESpeciesAST where
   show (SA f) = show f
 
 instance Additive.C ESpeciesAST where
-  zero   = SA (N 0)
+  zero   = SA Zero
   (SA f) + (SA g) = SA (f :+: g)
   negate = error "negation is not implemented yet!  wait until virtual species..."
 
 instance Ring.C ESpeciesAST where
   (SA f) * (SA g) = SA (f :*: g)
-  one = SA (N 1)
+  one = SA One
+  fromInteger 0 = SA Zero
+  fromInteger 1 = SA One
   fromInteger n = SA (N n)
   _ ^ 0 = one
   (SA f) ^ 1 = SA f
