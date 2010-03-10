@@ -41,8 +41,6 @@ import Math.Combinatorics.Species.Structures
 import qualified Math.Combinatorics.Multiset as MS
 import Math.Combinatorics.Multiset (Multiset(..), (+:))
 
-import Data.Maybe (fromJust)
-
 import Data.Typeable
 
 import NumericPrelude

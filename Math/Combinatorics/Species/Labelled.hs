@@ -8,6 +8,12 @@ module Math.Combinatorics.Species.Labelled
     ( labelled
     ) where
 
+-- A previous version of this module used an EGF library which
+-- explicitly computed with EGF's.  However, it turned out to be much
+-- slower than just computing explicitly with normal power series and
+-- zipping/unzipping with factorial denominators as necessary, which
+-- is the current approach.
+
 import Math.Combinatorics.Species.Types
 import Math.Combinatorics.Species.Class
 
@@ -63,20 +69,3 @@ labelled (EGF f) = (++repeat 0)
                  . map unLR
                  $ PS.coeffs f
 
--- A previous version of this module used an EGF library which
--- explicitly computed with EGF's.  However, it turned out to be much
--- slower than just computing explicitly with normal power series and
--- zipping/unzipping with factorial denominators as necessary, which
--- is the current approach.
---
--- instance Species (EGF.T Integer) where
---   singleton = EGF.fromCoeffs [0,1]
---   set       = EGF.fromCoeffs $ repeat 1
---   list      = EGF.fromCoeffs facts
---   o         = EGF.compose
---   nonEmpty  (EGF.Cons (_:xs)) = EGF.Cons (0:xs)
---   nonEmpty  x = x
---
--- labelled :: EGF.T Integer -> [Integer]
--- labelled = EGF.coeffs
---
