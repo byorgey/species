@@ -216,11 +216,12 @@ enumerateM = maybeToCastError enumerateMM
 enumerate :: (Iso f, Typeable a, Eq a) => ESpeciesAST -> [a] -> [f a]
 enumerate s = enumerateM s . MS.fromListEq
 
--- | XXX
+-- | Lazily enumerate all unlabelled structures.
 enumerateAllU :: Iso f => ESpeciesAST -> [f ()]
 enumerateAllU s = concatMap (enumerateU s) [0..]
 
--- | XXX
+-- | Lazily enumerate all labelled structures, using [1..] as the
+--   labels.
 enumerateAll :: Iso f => ESpeciesAST -> [f Int]
 enumerateAll s = concatMap (\n -> enumerateL s (take n [1..])) [0..]
 
@@ -332,12 +333,14 @@ showStructureType t = showsPrecST 0 t ""
 --   to declare a standard structure type (see
 --   "Math.Combinatorics.Species.Structure") associated with your
 --   type, and a mapping 'iso' from the standard type to your custom
---   one.
+--   one.  Instances are provided for all the standard structure types
+--   so you can enumerate species without having to provide your own
+--   custom data type as the target of the enumeration if you don't
+--   want to.
 class Typeable1 (SType f) => Iso (f :: * -> *) where
   type SType f :: * -> *
   iso :: SType f a -> f a
 
--- Some identity isomorphisms
 instance Iso Void where
   type SType Void = Void
   iso = id
