@@ -62,9 +62,9 @@ module Math.Combinatorics.Species
     , Iso(..)
     , structureType
     , enumerate
-    , enumerateLM, enumerateL
-    , enumerateUM, enumerateU
-    , enumerateMM, enumerateM
+    , enumerateL
+    , enumerateU
+    , enumerateM
     , enumerateAll, enumerateAllU
 
       -- ** Types used for generation

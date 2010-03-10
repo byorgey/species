@@ -16,9 +16,9 @@ module Math.Combinatorics.Species.Enumerate
 
     , enumerate
 
-    , enumerateLM, enumerateL
-    , enumerateUM, enumerateU
-    , enumerateMM, enumerateM
+    , enumerateL
+    , enumerateU
+    , enumerateM
 
     , enumerateAll
     , enumerateAllU
@@ -28,7 +28,7 @@ module Math.Combinatorics.Species.Enumerate
     , enumerate', enumerateE
 
     -- * Tools for dealing with structure types
-    , Structure(..), extractStructure
+    , Structure(..), extractStructure, unsafeExtractStructure
     , structureType, showStructureType
 
     ) where
@@ -127,156 +127,23 @@ data Structure a where
   Structure :: Typeable1 f => f a -> Structure a
 
 -- | Extract the contents from a 'Structure' wrapper, if we know the
---   type, and map it into an isomorphic type.
-extractStructure :: (Iso f, Typeable a) => Structure a -> Maybe (f a)
-extractStructure (Structure s) = fmap iso $ cast s
-
--- | 'enumerateE' is a variant of 'enumerate'' which takes an
---   (existentially quantified) 'ESpeciesAST' and returns a list of
---   structures wrapped in the (also existentially quantified)
---   'Structure' type.  This is also not meant to be used directly.
---   Instead, you should use one of the other @enumerateXX@ methods.
-enumerateE :: ESpeciesAST -> Multiset a -> [Structure a]
-enumerateE (SA s) m = map Structure (enumerate' s m)
-
--- @generate s ls@ generates a complete list of all s-structures
---   over the underlying set of labels @ls@.  For example:
---
--- > > generate octopi ([1,2,3] :: [Int])
--- > [<[1,2,3]>,<[1,3,2]>,<[2,1,3]>,<[2,3,1]>,<[3,1,2]>,<[3,2,1]>,<[1,2],[3]>,
--- >  <[2,1],[3]>,<[1,3],[2]>,<[3,1],[2]>,<[1],[2,3]>,<[1],[3,2]>,<[1],[2],[3]>,
--- >  <[1],[3],[2]>]
--- >
--- > > generate subsets "abc"
--- > [{'a','b','c'},{'a','b'},{'a','c'},{'a'},{'b','c'},{'b'},{'c'},{}]
---
--- > > generate simpleGraphs ([1,2,3] :: [Int])
--- > [{{1,2},{1,3},{2,3}},{{1,2},{1,3}},{{1,2},{2,3}},{{1,2}},{{1,3},{2,3}},
--- >  {{1,3}},{{2,3}},{}]
---
---   There is one caveat: since the type of the generated structures
---   is different for each species, it must be existentially
---   quantified!  The output of 'generate' can always be Shown, but
---   not much else.
---
---   However!  All is not lost.  It's possible, by the magic of
---   "Data.Typeable", to yank the type information (kicking and
---   screaming) back into the open, so that you can then manipulate
---   the generated structures to your heart's content.  To see how,
---   consult 'structureType' and 'generateTyped'.
-
--- XXX add examples to all of these.
--- XXX change Maybe versions to Either String
--- XXX change 'enumerate' documentation to be more stand-alone
-
--- | Labelled enumeration: given a species expression and a list of
---   labels (which are assumed to be distinct), compute the list of
---   all structures built from the given labels.  If the type given
---   for the enumeration does not match the species expression (via an
---   'Iso' instance), 'Nothing' is returned.
-enumerateLM :: (Iso f, Typeable a) => ESpeciesAST -> [a] -> Maybe [f a]
-enumerateLM s = enumerateMM s . MS.fromDistinctList
-
--- | Like 'enumerateLM', except that instead of returning 'Nothing' if
---   the types do not match, a helpful error message is printed.  This
---   version is generally more useful in practice, but those who like
---   their functions to be total should stick with 'enumerateLM'.
-enumerateL :: (Iso f, Typeable a) =>  ESpeciesAST -> [a] -> [f a]
-enumerateL = maybeToCastError enumerateLM
-
--- | Unlabelled enumeration: given a species expression and an integer
---   indicating the number of labels to use, compute the list of all
---   unlabelled structures of the given size.  If the type given for
---   the enumeration does not match the species expression, 'Nothing'
---   is returned.
-enumerateUM :: Iso f => ESpeciesAST -> Int -> Maybe [f ()]
-enumerateUM s n = enumerateMM s (MS.fromCounts [((),n)])
-
--- | Like 'enumerateUM', except that instead of returning 'Nothing' if
---   the types do not match, a helpful error message is printed.
-enumerateU ::  Iso f => ESpeciesAST -> Int -> [f ()]
-enumerateU = maybeToCastError enumerateUM
-
--- | General enumeration: given a species expression and a multiset of
---   labels, compute the list of all distinct structures built from
---   the given labels. If the type given for the enumeration does not
---   match the species expression, 'Nothing' is returned.
-enumerateMM :: (Iso f, Typeable a) => ESpeciesAST -> Multiset a -> Maybe [f a]
-enumerateMM s m = mapM extractStructure $ enumerateE s m
-
--- | Like 'enumerateM', except that instead of returning 'Nothing' if
---   the types do not match, a helpful error message is printed.
-enumerateM :: (Iso f, Typeable a) => ESpeciesAST -> Multiset a -> [f a]
-enumerateM = maybeToCastError enumerateMM
-
--- | Like 'enumerateM', except taking a list of labels with decidable
--- equality instead of an explicit multiset of labels.
-enumerate :: (Iso f, Typeable a, Eq a) => ESpeciesAST -> [a] -> [f a]
-enumerate s = enumerateM s . MS.fromListEq
-
--- | Lazily enumerate all unlabelled structures.
-enumerateAllU :: Iso f => ESpeciesAST -> [f ()]
-enumerateAllU s = concatMap (enumerateU s) [0..]
-
--- | Lazily enumerate all labelled structures, using [1..] as the
---   labels.
-enumerateAll :: Iso f => ESpeciesAST -> [f Int]
-enumerateAll s = concatMap (\n -> enumerateL s (take n [1..])) [0..]
-
--- | XXX
-maybeToCastError :: forall f a l. (Iso f, Typeable a) =>
-                    (ESpeciesAST -> l -> Maybe [f a]) -> ESpeciesAST -> l -> [f a]
-maybeToCastError gen s ls =
-  case gen s ls of
-    Nothing -> error $
-          "structure type mismatch.\n"
+--   type, and map it into an isomorphic type.  If the type doesn't
+--   match, return a helpful error message instead.
+extractStructure :: forall f a. (Iso f, Typeable a) =>
+                      Structure a -> Either String (f a)
+extractStructure (Structure s) =
+  case cast s of
+    Nothing -> Left $
+          "Structure type mismatch.\n"
        ++ "  Expected: " ++ showStructureType (typeOf (undefined :: SType f a)) ++ "\n"
-       ++ "  Inferred: " ++ structureType s ++ " " ++ show (typeOf (undefined :: a))
-    Just ys -> ys
+       ++ "  Inferred: " ++ showStructureType (typeOf s)
+    Just y -> Right (iso y)
 
--- XXX move this comment + edit?
--- @generateTyped s ls@ generates a complete list of all s-structures
---   over the underlying set of labels @ls@, where the type of the
---   generated structures is known ('structureType' may be used to
---   compute this type).  For example:
---
--- > > structureType subsets
--- > "Set"
--- > > generateTyped subsets ([1,2,3] :: [Int]) :: [Set Int]
--- > [{1,2,3},{1,2},{1,3},{1},{2,3},{2},{3},{}]
--- > > map (sum . getSet) $ it
--- > [6,3,4,1,5,2,3,0]
---
---   Although the output from 'generate' appears the same, trying to
---   compute the subset sums fails spectacularly if we use 'generate'
---   instead of 'generateTyped':
---
--- > > generate subsets ([1..3] :: [Int])
--- > [{1,2,3},{1,2},{1,3},{1},{2,3},{2},{3},{}]
--- > > map (sum . getSet) $ it
--- > <interactive>:1:21:
--- >     Couldn't match expected type `Set a'
--- >            against inferred type `Math.Combinatorics.Species.Enumerate.Structure
--- >                                     Int'
--- >       Expected type: [Set a]
--- >       Inferred type: [Math.Combinatorics.Species.Enumerate.Structure Int]
--- >     In the second argument of `($)', namely `it'
--- >     In the expression: map (sum . getSet) $ it
---
---   If we use the wrong type, we get a nice error message:
---
--- > > generateTyped octopi ([1..3] :: [Int]) :: [Set Int]
--- > *** Exception: structure type mismatch.
--- >   Expected: Set Int
--- >   Inferred: Comp Cycle (Comp Cycle Star) Int
--- generateTyped :: forall f a. (Typeable1 f, Typeable a) => ESpeciesAST -> [a] -> [f a]
--- generateTyped s xs =
---   case (mapM extractStructure . generateS s $ xs) of
---     Nothing -> error $
---           "structure type mismatch.\n"
---        ++ "  Expected: " ++ showStructureType (typeOf (undefined :: f a)) ++ "\n"
---        ++ "  Inferred: " ++ structureType s ++ " " ++ show (typeOf (undefined :: a))
---     Just ys -> ys
+-- | A version of 'extractStructure' which calls 'error' with the
+--   message in the case of a type mismatch, instead of returning an
+--   'Either'.
+unsafeExtractStructure :: (Iso f, Typeable a) => Structure a -> f a
+unsafeExtractStructure = either error id . extractStructure
 
 -- | @'structureType' s@ returns a String representation of the
 --   functor type which represents the structure of the species @s@.
@@ -325,6 +192,105 @@ showStructureType t = showsPrecST 0 t ""
 
         dropQuals :: String -> String
         dropQuals = reverse . takeWhile (/= '.') . reverse
+
+-- | 'enumerateE' is a variant of 'enumerate'' which takes an
+--   (existentially quantified) 'ESpeciesAST' and returns a list of
+--   structures wrapped in the (also existentially quantified)
+--   'Structure' type.  This is also not meant to be used directly.
+--   Instead, you should use one of the other @enumerateX@ methods.
+enumerateE :: ESpeciesAST -> Multiset a -> [Structure a]
+enumerateE (SA s) m = map Structure (enumerate' s m)
+
+-- XXX add examples to all of these.
+
+-- | @enumerate s ls@ computes a complete list of distinct
+--   @s@-structures over the underlying multiset of labels @ls@.  For
+--   example:
+--
+-- > > enumerate octopi [1,2,3] :: [Comp Cycle [] Int]
+-- > [<[3,2,1]>,<[3,1,2]>,<[2,3,1]>,<[2,1,3]>,<[1,3,2]>,<[1,2,3]>,
+-- >  <[1],[3,2]>,<[1],[2,3]>,<[3,1],[2]>,<[1,3],[2]>,<[2,1],[3]>,
+-- >  <[1,2],[3]>,<[2],[1],[3]>,<[1],[2],[3]>]
+-- >
+-- > > enumerate octopi [1,1,2] :: [Comp Cycle [] Int]
+-- > [<[2,1,1]>,<[1,2,1]>,<[1,1,2]>,<[2,1],[1]>,<[1,2],[1]>,
+-- >  <[1,1],[2]>,<[1],[1],[2]>]
+-- >
+-- > > enumerate subsets "abc" :: [Set Int]
+-- > [{'a','b','c'},{'a','b'},{'a','c'},{'a'},{'b','c'},{'b'},{'c'},{}]
+-- >
+-- > > enumerate simpleGraphs [1,2,3] :: [Comp Set Set Int]
+-- > [{{1,2},{1,3},{2,3}},{{1,2},{1,3}},{{1,2},{2,3}},{{1,2}},{{1,3},{2,3}},
+-- >  {{1,3}},{{2,3}},{}]
+--
+--   There is one caveat: since the type of the generated structures
+--   is different for each species, they must be cast (using the magic
+--   of "Data.Typeable") out of an existential wrapper; this is why
+--   type annotations are required in all the examples above.  Of
+--   course, if a call to 'enumerate' is used in the context of some
+--   larger program, a type annotation will probably not be needed,
+--   due to the magic of type inference.
+--
+--   For help in knowing what type annotation you can give when
+--   enumerating the structures of a particular species, see the
+--   'structureType' function.  To be able to use your own custom data
+--   type in an enumeration, just make your data type an instance of
+--   the 'Iso' type class.
+--
+--   If an invalid type annotation is given, 'enumerate' will call
+--   'error' with a helpful error message.  This should not be much of
+--   an issue in practice, since usually 'enumerate' will be used at a
+--   specific type; it's hard to imagine a usage of 'enumerate' which
+--   will sometimes work and sometimes fail.  However, those who like
+--   their functions total can use 'extractStructure' to make a
+--   version of 'enumerate' (or the other variants) with a return type
+--   of @[Either String (f a)]@ (which will return an annoying ton of
+--   duplicate error message) or @Either String [f a]@ (which has the
+--   unfortunate property of being much less lazy than the current
+--   versions, since it must compute the entire list before deciding
+--   whether to return @Left@ or @Right@).
+--
+--   For slight variants on 'enumerate', see 'enumerateL',
+--   'enumerateU', and 'enumerateM'.
+enumerate :: (Iso f, Typeable a, Eq a) => ESpeciesAST -> [a] -> [f a]
+enumerate s = enumerateM s . MS.fromListEq
+
+-- | Labelled enumeration: given a species expression and a list of
+--   labels (which are assumed to be distinct), compute the list of
+--   all structures built from the given labels.  If the type given
+--   for the enumeration does not match the species expression (via an
+--   'Iso' instance), call 'error' with an error message explaining
+--   the mismatch.
+enumerateL :: (Iso f, Typeable a) =>  ESpeciesAST -> [a] -> [f a]
+enumerateL s = enumerateM s . MS.fromDistinctList
+
+-- | Unlabelled enumeration: given a species expression and an integer
+--   indicating the number of labels to use, compute the list of all
+--   unlabelled structures of the given size.  If the type given for
+--   the enumeration does not match the species expression, call
+--   'error' with an error message explaining the mismatch.
+--
+--   Note that @'enumerateU' s n@ is equivalent to @'enumerate' s
+--   (replicate n ())@.
+enumerateU ::  Iso f => ESpeciesAST -> Int -> [f ()]
+enumerateU s n = enumerateM s (MS.fromCounts [((),n)])
+
+-- | General enumeration: given a species expression and a multiset of
+--   labels, compute the list of all distinct structures built from
+--   the given labels. If the type given for the enumeration does not
+--   match the species expression, call 'error' with a message
+--   explaining the mismatch.
+enumerateM :: (Iso f, Typeable a) => ESpeciesAST -> Multiset a -> [f a]
+enumerateM s m = map unsafeExtractStructure $ enumerateE s m
+
+-- | Lazily enumerate all unlabelled structures.
+enumerateAllU :: Iso f => ESpeciesAST -> [f ()]
+enumerateAllU s = concatMap (enumerateU s) [0..]
+
+-- | Lazily enumerate all labelled structures, using [1..] as the
+--   labels.
+enumerateAll :: Iso f => ESpeciesAST -> [f Int]
+enumerateAll s = concatMap (\n -> enumerateL s (take n [1..])) [0..]
 
 -- | The 'Iso' class allows you to generate structures of any type, by
 --   declaring an instance of 'Iso'.  The 'Iso' instance requires you
@@ -387,75 +353,3 @@ instance Iso Star where
 instance Typeable f => Iso (Mu f) where
   type SType (Mu f) = Mu f
   iso = id
-
--- Old code for doing only labelled generation:
---
--- generateT :: SpeciesAST s -> [a] -> [s a]
--- generateT (N n) []       = map Const [1..n]
--- generateT (N _) _        = []
--- generateT X [x]          = [Id x]
--- generateT X _            = []
--- generateT E xs           = [Set xs]
--- generateT C []           = []
--- generateT C (x:xs)       = map (Cycle . (x:)) (sPermutations xs)
--- generateT L xs           = sPermutations xs
--- generateT Subset xs      = map (Set . fst) (pSet xs)
--- generateT (KSubset k) xs = map Set (sKSubsets k xs)
--- generateT Elt xs         = map Id xs
--- generateT (f :+: g) xs   = map Inl (generateT f xs)
---                         ++ map Inr (generateT g xs)
--- generateT (f :*: g) xs   = [ Prod x y | (s1,s2) <- pSet xs
---                                       ,       x <- generateT f s1
---                                       ,       y <- generateT g s2
---                            ]
--- generateT (f :.: g) xs   = [ Comp y | p   <- sPartitions xs
---                                     , xs' <- mapM (generateT g) p
---                                     , y   <- generateT f xs'
---                            ]
--- generateT (f :><: g) xs  = [ Prod x y | x <- generateT f xs
---                                       , y <- generateT g xs ]
--- generateT (f :@: g) xs   = map Comp $ generateT f (generateT g xs)
--- generateT (Der f) xs     = map Comp $ generateT f (Star : map Original xs)
-
--- generateT (OfSize f p) xs | p (genericLength xs) = generateT f xs
---                           | otherwise     = []
--- generateT (OfSizeExactly f n) xs | genericLength xs == n = generateT f xs
---                                  | otherwise = []
--- generateT (NonEmpty f) [] = []
--- generateT (NonEmpty f) xs = generateT f xs
--- generateT (Rec f) xs = map Mu $ generateT (apply f (Rec f)) xs
---
--- -- | @pSet xs@ generates the power set of @xs@, yielding a list of
--- --   subsets of @xs@ paired with their complements.
--- pSet :: [a] -> [([a],[a])]
--- pSet [] = [([],[])]
--- pSet (x:xs) = mapx first ++ mapx second
---   where mapx which = map (which (x:)) $ pSet xs
---
--- -- | @sKSubsets k xs@ generate all the size-k subsets of @xs@.
--- sKSubsets :: Integer -> [a] -> [[a]]
--- sKSubsets 0 _      = [[]]
--- sKSubsets _ []     = []
--- sKSubsets n (x:xs) = map (x:) (sKSubsets (n-1) xs) ++ sKSubsets n xs
---
--- -- | Enumerate all partitions of a set.
--- sPartitions :: [a] -> [[[a]]]
--- sPartitions [] = [[]]
--- sPartitions (s:s') = do (sub,compl) <- pSet s'
---                         let firstSubset = s:sub
---                         map (firstSubset:) $ sPartitions compl
---
--- -- | Enumerate all permutations of a list.
--- sPermutations :: [a] -> [[a]]
--- sPermutations [] = [[]]
--- sPermutations xs = [ y:p | (y,ys) <- select xs
---                          , p      <- sPermutations ys
---                    ]
---
--- -- | Select each element of a list in turn, yielding a list of
--- --   elements, each paired with a list of the remaining elements.
--- select :: [a] -> [(a,[a])]
--- select [] = []
--- select (x:xs) = (x,xs) : map (second (x:)) (select xs)
-
-
