@@ -135,7 +135,7 @@ extractStructure (Structure s) =
   case cast s of
     Nothing -> Left $
           "Structure type mismatch.\n"
-       ++ "  Expected: " ++ showStructureType (typeOf (undefined :: SType f a)) ++ "\n"
+       ++ "  Expected: " ++ showStructureType (typeOf (undefined :: StructTy f a)) ++ "\n"
        ++ "  Inferred: " ++ showStructureType (typeOf s)
     Just y -> Right (iso y)
 
@@ -301,55 +301,59 @@ enumerateAll s = concatMap (\n -> enumerateL s (take n [1..])) [0..]
 --   so you can enumerate species without having to provide your own
 --   custom data type as the target of the enumeration if you don't
 --   want to.
-class Typeable1 (SType f) => Iso (f :: * -> *) where
-  type SType f :: * -> *
-  iso :: SType f a -> f a
+class Typeable1 (StructTy f) => Iso (f :: * -> *) where
+  -- | The standard structure type (see
+  --   "Math.Combinatorics.Species.Stucture") that will map into @f@.
+  type StructTy f :: * -> *
+
+  -- | The mapping from @'StructTy' f@ to @f@.
+  iso :: StructTy f a -> f a
 
 instance Iso Void where
-  type SType Void = Void
+  type StructTy Void = Void
   iso = id
 
 instance Iso Unit where
-  type SType Unit = Unit
+  type StructTy Unit = Unit
   iso = id
 
 instance Typeable a => Iso (Const a) where
-  type SType (Const a) = Const a
+  type StructTy (Const a) = Const a
   iso = id
 
 instance Iso Id where
-  type SType Id = Id
+  type StructTy Id = Id
   iso = id
 
 instance (Iso f, Iso g) => Iso (Sum f g) where
-  type SType (Sum f g) = Sum (SType f) (SType g)
+  type StructTy (Sum f g) = Sum (StructTy f) (StructTy g)
   iso (Inl x) = Inl (iso x)
   iso (Inr y) = Inr (iso y)
 
 instance (Iso f, Iso g) => Iso (Prod f g) where
-  type SType (Prod f g) = Prod (SType f) (SType g)
+  type StructTy (Prod f g) = Prod (StructTy f) (StructTy g)
   iso (Prod x y) = Prod (iso x) (iso y)
 
 instance (Iso f, Functor f, Iso g) => Iso (Comp f g) where
-  type SType (Comp f g) = Comp (SType f) (SType g)
+  type StructTy (Comp f g) = Comp (StructTy f) (StructTy g)
   iso (Comp fgx) = Comp (fmap iso (iso fgx))
 
 instance Iso [] where
-  type SType [] = []
+  type StructTy [] = []
   iso = id
 
 instance Iso Cycle where
-  type SType Cycle = Cycle
+  type StructTy Cycle = Cycle
   iso = id
 
 instance Iso Set where
-  type SType Set = Set
+  type StructTy Set = Set
   iso = id
 
 instance Iso Star where
-  type SType Star = Star
+  type StructTy Star = Star
   iso = id
 
 instance Typeable f => Iso (Mu f) where
-  type SType (Mu f) = Mu f
+  type StructTy (Mu f) = Mu f
   iso = id
