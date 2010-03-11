@@ -39,7 +39,7 @@ instance Show a => Show (Mu BTreeC a) where
 data BTree a = Empty | Node (BTree a) a (BTree a)
   deriving (Typeable, Eq, Read, Show)
 
-instance Iso BTree where
+instance Enumerable BTree where
   type StructTy BTree = Mu BTreeC
   iso (Mu (Inl _)) = Empty
   iso (Mu (Inr (Prod (Id a) (Prod l r)))) = Node (iso l) a (iso r)

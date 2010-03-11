@@ -12,7 +12,7 @@ module Math.Combinatorics.Species.Enumerate
     (
       -- * Enumeration methods
 
-      Iso(..)
+      Enumerable(..)
 
     , enumerate
 
@@ -129,7 +129,7 @@ data Structure a where
 -- | Extract the contents from a 'Structure' wrapper, if we know the
 --   type, and map it into an isomorphic type.  If the type doesn't
 --   match, return a helpful error message instead.
-extractStructure :: forall f a. (Iso f, Typeable a) =>
+extractStructure :: forall f a. (Enumerable f, Typeable a) =>
                       Structure a -> Either String (f a)
 extractStructure (Structure s) =
   case cast s of
@@ -142,7 +142,7 @@ extractStructure (Structure s) =
 -- | A version of 'extractStructure' which calls 'error' with the
 --   message in the case of a type mismatch, instead of returning an
 --   'Either'.
-unsafeExtractStructure :: (Iso f, Typeable a) => Structure a -> f a
+unsafeExtractStructure :: (Enumerable f, Typeable a) => Structure a -> f a
 unsafeExtractStructure = either error id . extractStructure
 
 -- | @'structureType' s@ returns a String representation of the
@@ -235,7 +235,7 @@ enumerateE (SA s) m = map Structure (enumerate' s m)
 --   enumerating the structures of a particular species, see the
 --   'structureType' function.  To be able to use your own custom data
 --   type in an enumeration, just make your data type an instance of
---   the 'Iso' type class.
+--   the 'Enumerable' type class.
 --
 --   If an invalid type annotation is given, 'enumerate' will call
 --   'error' with a helpful error message.  This should not be much of
@@ -252,16 +252,16 @@ enumerateE (SA s) m = map Structure (enumerate' s m)
 --
 --   For slight variants on 'enumerate', see 'enumerateL',
 --   'enumerateU', and 'enumerateM'.
-enumerate :: (Iso f, Typeable a, Eq a) => ESpeciesAST -> [a] -> [f a]
+enumerate :: (Enumerable f, Typeable a, Eq a) => ESpeciesAST -> [a] -> [f a]
 enumerate s = enumerateM s . MS.fromListEq
 
 -- | Labelled enumeration: given a species expression and a list of
 --   labels (which are assumed to be distinct), compute the list of
 --   all structures built from the given labels.  If the type given
 --   for the enumeration does not match the species expression (via an
---   'Iso' instance), call 'error' with an error message explaining
---   the mismatch.
-enumerateL :: (Iso f, Typeable a) =>  ESpeciesAST -> [a] -> [f a]
+--   'Enumerable' instance), call 'error' with an error message
+--   explaining the mismatch.
+enumerateL :: (Enumerable f, Typeable a) =>  ESpeciesAST -> [a] -> [f a]
 enumerateL s = enumerateM s . MS.fromDistinctList
 
 -- | Unlabelled enumeration: given a species expression and an integer
@@ -272,7 +272,7 @@ enumerateL s = enumerateM s . MS.fromDistinctList
 --
 --   Note that @'enumerateU' s n@ is equivalent to @'enumerate' s
 --   (replicate n ())@.
-enumerateU ::  Iso f => ESpeciesAST -> Int -> [f ()]
+enumerateU ::  Enumerable f => ESpeciesAST -> Int -> [f ()]
 enumerateU s n = enumerateM s (MS.fromCounts [((),n)])
 
 -- | General enumeration: given a species expression and a multiset of
@@ -280,28 +280,28 @@ enumerateU s n = enumerateM s (MS.fromCounts [((),n)])
 --   the given labels. If the type given for the enumeration does not
 --   match the species expression, call 'error' with a message
 --   explaining the mismatch.
-enumerateM :: (Iso f, Typeable a) => ESpeciesAST -> Multiset a -> [f a]
+enumerateM :: (Enumerable f, Typeable a) => ESpeciesAST -> Multiset a -> [f a]
 enumerateM s m = map unsafeExtractStructure $ enumerateE s m
 
 -- | Lazily enumerate all unlabelled structures.
-enumerateAllU :: Iso f => ESpeciesAST -> [f ()]
+enumerateAllU :: Enumerable f => ESpeciesAST -> [f ()]
 enumerateAllU s = concatMap (enumerateU s) [0..]
 
 -- | Lazily enumerate all labelled structures, using [1..] as the
 --   labels.
-enumerateAll :: Iso f => ESpeciesAST -> [f Int]
+enumerateAll :: Enumerable f => ESpeciesAST -> [f Int]
 enumerateAll s = concatMap (\n -> enumerateL s (take n [1..])) [0..]
 
--- | The 'Iso' class allows you to generate structures of any type, by
---   declaring an instance of 'Iso'.  The 'Iso' instance requires you
---   to declare a standard structure type (see
+-- | The 'Enumerable' class allows you to generate structures of any
+--   type, by declaring an instance of 'Enumerable'.  The 'Enumerable'
+--   instance requires you to declare a standard structure type (see
 --   "Math.Combinatorics.Species.Structure") associated with your
 --   type, and a mapping 'iso' from the standard type to your custom
 --   one.  Instances are provided for all the standard structure types
 --   so you can enumerate species without having to provide your own
 --   custom data type as the target of the enumeration if you don't
 --   want to.
-class Typeable1 (StructTy f) => Iso (f :: * -> *) where
+class Typeable1 (StructTy f) => Enumerable (f :: * -> *) where
   -- | The standard structure type (see
   --   "Math.Combinatorics.Species.Stucture") that will map into @f@.
   type StructTy f :: * -> *
@@ -309,51 +309,51 @@ class Typeable1 (StructTy f) => Iso (f :: * -> *) where
   -- | The mapping from @'StructTy' f@ to @f@.
   iso :: StructTy f a -> f a
 
-instance Iso Void where
+instance Enumerable Void where
   type StructTy Void = Void
   iso = id
 
-instance Iso Unit where
+instance Enumerable Unit where
   type StructTy Unit = Unit
   iso = id
 
-instance Typeable a => Iso (Const a) where
+instance Typeable a => Enumerable (Const a) where
   type StructTy (Const a) = Const a
   iso = id
 
-instance Iso Id where
+instance Enumerable Id where
   type StructTy Id = Id
   iso = id
 
-instance (Iso f, Iso g) => Iso (Sum f g) where
+instance (Enumerable f, Enumerable g) => Enumerable (Sum f g) where
   type StructTy (Sum f g) = Sum (StructTy f) (StructTy g)
   iso (Inl x) = Inl (iso x)
   iso (Inr y) = Inr (iso y)
 
-instance (Iso f, Iso g) => Iso (Prod f g) where
+instance (Enumerable f, Enumerable g) => Enumerable (Prod f g) where
   type StructTy (Prod f g) = Prod (StructTy f) (StructTy g)
   iso (Prod x y) = Prod (iso x) (iso y)
 
-instance (Iso f, Functor f, Iso g) => Iso (Comp f g) where
+instance (Enumerable f, Functor f, Enumerable g) => Enumerable (Comp f g) where
   type StructTy (Comp f g) = Comp (StructTy f) (StructTy g)
   iso (Comp fgx) = Comp (fmap iso (iso fgx))
 
-instance Iso [] where
+instance Enumerable [] where
   type StructTy [] = []
   iso = id
 
-instance Iso Cycle where
+instance Enumerable Cycle where
   type StructTy Cycle = Cycle
   iso = id
 
-instance Iso Set where
+instance Enumerable Set where
   type StructTy Set = Set
   iso = id
 
-instance Iso Star where
+instance Enumerable Star where
   type StructTy Star = Star
   iso = id
 
-instance Typeable f => Iso (Mu f) where
+instance Typeable f => Enumerable (Mu f) where
   type StructTy (Mu f) = Mu f
   iso = id

@@ -59,7 +59,7 @@ module Math.Combinatorics.Species
 
       -- * Enumerating species structures
       -- $enum
-    , Iso(..)
+    , Enumerable(..)
     , structureType
     , enumerate
     , enumerateL
