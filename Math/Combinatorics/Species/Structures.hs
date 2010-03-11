@@ -6,7 +6,7 @@
            , EmptyDataDecls
   #-}
 
--- | Types used for expressing generic structures when generating species.
+-- | Types used for expressing generic structures when enumerating species.
 module Math.Combinatorics.Species.Structures
     ( -- * Structure functors
       -- $struct
@@ -142,9 +142,9 @@ instance (Show a) => Show (Star a) where
   show Star = "*"
   show (Original a) = show a
 
--- | Higher-order fixpoint.  'Mu f a' is morally isomorphic to 'f (Mu
---   f) a', except that we actually need a level of indirection.  In
---   fact 'Mu f a' is isomorphic to 'Interp f (Mu f) a'; 'f' is a
+-- | Higher-order fixpoint. @'Mu' f a@ is morally isomorphic to @f ('Mu'
+--   f) a@, except that we actually need a level of indirection.  In
+--   fact @'Mu' f a@ is isomorphic to @'Interp' f ('Mu' f) a@; @f@ is a
 --   placeholder which is interpreted by the 'Interp' type function.
 data Mu f a = Mu { unMu :: Interp f (Mu f) a }
   deriving Typeable

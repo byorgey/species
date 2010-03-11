@@ -12,9 +12,7 @@ module Math.Combinatorics.Species.Enumerate
     (
       -- * Enumeration methods
 
-      Enumerable(..)
-
-    , enumerate
+      enumerate
 
     , enumerateL
     , enumerateU
@@ -23,11 +21,14 @@ module Math.Combinatorics.Species.Enumerate
     , enumerateAll
     , enumerateAllU
 
-    -- * The guts of enumeration
+    -- * Where all the work actually happens
 
     , enumerate', enumerateE
 
     -- * Tools for dealing with structure types
+
+    , Enumerable(..)
+
     , Structure(..), extractStructure, unsafeExtractStructure
     , structureType, showStructureType
 
@@ -148,9 +149,9 @@ unsafeExtractStructure = either error id . extractStructure
 -- | @'structureType' s@ returns a String representation of the
 --   functor type which represents the structure of the species @s@.
 --   In particular, if @structureType s@ prints @\"T\"@, then you can
---   safely use 'generate' by writing
+--   safely use 'enumerate' and friends by writing
 --
--- > generate s ls :: [T L]
+-- > enumerate s ls :: [T L]
 --
 --   where @ls :: [L]@.
 --
@@ -158,7 +159,7 @@ unsafeExtractStructure = either error id . extractStructure
 --
 -- > > structureType octopus
 -- > "Comp Cycle []"
--- > > generate octopus [1,2,3] :: [Comp Cycle [] Int]
+-- > > enumerate octopus [1,2,3] :: [Comp Cycle [] Int]
 -- > [<[3,2,1]>,<[3,1,2]>,<[2,3,1]>,<[2,1,3]>,<[1,3,2]>
 -- > ,<[1,2,3]>,<[1],[3,2]>,<[1],[2,3]>,<[3,1],[2]>
 -- > ,<[1,3],[2]>,<[2,1],[3]>,<[1,2],[3]>,<[2],[1],[3]>
@@ -168,10 +169,10 @@ structureType (SA s) = showStructureType . extractType $ s
   where extractType :: forall s. Typeable1 s => SpeciesAST s -> TypeRep
         extractType _ = typeOf1 (undefined :: s ())
 
--- | Show a TypeRep while stripping off qualifier portions of TyCon
+-- | Show a 'TypeRep' while stripping off qualifier portions of 'TyCon'
 --   names.  This is essentially copied and pasted from the
---   Data.Typeable source, with a number of cases taken out that we
---   don't care about (special cases for (->), tuples, etc.).
+--   "Data.Typeable source", with a number of cases taken out that we
+--   don't care about (special cases for @(->)@, tuples, etc.).
 showStructureType :: TypeRep -> String
 showStructureType t = showsPrecST 0 t ""
   where showsPrecST :: Int -> TypeRep -> ShowS
@@ -292,18 +293,21 @@ enumerateAllU s = concatMap (enumerateU s) [0..]
 enumerateAll :: Enumerable f => ESpeciesAST -> [f Int]
 enumerateAll s = concatMap (\n -> enumerateL s (take n [1..])) [0..]
 
--- | The 'Enumerable' class allows you to generate structures of any
+-- | The 'Enumerable' class allows you to enumerate structures of any
 --   type, by declaring an instance of 'Enumerable'.  The 'Enumerable'
 --   instance requires you to declare a standard structure type (see
---   "Math.Combinatorics.Species.Structure") associated with your
+--   "Math.Combinatorics.Species.Structures") associated with your
 --   type, and a mapping 'iso' from the standard type to your custom
 --   one.  Instances are provided for all the standard structure types
 --   so you can enumerate species without having to provide your own
 --   custom data type as the target of the enumeration if you don't
 --   want to.
+--
+--   See "Math.Combinatorics.Species.Rec" for some example instances
+--   of 'Enumerable'.
 class Typeable1 (StructTy f) => Enumerable (f :: * -> *) where
   -- | The standard structure type (see
-  --   "Math.Combinatorics.Species.Stucture") that will map into @f@.
+  --   "Math.Combinatorics.Species.Structures") that will map into @f@.
   type StructTy f :: * -> *
 
   -- | The mapping from @'StructTy' f@ to @f@.
