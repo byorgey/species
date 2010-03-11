@@ -165,7 +165,7 @@ unsafeExtractStructure = either error id . extractStructure
 -- > ,<[1,3],[2]>,<[2,1],[3]>,<[1,2],[3]>,<[2],[1],[3]>
 -- > ,<[1],[2],[3]>]
 structureType :: ESpeciesAST -> String
-structureType (SA s) = showStructureType . extractType $ s
+structureType (Wrap s) = showStructureType . extractType $ s
   where extractType :: forall s. Typeable1 s => SpeciesAST s -> TypeRep
         extractType _ = typeOf1 (undefined :: s ())
 
@@ -200,7 +200,7 @@ showStructureType t = showsPrecST 0 t ""
 --   'Structure' type.  This is also not meant to be used directly.
 --   Instead, you should use one of the other @enumerateX@ methods.
 enumerateE :: ESpeciesAST -> Multiset a -> [Structure a]
-enumerateE (SA s) m = map Structure (enumerate' s m)
+enumerateE (Wrap s) m = map Structure (enumerate' s m)
 
 -- XXX add examples to all of these.
 

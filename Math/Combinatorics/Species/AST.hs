@@ -80,9 +80,9 @@ needsZ _            = False
 -- | An existential wrapper to hide the phantom type parameter to
 --   'SpeciesAST', so we can make it an instance of 'Species'.
 data ESpeciesAST where
-  SA :: (Typeable1 s)
+  Wrap :: (Typeable1 s)
      => SpeciesAST s -> ESpeciesAST
 
 -- | A version of 'needsZ' for 'ESpeciesAST'.
 needsZE :: ESpeciesAST -> Bool
-needsZE (SA s) = needsZ s
+needsZE (Wrap s) = needsZ s

@@ -40,42 +40,42 @@ instance Show (SpeciesAST s) where
   showsPrec _ (Rec f)             = shows f
 
 instance Show ESpeciesAST where
-  show (SA f) = show f
+  show (Wrap f) = show f
 
 instance Additive.C ESpeciesAST where
-  zero   = SA Zero
-  (SA f) + (SA g) = SA (f :+: g)
+  zero   = Wrap Zero
+  (Wrap f) + (Wrap g) = Wrap (f :+: g)
   negate = error "negation is not implemented yet!  wait until virtual species..."
 
 instance Ring.C ESpeciesAST where
-  (SA f) * (SA g) = SA (f :*: g)
-  one = SA One
-  fromInteger 0 = SA Zero
-  fromInteger 1 = SA One
-  fromInteger n = SA (N n)
+  (Wrap f) * (Wrap g) = Wrap (f :*: g)
+  one = Wrap One
+  fromInteger 0 = Wrap Zero
+  fromInteger 1 = Wrap One
+  fromInteger n = Wrap (N n)
   _ ^ 0 = one
-  (SA f) ^ 1 = SA f
-  (SA f) ^ n = case (SA f) ^ (n-1) of
-                 (SA f') -> SA (f :*: f')
+  (Wrap f) ^ 1 = Wrap f
+  (Wrap f) ^ n = case (Wrap f) ^ (n-1) of
+                 (Wrap f') -> Wrap (f :*: f')
 
 instance Differential.C ESpeciesAST where
-  differentiate (SA f) = SA (Der f)
+  differentiate (Wrap f) = Wrap (Der f)
 
 instance Species ESpeciesAST where
-  singleton               = SA X
-  set                     = SA E
-  cycle                   = SA C
-  list                    = SA L
-  subset                  = SA Subset
-  ksubset k               = SA (KSubset k)
-  element                 = SA Elt
-  o (SA f) (SA g)         = SA (f :.: g)
-  cartesian (SA f) (SA g) = SA (f :><: g)
-  fcomp (SA f) (SA g)     = SA (f :@: g)
-  ofSize (SA f) p         = SA (OfSize f p)
-  ofSizeExactly (SA f) n  = SA (OfSizeExactly f n)
-  nonEmpty (SA f)         = SA (NonEmpty f)
-  rec f                   = SA (Rec f)
+  singleton               = Wrap X
+  set                     = Wrap E
+  cycle                   = Wrap C
+  list                    = Wrap L
+  subset                  = Wrap Subset
+  ksubset k               = Wrap (KSubset k)
+  element                 = Wrap Elt
+  o (Wrap f) (Wrap g)         = Wrap (f :.: g)
+  cartesian (Wrap f) (Wrap g) = Wrap (f :><: g)
+  fcomp (Wrap f) (Wrap g)     = Wrap (f :@: g)
+  ofSize (Wrap f) p         = Wrap (OfSize f p)
+  ofSizeExactly (Wrap f) n  = Wrap (OfSizeExactly f n)
+  nonEmpty (Wrap f)         = Wrap (NonEmpty f)
+  rec f                   = Wrap (Rec f)
 
 -- | Reify a species expression into an AST.  Of course, this is just
 --   the identity function with a usefully restricted type.  For
@@ -112,4 +112,4 @@ reflectT (Rec f)             = rec f
 
 -- | Reflect an AST back into any instance of the 'Species' class.
 reflect :: Species s => ESpeciesAST -> s
-reflect (SA f) = reflectT f
+reflect (Wrap f) = reflectT f
