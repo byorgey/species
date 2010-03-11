@@ -1,8 +1,9 @@
 {-# LANGUAGE GADTs #-}
 
 -- | Type class instances for 'ESpeciesAST' and 'SpeciesAST', in a
---   separate module to avoid a dependency cycle between M.C.S.AST and
---   M.C.S.Class.
+--   separate module to avoid a dependency cycle between
+--   "Math.Combinatorics.Species.AST" and
+--   "Math.Combinatorics.Species.Class".
 module Math.Combinatorics.Species.AST.Instances
     ( reify, reflectT, reflect )
     where
@@ -91,6 +92,8 @@ reify = id
 
 -- | Reflect an AST back into any instance of the 'Species' class.
 reflectT :: Species s => SpeciesAST f -> s
+reflectT Zero                = 0
+reflectT One                 = 1
 reflectT (N n)               = fromInteger n
 reflectT X                   = singleton
 reflectT E                   = set

@@ -9,6 +9,9 @@ module Math.Combinatorics.Species.Rec
          -- Binary trees
          BTreeC(..), BTree(..), bTree
 
+         -- Partitions
+       , Partition(..)
+
        ) where
 
 import NumericPrelude
@@ -46,3 +49,10 @@ instance Enumerable BTree where
 
 bTree :: Species s => s
 bTree = rec BTreeC
+
+-- | Type of partitions.
+data Partition a = Partition { getParts :: [[a]] }
+  deriving (Typeable, Eq, Read, Show)
+instance Enumerable Partition where
+  type StructTy Partition = Comp Set Set
+  iso (Comp ss) = Partition . map getSet . getSet $ ss

@@ -83,7 +83,12 @@ module Math.Combinatorics.Species
 
       -- * Recursive species
       -- $rec
+    , Mu(..), Interp, ASTFunctor(..)
     , BTree(..), BTreeC(..), bTree   -- XXX ?
+
+      -- * Other Enumerable types
+      -- $otherenum
+    , Partition(..)
 
     ) where
 
