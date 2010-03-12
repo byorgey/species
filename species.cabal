@@ -4,7 +4,7 @@ license:        BSD3
 license-file:   LICENSE
 build-type:     Simple
 cabal-version:  >= 1.2.3
-tested-with:    GHC == 6.10.3
+tested-with:    GHC >= 6.10 && < 6.11, GHC == 6.12.1
 author:         Brent Yorgey
 maintainer:     Brent Yorgey <byorgey@cis.upenn.edu>
 category:       Math
