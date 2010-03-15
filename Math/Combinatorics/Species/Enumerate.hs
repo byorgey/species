@@ -361,3 +361,8 @@ instance Enumerable Star where
 instance Typeable f => Enumerable (Mu f) where
   type StructTy (Mu f) = Mu f
   iso = id
+
+instance Enumerable Maybe where
+  type StructTy Maybe = Sum Unit Id
+  iso (Inl Unit) = Nothing
+  iso (Inr x)    = Just x
