@@ -11,6 +11,7 @@ module Math.Combinatorics.Species.TH where
 import NumericPrelude
 import PreludeBase
 
+import Math.Combinatorics.Species.Class
 import Math.Combinatorics.Species.Enumerate
 import Math.Combinatorics.Species.Structures
 
@@ -29,9 +30,12 @@ instance Applicative Q where
 deriveEnumerable :: Name -> Q [Dec]
 deriveEnumerable nm = do
   st <- nameToStruct nm
-  sequence [ mkEnumerableInst nm st
-           , return $ mkSpecies nm st
-           ]
+  let spNm = mkName . map toLower . nameBase $ nm
+  sequence
+    [ mkEnumerableInst nm st
+    , mkSpeciesSig spNm
+    , mkSpecies spNm st
+    ]
 
 data Struct = SId
             | SConst Type    -- ^ for types of kind *
@@ -154,18 +158,32 @@ mkIsoConMatches (cnm, ps) = map mkProd . sequence <$> mapM mkIsoMatches ps
         mkProd = (foldl1 (\x y -> (ConP 'Prod [x, y])) *** foldl AppE (ConE cnm))
                . unzip
 
-mkSpecies :: Name -> Struct -> Dec
-mkSpecies nm st = ValD (VarP spNm) (NormalB $ structToSp st)
-  where spNm = makeName . map toLower . nameBase $ nm
+mkSpeciesSig :: Name -> Q Dec
+mkSpeciesSig nm = let s = mkName "s" in sigD nm [t| Species s => s |]
 
-structToSp :: Struct -> Exp
-structToSp SId = VarE 'x
-structToSp (SConst t) = error "How to deal with SConst in structToSp?"
-structToSp (SEnum t)  = error "SEnum in structToSp" -- XXX fix this
-structToSp (SSumProd []) = LitE (IntegerL 0)
-structToSp (SSumProd ss) = foldl1 (\x y -> InfixE (Just x) (VarE '+) (Just y))
-                                  (map conToSp ss)
-structToSp (SComp s1 s2) = InfixE (Just (structToSp s1)) (VarE 'o) (Just (structToSp s2))
-structToSp SSelf = error "SSelf in structToSp"
 
-conToSp = undefined
+mkSpecies :: Name -> Struct -> Q Dec
+mkSpecies nm st = valD (varP nm) (normalB (structToSp st)) []
+
+structToSp :: Struct -> Q Exp
+structToSp SId           = return $ VarE 'singleton
+structToSp (SConst t)    = error "How to deal with SConst in structToSp?"
+structToSp (SEnum t)     = typeToSp t
+structToSp (SSumProd []) = return $ LitE (IntegerL 0)
+structToSp (SSumProd ss) = foldl1 (\x y -> InfixE (Just x) (VarE '(+)) (Just y))
+                                  <$> mapM conToSp ss
+structToSp (SComp s1 s2) = do sp1 <- structToSp s1
+                              sp2 <- structToSp s2
+                              return $ InfixE (Just sp1) (VarE 'o) (Just sp2)
+structToSp SSelf         = error "SSelf in structToSp"
+
+conToSp :: (Name, [Struct]) -> Q Exp
+conToSp (_,[]) = return $ LitE (IntegerL 1)
+conToSp (_,ps) = foldl1 (\x y -> InfixE (Just x) (VarE '(*)) (Just y))
+                        <$> mapM structToSp ps
+
+typeToSp :: Type -> Q Exp
+typeToSp ListT    = [| list |]
+typeToSp (ConT c) | c == ''[] = [| list |]
+                  | otherwise = nameToStruct c >>= structToSp
+typeToSp _        = error "non-constructor in typeToSp"
