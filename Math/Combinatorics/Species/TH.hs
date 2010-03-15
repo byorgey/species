@@ -31,11 +31,23 @@ deriveEnumerable :: Name -> Q [Dec]
 deriveEnumerable nm = do
   st <- nameToStruct nm
   let spNm = mkName . map toLower . nameBase $ nm
-  sequence
-    [ mkEnumerableInst nm st
-    , mkSpeciesSig spNm
-    , mkSpecies spNm st
-    ]
+  if (isRecursive st)
+    then mkEnumerableRec    nm spNm st
+    else mkEnumerableNonrec nm spNm st
+ where
+  mkEnumerableRec nm spNm st = undefined
+    -- do
+    -- codeNm <- newName (nameBase nm)
+    -- [d| data $codeNm = $codeNm deriving Typeable
+    --     type instance Interp codeNm self
+    -- |]
+
+  mkEnumerableNonrec nm spNm st =
+    sequence
+      [ mkEnumerableInst nm st
+      , mkSpeciesSig spNm
+      , mkSpecies spNm st
+      ]
 
 data Struct = SId
             | SConst Type    -- ^ for types of kind *
@@ -104,13 +116,13 @@ tyToStruct nm vars t@(AppT _ _)
 -- XXX deal with arrow types?
 
 structToTy :: Struct -> Type
-structToTy SId         = ConT ''Id
-structToTy (SConst t)  = AppT (ConT ''Const) t
-structToTy (SEnum t)   = AppT (ConT ''StructTy) t
+structToTy SId           = ConT ''Id
+structToTy (SConst t)    = AppT (ConT ''Const) t
+structToTy (SEnum t)     = AppT (ConT ''StructTy) t
 structToTy (SSumProd []) = ConT ''Void
 structToTy (SSumProd ss) = foldl1 (AppT . AppT (ConT ''Sum)) (map conToTy ss)
-structToTy (SComp s t) = AppT (AppT (ConT ''Comp) (structToTy s)) (structToTy t)
-structToTy SSelf       = error "SSelf in structToTy"  -- XXX ?
+structToTy (SComp s t)   = AppT (AppT (ConT ''Comp) (structToTy s)) (structToTy t)
+structToTy SSelf         = error "SSelf in structToTy"  -- XXX ?
 
 conToTy :: (Name, [Struct]) -> Type
 conToTy (_, []) = ConT ''Unit
@@ -158,32 +170,33 @@ mkIsoConMatches (cnm, ps) = map mkProd . sequence <$> mapM mkIsoMatches ps
         mkProd = (foldl1 (\x y -> (ConP 'Prod [x, y])) *** foldl AppE (ConE cnm))
                . unzip
 
-mkSpeciesSig :: Name -> Q Dec
-mkSpeciesSig nm = let s = mkName "s" in sigD nm [t| Species s => s |]
+isRecursive :: Struct -> Bool
+isRecursive (SSumProd cons) = any isRecursive (concatMap snd cons)
+isRecursive (SComp s1 s2)   = isRecursive s1 || isRecursive s2
+isRecursive SSelf           = True
+isRecursive _               = False
 
+mkSpeciesSig :: Name -> Q Dec
+mkSpeciesSig nm = sigD nm [t| Species s => s |]
 
 mkSpecies :: Name -> Struct -> Q Dec
 mkSpecies nm st = valD (varP nm) (normalB (structToSp st)) []
 
 structToSp :: Struct -> Q Exp
-structToSp SId           = return $ VarE 'singleton
+structToSp SId           = [| singleton |]
 structToSp (SConst t)    = error "How to deal with SConst in structToSp?"
 structToSp (SEnum t)     = typeToSp t
-structToSp (SSumProd []) = return $ LitE (IntegerL 0)
-structToSp (SSumProd ss) = foldl1 (\x y -> InfixE (Just x) (VarE '(+)) (Just y))
-                                  <$> mapM conToSp ss
-structToSp (SComp s1 s2) = do sp1 <- structToSp s1
-                              sp2 <- structToSp s2
-                              return $ InfixE (Just sp1) (VarE 'o) (Just sp2)
+structToSp (SSumProd []) = [| 0 |]
+structToSp (SSumProd ss) = foldl1 (\x y -> [| $x + $y |]) $ map conToSp ss
+structToSp (SComp s1 s2) = [| $(structToSp s1) `o` $(structToSp s2) |]
 structToSp SSelf         = error "SSelf in structToSp"
 
 conToSp :: (Name, [Struct]) -> Q Exp
-conToSp (_,[]) = return $ LitE (IntegerL 1)
-conToSp (_,ps) = foldl1 (\x y -> InfixE (Just x) (VarE '(*)) (Just y))
-                        <$> mapM structToSp ps
+conToSp (_,[]) = [| 1 |]
+conToSp (_,ps) = foldl1 (\x y -> [| $x * $y |]) $ map structToSp ps
 
 typeToSp :: Type -> Q Exp
 typeToSp ListT    = [| list |]
 typeToSp (ConT c) | c == ''[] = [| list |]
                   | otherwise = nameToStruct c >>= structToSp
-typeToSp _        = error "non-constructor in typeToSp"
+typeToSp _        = error "non-constructor in typeToSp?"
