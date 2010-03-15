@@ -1,4 +1,4 @@
-:set -XNoImplicitPrelude
+:set -XNoImplicitPrelude -XTemplateHaskell
 :m -Prelude
-:m +MyPrelude Math.Combinatorics.Species
+:m +MyPrelude Math.Combinatorics.Species Language.Haskell.TH
 :set prompt "> "
