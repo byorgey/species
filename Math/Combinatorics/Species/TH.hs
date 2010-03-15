@@ -16,6 +16,7 @@ import Math.Combinatorics.Species.Structures
 
 import Control.Arrow (first, second, (***))
 import Control.Monad (zipWithM, liftM2, mapM, ap)
+import Data.Char (toLower)
 
 import Control.Applicative (Applicative(..), (<$>), (<*>))
 
@@ -28,7 +29,9 @@ instance Applicative Q where
 deriveEnumerable :: Name -> Q [Dec]
 deriveEnumerable nm = do
   st <- nameToStruct nm
-  sequence [mkEnumerableInst nm st]
+  sequence [ mkEnumerableInst nm st
+           , return $ mkSpecies nm st
+           ]
 
 data Struct = SId
             | SConst Type    -- ^ for types of kind *
@@ -150,3 +153,19 @@ mkIsoConMatches (cnm, ps) = map mkProd . sequence <$> mapM mkIsoMatches ps
   where mkProd :: [(Pat, Exp)] -> (Pat, Exp)
         mkProd = (foldl1 (\x y -> (ConP 'Prod [x, y])) *** foldl AppE (ConE cnm))
                . unzip
+
+mkSpecies :: Name -> Struct -> Dec
+mkSpecies nm st = ValD (VarP spNm) (NormalB $ structToSp st)
+  where spNm = makeName . map toLower . nameBase $ nm
+
+structToSp :: Struct -> Exp
+structToSp SId = VarE 'x
+structToSp (SConst t) = error "How to deal with SConst in structToSp?"
+structToSp (SEnum t)  = error "SEnum in structToSp" -- XXX fix this
+structToSp (SSumProd []) = LitE (IntegerL 0)
+structToSp (SSumProd ss) = foldl1 (\x y -> InfixE (Just x) (VarE '+) (Just y))
+                                  (map conToSp ss)
+structToSp (SComp s1 s2) = InfixE (Just (structToSp s1)) (VarE 'o) (Just (structToSp s2))
+structToSp SSelf = error "SSelf in structToSp"
+
+conToSp = undefined
