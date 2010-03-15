@@ -364,5 +364,5 @@ instance Typeable f => Enumerable (Mu f) where
 
 instance Enumerable Maybe where
   type StructTy Maybe = Sum Unit Id
-  iso (Inl Unit) = Nothing
-  iso (Inr x)    = Just x
+  iso (Inl Unit)   = Nothing
+  iso (Inr (Id x)) = Just x
