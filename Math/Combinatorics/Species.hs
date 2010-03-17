@@ -86,9 +86,8 @@ module Math.Combinatorics.Species
     , Mu(..), Interp, ASTFunctor(..)
     , BTree(..), BTreeC(..), bTree   -- XXX ?
 
-      -- * Other Enumerable types
-      -- $otherenum
-    , Partition(..)
+      -- * Template Haskell
+    , deriveEnumerable
 
     ) where
 
@@ -100,6 +99,7 @@ import Math.Combinatorics.Species.Enumerate
 import Math.Combinatorics.Species.AST
 import Math.Combinatorics.Species.AST.Instances
 import Math.Combinatorics.Species.Rec
+import Math.Combinatorics.Species.TH
 
 -- $DSL
 -- The combinatorial species DSL consists of the 'Species' type class,

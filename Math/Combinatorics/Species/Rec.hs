@@ -9,9 +9,6 @@ module Math.Combinatorics.Species.Rec
          -- Binary trees
          BTreeC(..), BTree(..), bTree
 
-         -- Partitions
-       , Partition(..)
-
        ) where
 
 import NumericPrelude
