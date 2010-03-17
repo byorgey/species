@@ -33,7 +33,6 @@ Library
     Math.Combinatorics.Species.AST
     Math.Combinatorics.Species.AST.Instances
     Math.Combinatorics.Species.Structures
-    Math.Combinatorics.Species.Rec
     Math.Combinatorics.Species.Enumerate
     Math.Combinatorics.Species.TH
   extensions: NoImplicitPrelude

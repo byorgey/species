@@ -84,7 +84,6 @@ module Math.Combinatorics.Species
       -- * Recursive species
       -- $rec
     , Mu(..), Interp, ASTFunctor(..)
-    , BTree(..), BTreeC(..), bTree   -- XXX ?
 
       -- * Template Haskell
     , deriveEnumerable
@@ -98,7 +97,6 @@ import Math.Combinatorics.Species.Structures
 import Math.Combinatorics.Species.Enumerate
 import Math.Combinatorics.Species.AST
 import Math.Combinatorics.Species.AST.Instances
-import Math.Combinatorics.Species.Rec
 import Math.Combinatorics.Species.TH
 
 -- $DSL

@@ -3,6 +3,9 @@
            , TypeFamilies
   #-}
 
+-- NOTE: this file is no longer part of the library; it's here only
+-- for documentation/examples/hysterical raisins.
+
 -- | Some common recursively defined species.
 module Math.Combinatorics.Species.Rec
        (
