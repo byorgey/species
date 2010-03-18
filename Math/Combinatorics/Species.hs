@@ -86,7 +86,7 @@ module Math.Combinatorics.Species
     , Mu(..), Interp, ASTFunctor(..)
 
       -- * Template Haskell
-    , deriveEnumerable
+    , deriveSpecies
 
     ) where
 

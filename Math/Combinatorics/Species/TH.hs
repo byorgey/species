@@ -36,8 +36,8 @@ instance Applicative Q where
 data C1_ = C1_
   deriving (Show, Typeable)
 
-deriveEnumerable :: Name -> Q [Dec]
-deriveEnumerable nm = do
+deriveSpecies :: Name -> Q [Dec]
+deriveSpecies nm = do
   st <- nameToStruct nm
   let spNm = mkName . map toLower . nameBase $ nm
   if (isRecursive st)

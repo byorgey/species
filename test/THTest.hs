@@ -15,12 +15,12 @@ data Florp a = Fleep [a] a
 data Foo a = Baz | Bar a (Foo a)
   deriving Show
 
-$(deriveEnumerable ''Florp)
-$(deriveEnumerable ''Foo)
+$(deriveSpecies ''Florp)
+$(deriveSpecies ''Foo)
 
 data Tree a = Leaf | Node a (Tree a) (Tree a)
   deriving Show
 
-$(deriveEnumerable ''Tree)
+$(deriveSpecies ''Tree)
 
 main = print "hay!"
