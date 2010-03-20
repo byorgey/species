@@ -66,7 +66,7 @@ instance Species ESpeciesAST where
   singleton               = Wrap X
   set                     = Wrap E
   cycle                   = Wrap C
-  list                    = Wrap L
+  linOrd                  = Wrap L
   subset                  = Wrap Subset
   ksubset k               = Wrap (KSubset k)
   element                 = Wrap Elt
@@ -98,7 +98,7 @@ reflectT (N n)               = fromInteger n
 reflectT X                   = singleton
 reflectT E                   = set
 reflectT C                   = cycle
-reflectT L                   = list
+reflectT L                   = linOrd
 reflectT Subset              = subset
 reflectT (KSubset k)         = ksubset k
 reflectT Elt                 = element

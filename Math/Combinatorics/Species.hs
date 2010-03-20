@@ -36,7 +36,7 @@ module Math.Combinatorics.Species
     , madeOf
     , (><), (@@)
     , x, sets, cycles
-    , lists
+    , linOrds
     , subsets
     , ksubsets
     , elements

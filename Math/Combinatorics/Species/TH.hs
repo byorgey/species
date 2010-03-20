@@ -240,8 +240,8 @@ conToSp _    (_,[]) = [| 1 |]
 conToSp self (_,ps) = foldl1 (\x y -> [| $x * $y |]) $ map (structToSp self) ps
 
 typeToSp :: Name -> Type -> Q Exp
-typeToSp _    ListT    = [| list |]
-typeToSp self (ConT c) | c == ''[] = [| list |]
+typeToSp _    ListT    = [| linOrd |]
+typeToSp self (ConT c) | c == ''[] = [| linOrd |]
                        | otherwise = nameToStruct c >>= structToSp self -- XXX this is wrong! Need to do something else for recursive types?
 typeToSp _ _        = error "non-constructor in typeToSp?"
 

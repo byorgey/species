@@ -17,7 +17,7 @@ module Math.Combinatorics.Species.Class
     , x
     , sets
     , cycles
-    , lists
+    , linOrds
     , subsets
     , ksubsets
     , elements
@@ -82,12 +82,13 @@ class (Differential.C s) => Species s where
   -- | The species C of cyclical orderings (cycles/rings).
   cycle     :: s
 
-  -- | The species L of linear orderings (lists): since lists are
-  --   isomorphic to cycles with a hole, we may take L = C' as the
-  --   default implementation; list is included in the 'Species' class
-  --   so it can be special-cased for generation.
-  list :: s
-  list  = oneHole cycle
+  -- | The species L of linear orderings (lists): since linear
+  --   orderings are isomorphic to cyclic orderings with a hole, we
+  --   may take L = C' as the default implementation; linOrd is
+  --   included in the 'Species' class so it can be special-cased for
+  --   generation.
+  linOrd    :: s
+  linOrd = oneHole cycle
 
   -- | The species p of subsets is given by p = E * E. 'subset' has a
   --   default implementation of @set * set@, but is included in the
@@ -193,8 +194,8 @@ pointed = (x *) . Differential.differentiate
 -- Some species that can be defined in terms of the primitive species
 -- operations.
 
-lists :: Species s => s
-lists = list
+linOrds :: Species s => s
+linOrds = linOrd
 
 elements :: Species s => s
 elements = element
@@ -203,7 +204,7 @@ elements = element
 --   the lists look like \"tentacles\" attached to the cyclic
 --   \"body\": Oct = C o E+ .
 octopi, octopus :: Species s => s
-octopus = cycle `o` nonEmpty lists
+octopus = cycle `o` nonEmpty linOrds
 octopi  = octopus
 
 -- | The species of set partitions is just the composition E o E+,
@@ -223,7 +224,7 @@ subsets = subset
 -- | The species Bal of ballots consists of linear orderings of
 --   nonempty sets: Bal = L o E+.
 ballots, ballot :: Species s => s
-ballot = list `o` nonEmpty sets
+ballot = linOrd `o` nonEmpty sets
 ballots = ballot
 
 ksubsets :: Species s => Integer -> s
