@@ -1,0 +1,24 @@
+% XXX This shouldn't go in the paper.  Maybe move it to the web site.
+%
+% The reader is encouraged to download the \pkg{species} library in
+% order to play with examples while following along.  It is available on
+% Hackage \cite{hackage} and can most easily be installed (along with
+% all its dependencies) using the cabal-install tool
+% \cite{cabal-install}, provided as part of the Haskell Platform
+% \cite{haskell-platform}. Simply typing
+% \begin{verbatim}
+%     cabal install species
+% \end{verbatim}
+% at a prompt should download and install the \pkg{species} library
+% along with all its dependencies.  \bay{does this work for Windows
+%   users too?}  The biggest dependency is the \pkg{numeric-prelude}
+% library maintained by Henning Thielemann \cite{numeric-prelude}, which
+% provides a mathematically more sane \bay{use a different word?}
+% alternative to the standard Haskell Prelude.  In order to play along
+% with examples, be sure to start \texttt{ghci} with the
+% \texttt{-XNoImplicitPrelude} flag, then unload the \texttt{Prelude}
+% module and load the \texttt{MyPrelude} module provided by the
+% \pkg{numeric-prelude package}. \bay{provide .ghci file for playing
+%   with species library?} \bay{rework this} \bay{mention that it's
+%   tested on both GHC 6.10 and 6.12, but requires > 6.8 because of ?
+%   type families?}
