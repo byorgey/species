@@ -38,6 +38,7 @@ import Math.Combinatorics.Species.Class
 import Math.Combinatorics.Species.Types
 import Math.Combinatorics.Species.AST
 import Math.Combinatorics.Species.Structures
+import qualified Math.Combinatorics.Species.Util.Interval as I
 
 import qualified Math.Combinatorics.Multiset as MS
 import Math.Combinatorics.Multiset (Multiset(..), (+:))
@@ -165,7 +166,7 @@ unsafeExtractStructure = either error id . extractStructure
 -- > ,<[1,3],[2]>,<[2,1],[3]>,<[1,2],[3]>,<[2],[1],[3]>
 -- > ,<[1],[2],[3]>]
 structureType :: ESpeciesAST -> String
-structureType (Wrap s) = showStructureType . extractType $ s
+structureType (Wrap _ s) = showStructureType . extractType $ s
   where extractType :: forall s. Typeable1 s => SpeciesAST s -> TypeRep
         extractType _ = typeOf1 (undefined :: s ())
 
@@ -200,7 +201,10 @@ showStructureType t = showsPrecST 0 t ""
 --   'Structure' type.  This is also not meant to be used directly.
 --   Instead, you should use one of the other @enumerateX@ methods.
 enumerateE :: ESpeciesAST -> Multiset a -> [Structure a]
-enumerateE (Wrap s) m = map Structure (enumerate' s m)
+enumerateE (Wrap i s) m
+  | fromIntegral (sum (MS.getCounts m)) `I.elem` i = map Structure (enumerate' s m)
+  | otherwise = []
+
 
 -- XXX add examples to all of these.
 

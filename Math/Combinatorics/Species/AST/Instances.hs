@@ -13,6 +13,8 @@ import PreludeBase hiding (cycle)
 
 import Math.Combinatorics.Species.Class
 import Math.Combinatorics.Species.AST
+import Math.Combinatorics.Species.Util.Interval as I
+import qualified Math.Combinatorics.Species.Util.Interval as I
 
 import qualified Algebra.Additive as Additive
 import qualified Algebra.Ring as Ring
@@ -41,42 +43,42 @@ instance Show (SpeciesAST s) where
   showsPrec _ (Rec f)             = shows f
 
 instance Show ESpeciesAST where
-  show (Wrap f) = show f
+  show (Wrap _ f) = show f
 
 instance Additive.C ESpeciesAST where
-  zero   = Wrap Zero
-  (Wrap f) + (Wrap g) = Wrap (f :+: g)
+  zero   = Wrap 0 Zero
+  (Wrap fi f) + (Wrap gi g) = Wrap (fi `I.union` gi) (f :+: g)
   negate = error "negation is not implemented yet!  wait until virtual species..."
 
 instance Ring.C ESpeciesAST where
-  (Wrap f) * (Wrap g) = Wrap (f :*: g)
-  one = Wrap One
-  fromInteger 0 = Wrap Zero
-  fromInteger 1 = Wrap One
-  fromInteger n = Wrap (N n)
+  (Wrap fi f) * (Wrap gi g) = Wrap (fi + gi) (f :*: g)
+  one = Wrap 0 One
+  fromInteger 0 = Wrap 0 Zero
+  fromInteger 1 = Wrap 0 One
+  fromInteger n = Wrap 0 (N n)
   _ ^ 0 = one
-  (Wrap f) ^ 1 = Wrap f
-  (Wrap f) ^ n = case (Wrap f) ^ (n-1) of
-                 (Wrap f') -> Wrap (f :*: f')
+  w@(Wrap{}) ^ 1 = w
+  (Wrap fi f) ^ n   = case (Wrap f) ^ (n-1) of
+                      (Wrap f'i f') -> Wrap (fi + f'i) (f :*: f')
 
 instance Differential.C ESpeciesAST where
-  differentiate (Wrap f) = Wrap (Der f)
+  differentiate (Wrap fi f) = Wrap (decrI fi) (Der f)
 
 instance Species ESpeciesAST where
-  singleton               = Wrap X
-  set                     = Wrap E
-  cycle                   = Wrap C
-  linOrd                  = Wrap L
-  subset                  = Wrap Subset
-  ksubset k               = Wrap (KSubset k)
-  element                 = Wrap Elt
-  o (Wrap f) (Wrap g)         = Wrap (f :.: g)
-  cartesian (Wrap f) (Wrap g) = Wrap (f :><: g)
-  fcomp (Wrap f) (Wrap g)     = Wrap (f :@: g)
-  ofSize (Wrap f) p         = Wrap (OfSize f p)
-  ofSizeExactly (Wrap f) n  = Wrap (OfSizeExactly f n)
-  nonEmpty (Wrap f)         = Wrap (NonEmpty f)
-  rec f                   = Wrap (Rec f)
+  singleton                         = Wrap 1             X
+  set                               = Wrap allNats       E
+  cycle                             = Wrap (allNats + 1) C
+  linOrd                            = Wrap allNats       L
+  subset                            = Wrap allNats       Subset
+  ksubset k                         = Wrap (allNats + k) (KSubset k)
+  element                           = Wrap (allNats + 1) Elt
+  o (Wrap fi f) (Wrap gi g)         = Wrap (fi * gi)     (f :.: g)
+  cartesian (Wrap fi f) (Wrap gi g) = Wrap (fi `I.intersect` gi) (f :><: g)
+  fcomp (Wrap fi f) (Wrap gi g)     = Wrap undefined     (f :@: g)
+  ofSize (Wrap fi f) p              = Wrap (OfSize f p)
+  ofSizeExactly (Wrap fi f) n       = Wrap (OfSizeExactly f n)
+  nonEmpty (Wrap fi f)              = Wrap (NonEmpty f)
+  rec f                             = Wrap (Rec f)
 
 -- | Reify a species expression into an AST.  Of course, this is just
 --   the identity function with a usefully restricted type.  For
@@ -115,4 +117,4 @@ reflectT (Rec f)             = rec f
 
 -- | Reflect an AST back into any instance of the 'Species' class.
 reflect :: Species s => ESpeciesAST -> s
-reflect (Wrap f) = reflectT f
+reflect (Wrap _ f) = reflectT f

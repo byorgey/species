@@ -17,6 +17,7 @@ module Math.Combinatorics.Species.AST
     ) where
 
 import Math.Combinatorics.Species.Structures
+import Math.Combinatorics.Species.Util.Interval
 
 import Data.Typeable
 
@@ -79,9 +80,13 @@ needsZ _            = False
 
 -- | An existential wrapper to hide the phantom type parameter to
 --   'SpeciesAST', so we can make it an instance of 'Species'.
+--
+--   We also include an interval which tracks a conservative
+--   approximation to the sizes for which this species will actually
+--   generate any structures.
 data ESpeciesAST where
-  Wrap :: Typeable1 s => SpeciesAST s -> ESpeciesAST
+  Wrap :: Typeable1 s => Interval -> SpeciesAST s -> ESpeciesAST
 
 -- | A version of 'needsZ' for 'ESpeciesAST'.
 needsZE :: ESpeciesAST -> Bool
-needsZE (Wrap s) = needsZ s
+needsZE (Wrap _ s) = needsZ s
