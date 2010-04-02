@@ -9,12 +9,6 @@ module Math.Combinatorics.Species.Types
 
       CycleType
 
-      -- * Lazy multiplication
-
-    , LazyRing(..)
-    , LazyQ
-    , LazyZ
-
       -- * Series types
 
     , EGF(..)
@@ -52,65 +46,26 @@ import qualified Algebra.Differential as Differential
 import qualified Algebra.ZeroTestable as ZeroTestable
 import qualified Algebra.Field as Field
 
-import Data.Lub (parCommute, HasLub(..), flatLub)
-
 -- | A representation of the cycle type of a permutation.  If @c ::
 --   CycleType@ and @(k,n) `elem` c@, then the permutation has @n@
 --   cycles of size @k@.
 type CycleType = [(Integer, Integer)]
 
 --------------------------------------------------------------------------------
---  Lazy multiplication  -------------------------------------------------------
---------------------------------------------------------------------------------
-
--- | If @T@ is an instance of @Ring@, then @LazyRing T@ is isomorphic
---   to T but with a lazy multiplication: @0 * undefined = undefined * 0
---   = 0@, and @1 * a = a * 1 = a@.
-newtype LazyRing a = LR { unLR :: a }
-  deriving (Eq, Ord, Additive.C, ZeroTestable.C, Field.C)
-
-instance HasLub (LazyRing a) where
-  lub = flatLub
-
-instance Show a => Show (LazyRing a) where
-  show (LR r) = show r
-
-instance (Eq a, Ring.C a) => Ring.C (LazyRing a) where
-  (*) = parCommute lazyTimes
-    where lazyTimes (LR 0) _ = LR 0
-          lazyTimes (LR 1) x = x
-          lazyTimes (LR a) (LR b) = LR (a*b)
-  fromInteger = LR . fromInteger
-
-type LazyQ = LazyRing Rational
-type LazyZ = LazyRing Integer
-
---------------------------------------------------------------------------------
 --  Series types  --------------------------------------------------------------
 --------------------------------------------------------------------------------
 
 -- | Exponential generating functions, for counting labelled species.
-newtype EGF = EGF { unEGF :: PS.T LazyQ }
-  deriving (Additive.C, Differential.C, Show)
+newtype EGF = EGF { unEGF :: PS.T Rational }
+  deriving (Additive.C, Differential.C, Ring.C, Show)
 
-instance HasLub EGF where
-  lub = flatLub
-
-instance Ring.C EGF where
-  (*) = parCommute lazyEGFTimes
-    where lazyEGFTimes (EGF (PS.Cons (0:xs))) y
-            = EGF (PS.Cons (0 : (PS.coeffs (unEGF (egfFromCoeffs xs * y)))))
---          lazyEGFTimes (EGF (PS.Cons [1])) y = y  -- this makes things *worse*!
-          lazyEGFTimes x y = liftEGF2 (*) x y
-  fromInteger = EGF . fromInteger
-
-egfFromCoeffs :: [LazyQ] -> EGF
+egfFromCoeffs :: [Rational] -> EGF
 egfFromCoeffs = EGF . PS.fromCoeffs
 
-liftEGF :: (PS.T LazyQ -> PS.T LazyQ) -> EGF -> EGF
+liftEGF :: (PS.T Rational -> PS.T Rational) -> EGF -> EGF
 liftEGF f (EGF x) = EGF (f x)
 
-liftEGF2 :: (PS.T LazyQ -> PS.T LazyQ -> PS.T LazyQ)
+liftEGF2 :: (PS.T Rational -> PS.T Rational -> PS.T Rational)
          -> EGF -> EGF -> EGF
 liftEGF2 f (EGF x) (EGF y) = EGF (f x y)
 

@@ -105,7 +105,7 @@ cycleMonomials n = map cycleMonomial ds
 --   function:  F(x) = Z_F(x,0,0,0,...).
 zToEGF :: CycleIndex -> EGF
 zToEGF (CI (MVP.Cons xs))
-  = EGF . PowerSeries.fromCoeffs . map LR
+  = EGF . PowerSeries.fromCoeffs
   . insertZeros
   . concatMap (\(c,as) -> case as of { [] -> [(0,c)] ; [(1,p)] -> [(p,c)] ; _ -> [] })
   . map (Monomial.coeff &&& (M.assocs . Monomial.powers))
