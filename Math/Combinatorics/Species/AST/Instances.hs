@@ -58,8 +58,8 @@ instance Ring.C ESpeciesAST where
   fromInteger n = Wrap 0 (N n)
   _ ^ 0 = one
   w@(Wrap{}) ^ 1 = w
-  (Wrap fi f) ^ n   = case (Wrap f) ^ (n-1) of
-                      (Wrap f'i f') -> Wrap (fi + f'i) (f :*: f')
+  (Wrap fi f) ^ n   = case (Wrap fi f) ^ (n-1) of
+                        (Wrap f'i f') -> Wrap (fi + f'i) (f :*: f')
 
 instance Differential.C ESpeciesAST where
   differentiate (Wrap fi f) = Wrap (decrI fi) (Der f)
@@ -70,15 +70,18 @@ instance Species ESpeciesAST where
   cycle                             = Wrap (allNats + 1) C
   linOrd                            = Wrap allNats       L
   subset                            = Wrap allNats       Subset
-  ksubset k                         = Wrap (allNats + k) (KSubset k)
+  ksubset k                         = Wrap (allNats + fromInteger k) (KSubset k)
   element                           = Wrap (allNats + 1) Elt
   o (Wrap fi f) (Wrap gi g)         = Wrap (fi * gi)     (f :.: g)
   cartesian (Wrap fi f) (Wrap gi g) = Wrap (fi `I.intersect` gi) (f :><: g)
-  fcomp (Wrap fi f) (Wrap gi g)     = Wrap undefined     (f :@: g)
-  ofSize (Wrap fi f) p              = Wrap (OfSize f p)
-  ofSizeExactly (Wrap fi f) n       = Wrap (OfSizeExactly f n)
-  nonEmpty (Wrap fi f)              = Wrap (NonEmpty f)
-  rec f                             = Wrap (Rec f)
+  fcomp (Wrap fi f) (Wrap gi g)     = Wrap undefined     (f :@: g)  -- XXX
+  ofSize (Wrap fi f) p              = Wrap (I (smallestIn fi p) Omega) (OfSize f p)
+  ofSizeExactly (Wrap fi f) n       = Wrap (fromInteger n) (OfSizeExactly f n)
+  nonEmpty (Wrap fi f)              = Wrap (fi `I.intersect` (I 1 Omega)) (NonEmpty f)
+  rec f                             = Wrap undefined (Rec f)        -- XXX
+
+smallestIn :: Interval -> (Integer -> Bool) -> Integer
+smallestIn (I s _) p = head $ filter p [s..]
 
 -- | Reify a species expression into an AST.  Of course, this is just
 --   the identity function with a usefully restricted type.  For
