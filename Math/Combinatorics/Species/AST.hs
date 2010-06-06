@@ -27,7 +27,7 @@ import PreludeBase hiding (cycle)
 -- | Reified combinatorial species.  Note that 'SpeciesAST' has a
 --   phantom type parameter which also reflects the structure, so we
 --   can write quasi-dependently-typed functions over species, in
---   particular for species generation.
+--   particular for species enumeration.
 --
 --   Of course, the non-uniform type parameter means that
 --   'SpeciesAST' cannot be an instance of the 'Species' class;
