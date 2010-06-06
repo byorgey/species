@@ -7,7 +7,7 @@
            , DeriveDataTypeable
   #-}
 
--- | Code to derive enumeration routines for user-defined data types.
+-- | Code to derive species instances for user-defined data types.
 module Math.Combinatorics.Species.TH where
 
 import NumericPrelude
