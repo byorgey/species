@@ -86,18 +86,18 @@ class (Differential.C s) => Species s where
   --   orderings are isomorphic to cyclic orderings with a hole, we
   --   may take L = C' as the default implementation; linOrd is
   --   included in the 'Species' class so it can be special-cased for
-  --   generation.
+  --   enumeration.
   linOrd    :: s
   linOrd = oneHole cycle
 
   -- | The species p of subsets is given by p = E * E. 'subset' has a
   --   default implementation of @set * set@, but is included in the
-  --   'Species' class so it can be overridden when generating
+  --   'Species' class so it can be overridden when enumerating
   --   structures: since subset is defined as @set * set@, the
-  --   generation code by default generates a pair of the subset and
+  --   enumeration code by default generates a pair of the subset and
   --   its complement, but normally when thinking about subsets we
   --   only want to see the elements in the subset.  To explicitly
-  --   generate subset/complement pairs, you can use @set * set@
+  --   enumerate subset/complement pairs, you can use @set * set@
   --   directly.
   subset :: s
   subset = set * set
@@ -109,7 +109,7 @@ class (Differential.C s) => Species s where
   ksubset k = (set `ofSizeExactly` k) * set
 
   -- | Structures of the species e of elements are just elements of
-  --   the underlying set: e = X * E.  Included with default
+  --   the underlying set: e = X * E.  Included with a default
   --   definition in 'Species' class for the same reason as 'subset'
   --   and 'ksubset'.
   element :: s
