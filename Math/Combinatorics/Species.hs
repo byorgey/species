@@ -124,10 +124,7 @@ import Math.Combinatorics.Species.TH
 -- naming/instance schemes, etc., we just redefine them here.
 
 -- $ast
--- Species can be converted to and from 'ESpeciesAST' via the functions
--- 'reify' and 'reflect'.
+-- XXX
 
 -- $rec
--- Some common recursive species, provided as a convenience.  For
--- details on how to define your own recursive species, see the
--- "Math.Combinatorics.Species.Rec" module.
+-- XXX
