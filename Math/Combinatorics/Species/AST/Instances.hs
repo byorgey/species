@@ -74,11 +74,17 @@ instance Species ESpeciesAST where
   element                           = Wrap (allNats + 1) Elt
   o (Wrap fi f) (Wrap gi g)         = Wrap (fi * gi)     (f :.: g)
   cartesian (Wrap fi f) (Wrap gi g) = Wrap (fi `I.intersect` gi) (f :><: g)
-  fcomp (Wrap fi f) (Wrap gi g)     = Wrap undefined     (f :@: g)  -- XXX
+  fcomp (Wrap fi f) (Wrap gi g)     = Wrap allNats       (f :@: g)
+    -- Note, the above is obviously overly conservative.  To do this
+    -- right we'd have to compute the generating function for g ---
+    -- and actually it would depend on whether we were doing labelled
+    -- or unlabelled enumeration, which we don't know at this point.
   ofSize (Wrap fi f) p              = Wrap (I (smallestIn fi p) Omega) (OfSize f p)
   ofSizeExactly (Wrap fi f) n       = Wrap (fromInteger n) (OfSizeExactly f n)
   nonEmpty (Wrap fi f)              = Wrap (fi `I.intersect` (I 1 Omega)) (NonEmpty f)
-  rec f                             = Wrap undefined (Rec f)        -- XXX
+  rec f                             = Wrap undefined (Rec f)
+    -- XXX fix this!  Somehow need to "solve" the recursive interval equation
+    -- that we get.
 
 smallestIn :: Interval -> (Integer -> Bool) -> Integer
 smallestIn (I s _) p = head $ filter p [s..]
