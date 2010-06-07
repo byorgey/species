@@ -48,31 +48,37 @@ deriveSpecies nm = do
     codeNm <- newName (nameBase nm)
     self   <- newName "self"
 
-    [d1] <- [d| data Code_ = Code_ deriving Typeable |]
-    let DataD [] _ [] [NormalC _ []] ds = d1
-        d1' = DataD [] codeNm [] [NormalC codeNm []] ds
+    let declCode = DataD [] codeNm [] [NormalC codeNm []] [''Typeable]
 
-    [d2] <- [d| instance Show $(conT codeNm) where
-                  show _ = $(lift (nameBase nm))
-            |]
+    [showCode] <- [d| instance Show $(conT codeNm) where
+                        show _ = $(lift (nameBase nm))
+                  |]
 
-    [d3] <- [d| type instance Interp $(conT codeNm) $(varT self)
-                       = $(structToTy self st)
-            |]
+    [interpCode] <- [d| type instance Interp $(conT codeNm) $(varT self)
+                          = $(structToTy self st)
+                    |]
 
     applyBody <- NormalB <$> structToSpAST self st
-    let d4  = InstanceD [] (AppT (ConT ''ASTFunctor) (ConT codeNm))
-                           [FunD 'apply [Clause [WildP, VarP self] applyBody []]]
+    let astFunctorInst  = InstanceD [] (AppT (ConT ''ASTFunctor) (ConT codeNm))
+                            [FunD 'apply [Clause [WildP, VarP self] applyBody []]]
 
-    [d5] <- [d| instance Show a => Show (Mu $(conT codeNm) a) where
-                  show = show . unMu
-            |]
+    [showMu] <- [d| instance Show a => Show (Mu $(conT codeNm) a) where
+                      show = show . unMu
+                |]
 
     enum <- mkEnumerableInst nm st (Just codeNm)
     sig  <- mkSpeciesSig spNm
     spD  <- mkSpecies spNm st (Just codeNm)
 
-    return $ [d1', d2, d3, d4, d5, enum, sig, spD]
+    return $ [ declCode
+             , showCode
+             , interpCode
+             , astFunctorInst
+             , showMu
+             , enum
+             , sig
+             , spD
+             ]
 
   mkEnumerableNonrec nm spNm st =
     sequence
