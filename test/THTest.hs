@@ -28,6 +28,11 @@ data Tree2 a = Leaf2 | Node2 (Tree2 a) a (Tree2 a)
 
 $(deriveSpecies ''Tree2)
 
+data Parens a = LeafP a | NodeP (Parens a) (Parens a)
+  deriving Show
+
+$(deriveSpecies ''Parens)
+
 main = do
   print $ (enumerate tree [1,2] :: [Tree Int])
   print $ (enumerate tree2 [1,2] :: [Tree2 Int])
