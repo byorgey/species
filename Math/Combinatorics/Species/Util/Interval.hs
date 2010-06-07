@@ -13,7 +13,7 @@ module Math.Combinatorics.Species.Util.Interval
     , Interval, iLow, iHigh
 
     -- * Interval operations
-    , decrI, union, intersect, elem
+    , decrI, union, intersect, elem, toList
 
     -- * Constructing intervals
     , natsI, fromI, emptyI, omegaI
@@ -111,6 +111,13 @@ instance Ring.C Interval where
 elem :: Integer -> Interval -> Bool
 elem n (I lo Omega)    = lo <= fromInteger n
 elem n (I lo (Nat hi)) = lo <= fromInteger n && n <= hi
+
+-- | Convert an interval to a list of Integers.
+toList :: Interval -> [Integer]
+toList (I Omega Omega) = []
+toList (I lo hi) | lo > hi = []
+toList (I (Nat lo) Omega) = [lo..]
+toList (I (Nat lo) (Nat hi)) = [lo..hi]
 
 -- | The range [0,omega] containing all natural numbers.
 natsI :: Interval
