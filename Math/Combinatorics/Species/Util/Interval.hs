@@ -16,55 +16,88 @@ import PreludeBase hiding (elem)
 import qualified Algebra.Additive as Additive
 import qualified Algebra.Ring as Ring
 
+-- | 'NatO' is an explicit representation of the co-inductive Nat type
+--   which admits an infinite value, omega.  Our intuition for the
+--   semantics of 'NatO' comes from thinking of it as an efficient
+--   representation of lazy unary natural numbers, except that we can
+--   actually test for omega in finite time.
 data NatO = Nat Integer | Omega
   deriving (Eq, Ord, Show)
 
+-- | Decrement a possibly infinite natural. Zero and omega are both
+--   fixed points of 'decr'.
 decr :: NatO -> NatO
 decr (Nat 0) = Nat 0
 decr (Nat n) = Nat (n-1)
 decr Omega   = Omega
 
+-- | 'NatO' forms an additive monoid, with zero as the identity.  This
+--   doesn't quite fit since Additive.C is supposed to be for groups,
+--   so the 'negate' method just throws an error.  But we'll never use
+--   it and 'NatO' won't be directly exposed to users of the species
+--   library anyway.
 instance Additive.C NatO where
   zero          = Nat 0
   Nat m + Nat n = Nat (m + n)
   _ + _         = Omega
   negate = error "naturals with omega only form a semiring"
 
+-- | In fact, 'NatO' forms a semiring, with 1 as the multiplicative
+--   unit.
 instance Ring.C NatO where
   one = Nat 1
   Nat 0 * _     = Nat 0
+  _ * Nat 0     = Nat 0
   Nat m * Nat n = Nat (m * n)
   _ * _         = Omega
 
   fromInteger = Nat
 
-data Interval = I { iLow  :: Integer
+-- | An 'Interval' is a closed range of consecutive integers.  Both
+--   endpoints are represented as 'NatO' values.  For example, [2,5]
+--   represents the values 2,3,4,5; [2,omega] represents all integers
+--   >= 2; intervals where the first endpoint is greater than the
+--   second also represent the empty interval.
+data Interval = I { iLow  :: NatO
                   , iHigh :: NatO
                   }
 
+-- | The range [0,omega].
 allNats :: Interval
 allNats = I 0 Omega
 
+-- | Decrement both endpoints of an interval.
 decrI :: Interval -> Interval
-decrI (I 0 h) = I 0 (decr h)
-decrI (I l h) = I (l-1) (decr h)
+decrI (I l h) = I (decr l) (decr h)
 
+-- | The union of two intervals is the smallest interval containing
+--   both.
 union :: Interval -> Interval -> Interval
 union (I l1 h1) (I l2 h2) = I (min l1 l2) (max h1 h2)
 
+-- | The intersection of two intervals is the largest interval
+--   contained in both.
 intersect :: Interval -> Interval -> Interval
 intersect (I l1 h1) (I l2 h2) = I (max l1 l2) (min h1 h2)
 
+-- | Intervals can be added by adding their endpoints pointwise.
 instance Additive.C Interval where
   zero = I 0 0
   (I l1 h1) + (I l2 h2) = I (l1 + l2) (h1 + h2)
   negate = error "Interval negation: intervals only form a semiring"
 
+-- | Intervals form a semiring, with the multiplication operation
+--   being pointwise multiplication of their endpoints.
 instance Ring.C Interval where
   one = I 1 1
   (I l1 h1) * (I l2 h2) = I (l1 * l2) (h1 * h2)
-  fromInteger n = I n (Nat n)
+  fromInteger n = I (Nat n) (Nat n)
 
+-- | Test a given integer for interval membership.
 elem :: Integer -> Interval -> Bool
-elem n (I lo Omega)    = lo <= n
-elem n (I lo (Nat hi)) = lo <= n && n <= hi
+elem n (I lo Omega)    = lo <= fromInteger n
+elem n (I lo (Nat hi)) = lo <= fromInteger n && n <= hi
+
+-- | The interval which contains only omega.
+omegaI :: Interval
+omegaI = I Omega Omega
