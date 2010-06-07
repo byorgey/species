@@ -153,6 +153,9 @@ class (Differential.C s) => Species s where
   --   higher-order species constructor 'f'.
   rec :: ASTFunctor f => f -> s
 
+  -- XXX  don't export this!
+  omega :: s
+
 -- | A convenient synonym for differentiation.  F'-structures look
 --   like F-structures on a set formed by adjoining a distinguished
 --   \"hole\" element to the underlying set.

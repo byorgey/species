@@ -13,7 +13,7 @@ import PreludeBase hiding (cycle)
 
 import Math.Combinatorics.Species.Class
 import Math.Combinatorics.Species.AST
-import Math.Combinatorics.Species.Util.Interval
+import Math.Combinatorics.Species.Util.Interval hiding (omega)
 import qualified Math.Combinatorics.Species.Util.Interval as I
 
 import qualified Algebra.Additive as Additive
@@ -53,8 +53,8 @@ instance Additive.C ESpeciesAST where
 instance Ring.C ESpeciesAST where
   (Wrap fi f) * (Wrap gi g) = Wrap (fi + gi) (f :*: g)
   one = Wrap 0 One
-  fromInteger 0 = Wrap 0 Zero
-  fromInteger 1 = Wrap 0 One
+  fromInteger 0 = zero
+  fromInteger 1 = one
   fromInteger n = Wrap 0 (N n)
   _ ^ 0 = one
   w@(Wrap{}) ^ 1 = w
@@ -65,29 +65,35 @@ instance Differential.C ESpeciesAST where
   differentiate (Wrap fi f) = Wrap (decrI fi) (Der f)
 
 instance Species ESpeciesAST where
-  singleton                         = Wrap 1             X
-  set                               = Wrap allNats       E
-  cycle                             = Wrap (allNats + 1) C
-  linOrd                            = Wrap allNats       L
-  subset                            = Wrap allNats       Subset
-  ksubset k                         = Wrap (allNats + fromInteger k) (KSubset k)
-  element                           = Wrap (allNats + 1) Elt
-  o (Wrap fi f) (Wrap gi g)         = Wrap (fi * gi)     (f :.: g)
+  singleton                         = Wrap 1           X
+  set                               = Wrap natsI       E
+  cycle                             = Wrap (natsI + 1) C
+  linOrd                            = Wrap natsI       L
+  subset                            = Wrap natsI       Subset
+  ksubset k                         = Wrap (natsI + fromInteger k) (KSubset k)
+  element                           = Wrap (natsI + 1) Elt
+  o (Wrap fi f) (Wrap gi g)         = Wrap (fi * gi)   (f :.: g)
   cartesian (Wrap fi f) (Wrap gi g) = Wrap (fi `I.intersect` gi) (f :><: g)
-  fcomp (Wrap fi f) (Wrap gi g)     = Wrap allNats       (f :@: g)
+  fcomp (Wrap fi f) (Wrap gi g)     = Wrap natsI       (f :@: g)
     -- Note, the above is obviously overly conservative.  To do this
     -- right we'd have to compute the generating function for g ---
     -- and actually it would depend on whether we were doing labelled
     -- or unlabelled enumeration, which we don't know at this point.
-  ofSize (Wrap fi f) p              = Wrap (I (smallestIn fi p) Omega) (OfSize f p)
+  ofSize (Wrap fi f) p              = Wrap (fromI $ smallestIn fi p) (OfSize f p)
   ofSizeExactly (Wrap fi f) n       = Wrap (fromInteger n) (OfSizeExactly f n)
-  nonEmpty (Wrap fi f)              = Wrap (fi `I.intersect` (I 1 Omega)) (NonEmpty f)
-  rec f                             = Wrap undefined (Rec f)
+  nonEmpty (Wrap fi f)              = Wrap (fi `I.intersect` (fromI 1)) (NonEmpty f)
+  rec f                             = Wrap (solveRecInterval f) (Rec f)
     -- XXX fix this!  Somehow need to "solve" the recursive interval equation
     -- that we get.
 
-smallestIn :: Interval -> (Integer -> Bool) -> Integer
-smallestIn (I s _) p = head $ filter p [s..]
+  omega                             = Wrap omegaI Omega
+
+smallestIn :: Interval -> (Integer -> Bool) -> NatO
+smallestIn i p = natO (\n -> fromInteger . head $ filter p [n..]) I.omega (iLow i)
+
+solveRecInterval :: ASTFunctor f => f -> Interval
+solveRecInterval f = evalInterval $ apply f Omega
+  where evalInterval = getInterval . reify . reflectT
 
 -- | Reify a species expression into an AST.  Of course, this is just
 --   the identity function with a usefully restricted type.  For
@@ -123,6 +129,7 @@ reflectT (OfSize f p)        = ofSize (reflectT f) p
 reflectT (OfSizeExactly f n) = ofSizeExactly (reflectT f) n
 reflectT (NonEmpty f)        = nonEmpty (reflectT f)
 reflectT (Rec f)             = rec f
+reflectT Omega               = omega
 
 -- | Reflect an AST back into any instance of the 'Species' class.
 reflect :: Species s => ESpeciesAST -> s

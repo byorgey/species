@@ -5,9 +5,18 @@
 --   example, the species X + X^2 + X^3 will correspond to the
 --   interval [1,3].
 module Math.Combinatorics.Species.Util.Interval
-    ( NatO(..)
-    , Interval(..), allNats
+    (
+    -- * The 'NatO' type
+      NatO, omega, natO
+
+    -- * The 'Interval' type
+    , Interval, iLow, iHigh
+
+    -- * Interval operations
     , decrI, union, intersect, elem
+
+    -- * Constructing intervals
+    , natsI, fromI, emptyI, omegaI
     ) where
 
 import NumericPrelude
@@ -23,6 +32,14 @@ import qualified Algebra.Ring as Ring
 --   actually test for omega in finite time.
 data NatO = Nat Integer | Omega
   deriving (Eq, Ord, Show)
+
+omega :: NatO
+omega = Omega
+
+-- | Eliminator for 'NatO' values.
+natO :: (Integer -> a) -> a -> NatO -> a
+natO _ o Omega = o
+natO f _ (Nat n) = f n
 
 -- | Decrement a possibly infinite natural. Zero and omega are both
 --   fixed points of 'decr'.
@@ -54,17 +71,14 @@ instance Ring.C NatO where
   fromInteger = Nat
 
 -- | An 'Interval' is a closed range of consecutive integers.  Both
---   endpoints are represented as 'NatO' values.  For example, [2,5]
---   represents the values 2,3,4,5; [2,omega] represents all integers
+--   endpoints are represented as 'NatO' values.  For example, \[2,5\]
+--   represents the values 2,3,4,5; \[2,omega\] represents all integers
 --   >= 2; intervals where the first endpoint is greater than the
 --   second also represent the empty interval.
 data Interval = I { iLow  :: NatO
                   , iHigh :: NatO
                   }
-
--- | The range [0,omega].
-allNats :: Interval
-allNats = I 0 Omega
+  deriving Show
 
 -- | Decrement both endpoints of an interval.
 decrI :: Interval -> Interval
@@ -98,10 +112,17 @@ elem :: Integer -> Interval -> Bool
 elem n (I lo Omega)    = lo <= fromInteger n
 elem n (I lo (Nat hi)) = lo <= fromInteger n && n <= hi
 
+-- | The range [0,omega] containing all natural numbers.
+natsI :: Interval
+natsI = I 0 Omega
+
+-- | Construct an open range [n,omega].
+fromI :: NatO -> Interval
+fromI n = I n Omega
+
 -- | The empty interval.
 emptyI :: Interval
 emptyI = I 1 0
-
 
 -- | The interval which contains only omega.
 omegaI :: Interval

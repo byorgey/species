@@ -9,7 +9,7 @@
 module Math.Combinatorics.Species.AST
     (
       SpeciesAST(..)
-    , ESpeciesAST(..)
+    , ESpeciesAST(..), getInterval
     , ASTFunctor(..)
 
     , needsZ, needsZE
@@ -55,6 +55,8 @@ data SpeciesAST (s :: * -> *) where
    NonEmpty :: SpeciesAST f -> SpeciesAST f
    Rec      :: ASTFunctor f => f -> SpeciesAST (Mu f)
 
+   Omega    :: SpeciesAST Void
+
 -- | Type class for codes which can be interpreted as higher-order
 --   functors.
 class (Typeable f, Show f, Typeable1 (Interp f (Mu f))) => ASTFunctor f where
@@ -86,6 +88,10 @@ needsZ _            = False
 --   generate any structures.
 data ESpeciesAST where
   Wrap :: Typeable1 s => Interval -> SpeciesAST s -> ESpeciesAST
+
+-- | Extract the interval on which the species actually generates structures.
+getInterval :: ESpeciesAST -> Interval
+getInterval (Wrap i _) = i
 
 -- | A version of 'needsZ' for 'ESpeciesAST'.
 needsZE :: ESpeciesAST -> Bool
