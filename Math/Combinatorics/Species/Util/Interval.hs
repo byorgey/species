@@ -98,6 +98,11 @@ elem :: Integer -> Interval -> Bool
 elem n (I lo Omega)    = lo <= fromInteger n
 elem n (I lo (Nat hi)) = lo <= fromInteger n && n <= hi
 
+-- | The empty interval.
+emptyI :: Interval
+emptyI = I 1 0
+
+
 -- | The interval which contains only omega.
 omegaI :: Interval
 omegaI = I Omega Omega

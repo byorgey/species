@@ -13,7 +13,7 @@ import PreludeBase hiding (cycle)
 
 import Math.Combinatorics.Species.Class
 import Math.Combinatorics.Species.AST
-import Math.Combinatorics.Species.Util.Interval as I
+import Math.Combinatorics.Species.Util.Interval
 import qualified Math.Combinatorics.Species.Util.Interval as I
 
 import qualified Algebra.Additive as Additive
@@ -46,7 +46,7 @@ instance Show ESpeciesAST where
   show (Wrap _ f) = show f
 
 instance Additive.C ESpeciesAST where
-  zero   = Wrap 0 Zero
+  zero   = Wrap emptyI Zero
   (Wrap fi f) + (Wrap gi g) = Wrap (fi `I.union` gi) (f :+: g)
   negate = error "negation is not implemented yet!  wait until virtual species..."
 
