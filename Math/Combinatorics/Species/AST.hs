@@ -8,8 +8,9 @@
 -- | A data structure to reify combinatorial species.
 module Math.Combinatorics.Species.AST
     (
-      SpeciesAST(..)
-    , ESpeciesAST(..), getInterval
+      SpeciesAST(..), SizedSpeciesAST(..)
+    , interval, annI, getI, stripI
+    , ESpeciesAST(..)
     , ASTFunctor(..)
 
     , needsZ, needsZE
@@ -18,6 +19,7 @@ module Math.Combinatorics.Species.AST
 
 import Math.Combinatorics.Species.Structures
 import Math.Combinatorics.Species.Util.Interval
+import qualified Math.Combinatorics.Species.Util.Interval as I
 
 import Data.Typeable
 
@@ -33,6 +35,13 @@ import PreludeBase hiding (cycle)
 --   'SpeciesAST' cannot be an instance of the 'Species' class;
 --   for that purpose the existential wrapper 'ESpeciesAST' is
 --   provided.
+--
+--   'SpeciesAST' is defined via mutual recursion with
+--   'SizedSpeciesAST', which pairs a 'SpeciesAST' with an interval
+--   annotation indicating (a conservative approximation of) the label
+--   set sizes for which the species actually yields any structures.
+--   A value of 'SizedSpeciesAST' is thus an annotated species
+--   expression tree with interval annotations at every node.
 data SpeciesAST (s :: * -> *) where
    Zero     :: SpeciesAST Void
    One      :: SpeciesAST Unit
@@ -44,18 +53,72 @@ data SpeciesAST (s :: * -> *) where
    Subset   :: SpeciesAST Set
    KSubset  :: Integer -> SpeciesAST Set
    Elt      :: SpeciesAST Id
-   (:+:)    :: SpeciesAST f -> SpeciesAST g -> SpeciesAST (Sum f g)
-   (:*:)    :: SpeciesAST f -> SpeciesAST g -> SpeciesAST (Prod f g)
-   (:.:)    :: SpeciesAST f -> SpeciesAST g -> SpeciesAST (Comp f g)
-   (:><:)   :: SpeciesAST f -> SpeciesAST g -> SpeciesAST (Prod f g)
-   (:@:)    :: SpeciesAST f -> SpeciesAST g -> SpeciesAST (Comp f g)
-   Der      :: SpeciesAST f -> SpeciesAST (Comp f Star)
-   OfSize   :: SpeciesAST f -> (Integer -> Bool) -> SpeciesAST f
-   OfSizeExactly :: SpeciesAST f -> Integer -> SpeciesAST f
-   NonEmpty :: SpeciesAST f -> SpeciesAST f
+   (:+:)    :: SizedSpeciesAST f -> SizedSpeciesAST g -> SpeciesAST (Sum f g)
+   (:*:)    :: SizedSpeciesAST f -> SizedSpeciesAST g -> SpeciesAST (Prod f g)
+   (:.:)    :: SizedSpeciesAST f -> SizedSpeciesAST g -> SpeciesAST (Comp f g)
+   (:><:)   :: SizedSpeciesAST f -> SizedSpeciesAST g -> SpeciesAST (Prod f g)
+   (:@:)    :: SizedSpeciesAST f -> SizedSpeciesAST g -> SpeciesAST (Comp f g)
+   Der      :: SizedSpeciesAST f -> SpeciesAST (Comp f Star)
+   OfSize   :: SizedSpeciesAST f -> (Integer -> Bool) -> SpeciesAST f
+   OfSizeExactly :: SizedSpeciesAST f -> Integer -> SpeciesAST f
+   NonEmpty :: SizedSpeciesAST f -> SpeciesAST f
    Rec      :: ASTFunctor f => f -> SpeciesAST (Mu f)
 
    Omega    :: SpeciesAST Void
+
+data SizedSpeciesAST (s :: * -> *) where
+  Sized :: Interval -> SpeciesAST s -> SizedSpeciesAST s
+
+-- | Given a 'SpeciesAST', compute (a conservative approximation of)
+--   the interval of label set sizes on which the species yields any
+--   structures.
+interval :: SpeciesAST s -> Interval
+interval Zero                = emptyI
+interval One                 = 0
+interval (N n)               = 0
+interval X                   = 1
+interval E                   = natsI
+interval C                   = fromI 1
+interval L                   = natsI
+interval Subset              = natsI
+interval (KSubset k)         = fromI (fromInteger k)
+interval Elt                 = fromI 1
+interval (f :+: g)           = getI f `I.union` getI g
+interval (f :*: g)           = getI f + getI g
+interval (f :.: g)           = getI f * getI g
+interval (f :><: g)          = getI f `I.intersect` getI g
+interval (f :@: g)           = natsI
+    -- Note, the above interval for functor composition is obviously
+    -- overly conservative.  To do this right we'd have to compute the
+    -- generating function for g --- and actually it would depend on
+    -- whether we were doing labelled or unlabelled enumeration, which
+    -- we don't know at this point.
+interval (Der f)             = decrI (getI f)
+interval (OfSize f p)        = fromI $ smallestIn (getI f) p
+interval (OfSizeExactly f n) = fromInteger n `I.intersect` getI f
+interval (NonEmpty f)        = fromI 1 `I.intersect` getI f
+interval (Rec f)             = interval (apply f Omega)
+interval Omega               = omegaI
+
+-- | Find the smallest integer in the given interval satisfying a predicate.
+smallestIn :: Interval -> (Integer -> Bool) -> NatO
+smallestIn i p = case filter p (toList i) of
+                   []    -> I.omega
+                   (x:_) -> fromIntegral x
+
+
+-- | Annotate a 'SpeciesAST' with the interval of label set sizes for
+--   which it yields structures.
+annI :: SpeciesAST s -> SizedSpeciesAST s
+annI s = Sized (interval s) s
+
+-- | Strip the interval annotation from a 'SizedSpeciesAST'.
+stripI :: SizedSpeciesAST s -> SpeciesAST s
+stripI (Sized _ s) = s
+
+-- | Retrieve the interval annotation.
+getI :: SizedSpeciesAST s -> Interval
+getI (Sized i _) = i
 
 -- | Type class for codes which can be interpreted as higher-order
 --   functors.
@@ -69,30 +132,22 @@ class (Typeable f, Show f, Typeable1 (Interp f (Mu f))) => ASTFunctor f where
 --   series.
 needsZ :: SpeciesAST s -> Bool
 needsZ L            = True
-needsZ (f :+: g)    = needsZ f || needsZ g
-needsZ (f :*: g)    = needsZ f || needsZ g
+needsZ (f :+: g)    = needsZ (stripI f) || needsZ (stripI g)
+needsZ (f :*: g)    = needsZ (stripI f) || needsZ (stripI g)
 needsZ (_ :.: _)    = True
 needsZ (_ :><: _)   = True
 needsZ (_ :@: _)    = True
 needsZ (Der _)      = True
-needsZ (OfSize f _) = needsZ f
-needsZ (OfSizeExactly f _) = needsZ f
-needsZ (NonEmpty f) = needsZ f
+needsZ (OfSize f _) = needsZ (stripI f)
+needsZ (OfSizeExactly f _) = needsZ (stripI f)
+needsZ (NonEmpty f) = needsZ (stripI f)
 needsZ _            = False
 
 -- | An existential wrapper to hide the phantom type parameter to
---   'SpeciesAST', so we can make it an instance of 'Species'.
---
---   We also include an interval which tracks a conservative
---   approximation to the sizes for which this species will actually
---   generate any structures.
+--   'SizedSpeciesAST', so we can make it an instance of 'Species'.
 data ESpeciesAST where
-  Wrap :: Typeable1 s => Interval -> SpeciesAST s -> ESpeciesAST
-
--- | Extract the interval on which the species actually generates structures.
-getInterval :: ESpeciesAST -> Interval
-getInterval (Wrap i _) = i
+  Wrap :: Typeable1 s => SizedSpeciesAST s -> ESpeciesAST
 
 -- | A version of 'needsZ' for 'ESpeciesAST'.
 needsZE :: ESpeciesAST -> Bool
-needsZE (Wrap _ s) = needsZ s
+needsZE (Wrap s) = needsZ (stripI s)
