@@ -10,7 +10,7 @@ module Math.Combinatorics.Species.AST
     (
       SpeciesAST(..), SizedSpeciesAST(..)
     , interval, annI, getI, stripI
-    , ESpeciesAST(..)
+    , ESpeciesAST(..), wrap
     , ASTFunctor(..)
 
     , needsZ, needsZE
@@ -147,6 +147,11 @@ needsZ _            = False
 --   'SizedSpeciesAST', so we can make it an instance of 'Species'.
 data ESpeciesAST where
   Wrap :: Typeable1 s => SizedSpeciesAST s -> ESpeciesAST
+
+-- | Smart wrap constructor which also adds an appropriate interval
+--   annotation.
+wrap :: Typeable1 s => SpeciesAST s -> ESpeciesAST
+wrap = Wrap . annI
 
 -- | A version of 'needsZ' for 'ESpeciesAST'.
 needsZE :: ESpeciesAST -> Bool

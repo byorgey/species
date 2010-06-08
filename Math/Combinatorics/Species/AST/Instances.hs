@@ -31,69 +31,65 @@ instance Show (SpeciesAST s) where
   showsPrec _ Subset              = showChar 'p'
   showsPrec _ (KSubset n)         = showChar 'p' . shows n
   showsPrec _ (Elt)               = showChar 'e'
-  showsPrec p (f :+: g)           = showParen (p>6)  $ showsPrec 6 f . showString " + "  . showsPrec 6 g
-  showsPrec p (f :*: g)           = showParen (p>=7) $ showsPrec 7 f . showString " * "  . showsPrec 7 g
-  showsPrec p (f :.: g)           = showParen (p>=7) $ showsPrec 7 f . showString " . "  . showsPrec 7 g
-  showsPrec p (f :><: g)          = showParen (p>=7) $ showsPrec 7 f . showString " >< " . showsPrec 7 g
-  showsPrec p (f :@: g)           = showParen (p>=7) $ showsPrec 7 f . showString " @ "  . showsPrec 7 g
-  showsPrec p (Der f)             = showsPrec 11 f . showChar '\''
-  showsPrec _ (OfSize f p)        = showChar '<' .  showsPrec 0 f . showChar '>'
-  showsPrec _ (OfSizeExactly f n) = showsPrec 11 f . shows n
-  showsPrec _ (NonEmpty f)        = showsPrec 11 f . showChar '+'
+  showsPrec p (f :+: g)           = showParen (p>6)  $ showsPrec 6 (stripI f)
+                                                     . showString " + "
+                                                     . showsPrec 6 (stripI g)
+  showsPrec p (f :*: g)           = showParen (p>=7) $ showsPrec 7 (stripI f)
+                                                     . showString " * "
+                                                     . showsPrec 7 (stripI g)
+  showsPrec p (f :.: g)           = showParen (p>=7) $ showsPrec 7 (stripI f)
+                                                     . showString " . "
+                                                     . showsPrec 7 (stripI g)
+  showsPrec p (f :><: g)          = showParen (p>=7) $ showsPrec 7 (stripI f)
+                                                     . showString " >< "
+                                                     . showsPrec 7 (stripI g)
+  showsPrec p (f :@: g)           = showParen (p>=7) $ showsPrec 7 (stripI f)
+                                                     . showString " @ "
+                                                     . showsPrec 7 (stripI g)
+  showsPrec p (Der f)             = showsPrec 11 (stripI f) . showChar '\''
+  showsPrec _ (OfSize f p)        = showChar '<' .  showsPrec 0 (stripI f) . showChar '>'
+  showsPrec _ (OfSizeExactly f n) = showsPrec 11 (stripI f) . shows n
+  showsPrec _ (NonEmpty f)        = showsPrec 11 (stripI f) . showChar '+'
   showsPrec _ (Rec f)             = shows f
 
 instance Show ESpeciesAST where
-  show (Wrap _ f) = show f
+  show (Wrap f) = show (stripI f)
 
 instance Additive.C ESpeciesAST where
-  zero   = Wrap emptyI Zero
-  (Wrap fi f) + (Wrap gi g) = Wrap (fi `I.union` gi) (f :+: g)
+  zero   = wrap Zero
+  Wrap f + Wrap g = wrap $ f :+: g
   negate = error "negation is not implemented yet!  wait until virtual species..."
 
 instance Ring.C ESpeciesAST where
-  (Wrap fi f) * (Wrap gi g) = Wrap (fi + gi) (f :*: g)
-  one = Wrap 0 One
+  Wrap f * Wrap g = wrap $ f :*: g
+  one = wrap One
   fromInteger 0 = zero
   fromInteger 1 = one
-  fromInteger n = Wrap 0 (N n)
+  fromInteger n = wrap $ N n
   _ ^ 0 = one
   w@(Wrap{}) ^ 1 = w
-  (Wrap fi f) ^ n   = case (Wrap fi f) ^ (n-1) of
-                        (Wrap f'i f') -> Wrap (fi + f'i) (f :*: f')
+  (Wrap f) ^ n   = case (Wrap f) ^ (n-1) of
+                        (Wrap f') -> wrap $ f :*: f'
 
 instance Differential.C ESpeciesAST where
-  differentiate (Wrap fi f) = Wrap (decrI fi) (Der f)
+  differentiate (Wrap f) = wrap (Der f)
 
 instance Species ESpeciesAST where
-  singleton                         = Wrap 1           X
-  set                               = Wrap natsI       E
-  cycle                             = Wrap (natsI + 1) C
-  linOrd                            = Wrap natsI       L
-  subset                            = Wrap natsI       Subset
-  ksubset k                         = Wrap (natsI + fromInteger k) (KSubset k)
-  element                           = Wrap (natsI + 1) Elt
-  o (Wrap fi f) (Wrap gi g)         = Wrap (fi * gi)   (f :.: g)
-  cartesian (Wrap fi f) (Wrap gi g) = Wrap (fi `I.intersect` gi) (f :><: g)
-  fcomp (Wrap fi f) (Wrap gi g)     = Wrap natsI       (f :@: g)
-    -- Note, the above is obviously overly conservative.  To do this
-    -- right we'd have to compute the generating function for g ---
-    -- and actually it would depend on whether we were doing labelled
-    -- or unlabelled enumeration, which we don't know at this point.
-  ofSize (Wrap fi f) p              = Wrap (fromI $ smallestIn fi p) (OfSize f p)
-  ofSizeExactly (Wrap fi f) n       = Wrap (fromInteger n) (OfSizeExactly f n)
-  nonEmpty (Wrap fi f)              = Wrap (fi `I.intersect` (fromI 1)) (NonEmpty f)
-  rec f                             = Wrap (solveRecInterval f) (Rec f)
-    -- XXX fix this!  Somehow need to "solve" the recursive interval equation
-    -- that we get.
-
-  omega                             = Wrap omegaI Omega
-
-smallestIn :: Interval -> (Integer -> Bool) -> NatO
-smallestIn i p = natO (\n -> fromInteger . head $ filter p [n..]) I.omega (iLow i)
-
-solveRecInterval :: ASTFunctor f => f -> Interval
-solveRecInterval f = evalInterval $ apply f Omega
-  where evalInterval = getInterval . reify . reflectT
+  singleton                         = wrap X
+  set                               = wrap E
+  cycle                             = wrap C
+  linOrd                            = wrap L
+  subset                            = wrap Subset
+  ksubset k                         = wrap $ KSubset k
+  element                           = wrap Elt
+  o (Wrap f) (Wrap g)               = wrap $ f :.: g
+  cartesian (Wrap f) (Wrap g)       = wrap $ f :><: g
+  fcomp (Wrap f) (Wrap g)           = wrap $ f :@: g
+  ofSize (Wrap f) p                 = wrap $ OfSize f p
+  ofSizeExactly (Wrap f) n          = wrap $ OfSizeExactly f n
+  nonEmpty (Wrap f)                 = wrap $ NonEmpty f
+  rec f                             = wrap $ Rec f
+  omega                             = wrap Omega
 
 -- | Reify a species expression into an AST.  Of course, this is just
 --   the identity function with a usefully restricted type.  For
@@ -119,18 +115,18 @@ reflectT L                   = linOrd
 reflectT Subset              = subset
 reflectT (KSubset k)         = ksubset k
 reflectT Elt                 = element
-reflectT (f :+: g)           = reflectT f + reflectT g
-reflectT (f :*: g)           = reflectT f * reflectT g
-reflectT (f :.: g)           = reflectT f `o` reflectT g
-reflectT (f :><: g)          = reflectT f >< reflectT g
-reflectT (f :@: g)           = reflectT f @@ reflectT g
-reflectT (Der f)             = oneHole (reflectT f)
-reflectT (OfSize f p)        = ofSize (reflectT f) p
-reflectT (OfSizeExactly f n) = ofSizeExactly (reflectT f) n
-reflectT (NonEmpty f)        = nonEmpty (reflectT f)
+reflectT (f :+: g)           = reflectT (stripI f) + reflectT (stripI g)
+reflectT (f :*: g)           = reflectT (stripI f) * reflectT (stripI g)
+reflectT (f :.: g)           = reflectT (stripI f) `o` reflectT (stripI g)
+reflectT (f :><: g)          = reflectT (stripI f) >< reflectT (stripI g)
+reflectT (f :@: g)           = reflectT (stripI f) @@ reflectT (stripI g)
+reflectT (Der f)             = oneHole (reflectT $ stripI f)
+reflectT (OfSize f p)        = ofSize (reflectT $ stripI f) p
+reflectT (OfSizeExactly f n) = ofSizeExactly (reflectT $ stripI f) n
+reflectT (NonEmpty f)        = nonEmpty (reflectT $ stripI f)
 reflectT (Rec f)             = rec f
 reflectT Omega               = omega
 
 -- | Reflect an AST back into any instance of the 'Species' class.
 reflect :: Species s => ESpeciesAST -> s
-reflect (Wrap _ f) = reflectT f
+reflect (Wrap f) = reflectT (stripI f)

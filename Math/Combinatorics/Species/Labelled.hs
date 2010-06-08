@@ -47,7 +47,7 @@ instance Species EGF where
   ofSize s p        = (liftEGF . PS.lift1 $ filterCoeffs p) s
   ofSizeExactly s n = (liftEGF . PS.lift1 $ selectIndex n) s
 
-  rec f = reflect (Wrap undefined (apply f (Rec f))) -- XXX
+  rec f = reflect (wrap (apply f (Rec f))) -- XXX should do this with Newton-Raphson
 
 -- | Extract the coefficients of an exponential generating function as
 --   a list of Integers.  Since 'EGF' is an instance of 'Species', the
