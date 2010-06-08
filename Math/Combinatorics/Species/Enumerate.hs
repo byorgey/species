@@ -87,40 +87,54 @@ enumerate' Subset xs            = map (Set . MS.toList . fst) (MS.splits xs)
 enumerate' (KSubset k) xs       = map (Set . MS.toList)
                                       (MS.kSubsets (fromIntegral k) xs)
 enumerate' Elt xs               = map (Id . fst) . MS.toCounts $ xs
-enumerate' (f :+: g) xs         = map Inl (enumerate' f xs)
-                               ++ map Inr (enumerate' g xs)
+enumerate' (f :+: g) xs         = map Inl (enumerate' (stripI f) xs)
+                               ++ map Inr (enumerate' (stripI g) xs)
+
+  -- XXX working here.  Need to change this to use the annotations
+  -- which are now contained in f and g.  I suppose MS.splits should
+  -- be changed (?) to only return splits which are of appropriate
+  -- sizes.  I guess a quick and dirty solution is just to filter the
+  -- things returned by splits to make sure they are in the
+  -- appropriate ranges.
+
+  -- XXX use multiset operations instead of 'length'
+
 enumerate' (f :*: g) xs         = [ Prod x y
                                   | (s1,s2) <- MS.splits xs
-                                  ,       x <- enumerate' f s1
-                                  ,       y <- enumerate' g s2
+                                  ,            (fromIntegral $ MS.size s1) `I.elem` (getI f)
+                                  ,            (fromIntegral $ MS.size s2) `I.elem` (getI g)
+                                  ,       x <- enumerate' (stripI f) s1
+                                  ,       y <- enumerate' (stripI g) s2
                                   ]
 enumerate' (f :.: g) xs         = [ Comp y
                                   | p   <- MS.partitions xs
-                                  , xs' <- MS.sequenceMS . fmap (enumerate' g) $ p
-                                  , y   <- enumerate' f xs'
+                                  ,        (fromIntegral $ MS.size p) `I.elem` (getI f)
+                                  ,        all ((`I.elem` (getI g)) . fromIntegral . MS.size) (MS.toList p)
+                                  , xs' <- MS.sequenceMS . fmap (enumerate' (stripI g)) $ p
+                                  , y   <- enumerate' (stripI f) xs'
                                   ]
 enumerate' (f :><: g) xs        = [ Prod x y
-                                  | x <- enumerate' f xs
-                                  , y <- enumerate' g xs
+                                  | x <- enumerate' (stripI f) xs
+                                  , y <- enumerate' (stripI g) xs
                                   ]
 enumerate' (f :@: g) xs         = map Comp
-                                  . enumerate' f
+                                  . enumerate' (stripI f)
                                   . MS.fromDistinctList
-                                  . enumerate' g
+                                  . enumerate' (stripI g)
                                   $ xs
 enumerate' (Der f) xs           = map Comp
-                                  . enumerate' f
+                                  . enumerate' (stripI f)
                                   $ (Star,1) +: fmap Original xs
 enumerate' (NonEmpty f) (MS []) = []
-enumerate' (NonEmpty f) xs      = enumerate' f xs
+enumerate' (NonEmpty f) xs      = enumerate' (stripI f) xs
 enumerate' (Rec f) xs           = map Mu $ enumerate' (apply f (Rec f)) xs
 enumerate' (OfSize f p) xs
   | p (fromIntegral . sum . MS.getCounts $ xs)
-    = enumerate' f xs
+    = enumerate' (stripI f) xs
   | otherwise = []
 enumerate' (OfSizeExactly f n) xs
   | (fromIntegral . sum . MS.getCounts $ xs) == n
-    = enumerate' f xs
+    = enumerate' (stripI f) xs
   | otherwise = []
 
 -- | An existential wrapper for structures, hiding the structure
@@ -166,7 +180,7 @@ unsafeExtractStructure = either error id . extractStructure
 -- > ,<[1,3],[2]>,<[2,1],[3]>,<[1,2],[3]>,<[2],[1],[3]>
 -- > ,<[1],[2],[3]>]
 structureType :: ESpeciesAST -> String
-structureType (Wrap _ s) = showStructureType . extractType $ s
+structureType (Wrap s) = showStructureType . extractType $ (stripI s)
   where extractType :: forall s. Typeable1 s => SpeciesAST s -> TypeRep
         extractType _ = typeOf1 (undefined :: s ())
 
@@ -201,8 +215,8 @@ showStructureType t = showsPrecST 0 t ""
 --   'Structure' type.  This is also not meant to be used directly.
 --   Instead, you should use one of the other @enumerateX@ methods.
 enumerateE :: ESpeciesAST -> Multiset a -> [Structure a]
-enumerateE (Wrap i s) m
-  | fromIntegral (sum (MS.getCounts m)) `I.elem` i = map Structure (enumerate' s m)
+enumerateE (Wrap s) m
+  | fromIntegral (sum (MS.getCounts m)) `I.elem` (getI s) = map Structure (enumerate' (stripI s) m)
   | otherwise = []
 
 
