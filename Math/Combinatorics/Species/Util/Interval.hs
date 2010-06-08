@@ -71,9 +71,9 @@ instance Ring.C NatO where
   fromInteger = Nat
 
 -- | An 'Interval' is a closed range of consecutive integers.  Both
---   endpoints are represented as 'NatO' values.  For example, \[2,5\]
---   represents the values 2,3,4,5; \[2,omega\] represents all integers
---   >= 2; intervals where the first endpoint is greater than the
+--   endpoints are represented as 'NatO' values.  For example, [2,5]
+--   represents the values 2,3,4,5; [2,omega] represents all integers
+--   greater than 1; intervals where the first endpoint is greater than the
 --   second also represent the empty interval.
 data Interval = I { iLow  :: NatO
                   , iHigh :: NatO
