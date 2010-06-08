@@ -256,14 +256,14 @@ structToSpAST _    SId           = [| X |]
 structToSpAST _    (SConst t)    = error "SConst in structToSpAST?"
 structToSpAST self (SEnum t)     = typeToSpAST self t
 structToSpAST _    (SSumProd []) = [| Zero |]
-structToSpAST self (SSumProd ss) = foldl1 (\x y -> [| $x :+: $y |])
+structToSpAST self (SSumProd ss) = foldl1 (\x y -> [| annI $x :+: annI $y |])
                                      $ map (conToSpAST self) ss
-structToSpAST self (SComp s1 s2) = [| $(structToSpAST self s1) :.: $(structToSpAST self s2) |]
+structToSpAST self (SComp s1 s2) = [| annI $(structToSpAST self s1) :.: annI $(structToSpAST self s2) |]
 structToSpAST self SSelf         = varE self
 
 conToSpAST :: Name -> (Name, [Struct]) -> Q Exp
 conToSpAST _    (_,[]) = [| One |]
-conToSpAST self (_,ps) = foldl1 (\x y -> [| $x :*: $y |]) $ map (structToSpAST self) ps
+conToSpAST self (_,ps) = foldl1 (\x y -> [| annI $x :*: annI $y |]) $ map (structToSpAST self) ps
 
 typeToSpAST :: Name -> Type -> Q Exp
 typeToSpAST _    ListT    = [| L |]
