@@ -47,7 +47,11 @@ simplSum UOne (UN n)   = UN $ succ n
 simplSum (UN n) UOne   = UN $ succ n
 simplSum (UN m) (UN n) = UN $ m + n
 simplSum (f :+:% g) h  = simplSum f (simplSum g h)
-simplSum f g           = f :+:% g
+simplSum f g | f == g  = simplProd (UN 2) f
+simplSum (UN n :*:% f) g | f == g = UN (succ n) :*:% f
+simplSum f (UN n :*:% g) | f == g = UN (succ n) :*:% f
+simplSum (UN m :*:% f) (UN n :*:% g) | f == g = UN (m + n) :*:% f
+simplSum f g = f :+:% g
 
 simplProd :: USpeciesAST -> USpeciesAST -> USpeciesAST
 simplProd UZero _              = UZero
