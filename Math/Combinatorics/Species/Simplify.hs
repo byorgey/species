@@ -3,7 +3,7 @@
 -- | Functions to manipulate and simplify species expressions
 --   according to algebraic species isomorphisms.
 module Math.Combinatorics.Species.Simplify
-    ( simplify
+    ( simplify, sumOfProducts
     ) where
 
 import NumericPrelude
@@ -148,3 +148,11 @@ intPartitions k = intPartitions' k k
         intPartitions' k 1 = [replicate (fromInteger k) 1]
         intPartitions' k j = map (j:) (intPartitions' (k - j) (min (k-j) j))
                           ++ intPartitions' k (j-1)
+
+-- | Simplify a species and decompose it into a sum of products.
+sumOfProducts :: USpeciesAST -> [[USpeciesAST]]
+sumOfProducts = terms . simplify
+  where terms (f :+:% g)   = factors f : terms g
+        terms f            = [factors f]
+        factors (f :*:% g) = f : factors g
+        factors f          = [f]

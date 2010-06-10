@@ -8,12 +8,22 @@ module Math.Combinatorics.Species.NewtonRaphson
       newtonRaphsonIter
     , inits'
     , newtonRaphson
+    , newtonRaphsonRec
+    , solveForR
     ) where
 
 import NumericPrelude
 import PreludeBase
 
 import Math.Combinatorics.Species
+import Math.Combinatorics.Species.AST
+import Math.Combinatorics.Species.AST.Instances (reflectU)
+import Math.Combinatorics.Species.Simplify
+
+import Data.Typeable
+
+import Control.Monad (guard)
+import Data.List (delete)
 
 -- | @newtonRaphson r k a@ assumes that @a@ is a species having
 --   contact of order @k@ with species @t = x * (r `o` t)@ (that is, @a@
@@ -42,3 +52,30 @@ newtonRaphson r n = newtonRaphson' 0 0
   where newtonRaphson' a k
           | k >= n = a
           | otherwise = newtonRaphson' (newtonRaphsonIter r k a) (2*k + 2)
+
+newtonRaphsonRec :: (ASTFunctor f, Species s) => f -> Integer -> Maybe s
+newtonRaphsonRec code k = fmap (\(n,r) -> n + newtonRaphson r k) (solveForR code)
+
+solveForR :: (ASTFunctor f, Species s) => f -> Maybe (s, s)
+solveForR code = do
+  let terms = sumOfProducts . erase' $ apply code (Rec code)
+  guard . not . null $ terms
+
+  -- If there is a constant term, it will be the first one; pull it
+  -- out.
+  let (n, terms') = case terms of
+                      ([UOne] : ts) -> (UOne, ts)
+                      ([UN n] : ts) -> (UN n, ts)
+                      ts          -> (UZero, ts)
+
+  -- Now we need to be able to factor an X out of the rest.
+  guard $ all (UX `elem`) terms'
+
+  -- Now replace every recursive occurrence by (n + X).
+  let r = foldr1 (+) $ map ( foldr1 (*)
+                           . map (substRec code (n + x))
+                           . delete UX)
+                       terms'
+
+  return (reflectU n, reflectU r)
+
