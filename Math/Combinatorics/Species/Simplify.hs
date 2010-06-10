@@ -12,6 +12,7 @@ import PreludeBase
 import Math.Combinatorics.Species
 import Math.Combinatorics.Species.AST
 
+import Data.List (genericLength)
 import Data.Typeable
 
 simplify :: USpeciesAST -> USpeciesAST
@@ -115,8 +116,21 @@ simplOfSizeExactly UL 0 = UOne
 simplOfSizeExactly (f :+:% g) k = simplSum (simplOfSizeExactly f k) (simplOfSizeExactly g k)
 simplOfSizeExactly (f :*:% g) k = foldr simplSum UZero
                                     [ simplProd (simplOfSizeExactly f j) (simplOfSizeExactly g (k - j)) | j <- [0..k] ]
- -- XXX more here? multiplication? composition?
+
+-- XXX get this to work?
+--simplOfSizeExactly (f :.:% g) k = foldr simplSum UZero $
+--                                    map (\gs -> simplProd (simplOfSizeExactly f (genericLength gs)) (foldr simplProd UOne gs))
+--                                    [ map (simplOfSizeExactly g) p | p <- intPartitions k ]
+
 simplOfSizeExactly f k = UOfSizeExactly f k
 
 simplNonEmpty :: USpeciesAST -> USpeciesAST
 simplNonEmpty f = UNonEmpty f  -- XXX
+
+intPartitions :: Integer -> [[Integer]]
+intPartitions k = intPartitions' k k
+  -- intPartitions' k j gives partitions of k into parts of size at most j
+  where intPartitions' 0 _ = [[]]
+        intPartitions' k 1 = [replicate (fromInteger k) 1]
+        intPartitions' k j = map (j:) (intPartitions' (k - j) (min (k-j) j))
+                          ++ intPartitions' k (j-1)
