@@ -109,6 +109,9 @@ simplOfSizeExactly (UN n) 0 = UN n
 simplOfSizeExactly (UN _) _ = UZero
 simplOfSizeExactly UX 1 = UX
 simplOfSizeExactly UX _ = UZero
+simplOfSizeExactly UE 0 = UOne
+simplOfSizeExactly UC 0 = UZero
+simplOfSizeExactly UL 0 = UOne
 simplOfSizeExactly (f :+:% g) k = simplSum (simplOfSizeExactly f k) (simplOfSizeExactly g k)
 simplOfSizeExactly (f :*:% g) k = foldr simplSum UZero
                                     [ simplProd (simplOfSizeExactly f j) (simplOfSizeExactly g (k - j)) | j <- [0..k] ]
