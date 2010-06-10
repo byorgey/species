@@ -118,9 +118,14 @@ simplOfSizeExactly (f :*:% g) k = foldr simplSum UZero
                                     [ simplProd (simplOfSizeExactly f j) (simplOfSizeExactly g (k - j)) | j <- [0..k] ]
 
 -- XXX get this to work?
---simplOfSizeExactly (f :.:% g) k = foldr simplSum UZero $
---                                    map (\gs -> simplProd (simplOfSizeExactly f (genericLength gs)) (foldr simplProd UOne gs))
---                                    [ map (simplOfSizeExactly g) p | p <- intPartitions k ]
+--
+-- Note, it's incorrect to multiply by f.  For regular f we can just
+-- multiply together all the g's.  However for non-regular f this
+-- doesn't work.  Seems difficult to do this properly...
+
+-- simplOfSizeExactly (f :.:% g) k = foldr simplSum UZero $
+--                                     map (\gs -> simplProd (simplOfSizeExactly f (genericLength gs)) (foldr simplProd UOne gs))
+--                                     [ map (simplOfSizeExactly g) p | p <- intPartitions k ]
 
 simplOfSizeExactly f k = UOfSizeExactly f k
 
