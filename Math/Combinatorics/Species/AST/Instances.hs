@@ -47,7 +47,6 @@ instance Eq USpeciesAST where
   UOmega               == UOmega                = True
   _ == _                                        = False
 
-
 instance Show USpeciesAST where
   showsPrec _ UZero                = shows (0 :: Int)
   showsPrec _ UOne                 = shows (1 :: Int)
@@ -79,6 +78,41 @@ instance Show USpeciesAST where
   showsPrec _ (UOfSizeExactly f n) = showsPrec 11 f . shows n
   showsPrec _ (UNonEmpty f)        = showsPrec 11 f . showChar '+'
   showsPrec _ (URec f)             = shows f
+
+instance Additive.C USpeciesAST where
+  zero   = UZero
+  (+)    = (:+:%)
+  negate = error "negation is not implemented yet!  wait until virtual species..."
+
+instance Ring.C USpeciesAST where
+  (*) = (:*:%)
+  one = UOne
+  fromInteger 0 = zero
+  fromInteger 1 = one
+  fromInteger n = UN n
+  _ ^ 0 = one
+  w ^ 1 = w
+  f ^ n = f * (f ^ (n-1))
+
+instance Differential.C USpeciesAST where
+  differentiate = UDer
+
+instance Species USpeciesAST where
+  singleton     = UX
+  set           = UE
+  cycle         = UC
+  linOrd        = UL
+  subset        = USubset
+  ksubset k     = UKSubset k
+  element       = UElt
+  o             = (:.:%)
+  cartesian     = (:><:%)
+  fcomp         = (:@:%)
+  ofSize        = UOfSize
+  ofSizeExactly = UOfSizeExactly
+  nonEmpty      = UNonEmpty
+  rec           = URec
+  omega         = UOmega
 
 instance Show (SpeciesAST s) where
   show = show . erase'
