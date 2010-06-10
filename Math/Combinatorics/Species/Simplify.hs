@@ -9,8 +9,8 @@ module Math.Combinatorics.Species.Simplify
 import NumericPrelude
 import PreludeBase
 
-import Math.Combinatorics.Species
 import Math.Combinatorics.Species.AST
+import Math.Combinatorics.Species.AST.Instances
 
 import Data.List (genericLength)
 import Data.Typeable

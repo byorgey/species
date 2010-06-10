@@ -15,7 +15,7 @@ module Math.Combinatorics.Species.NewtonRaphson
 import NumericPrelude
 import PreludeBase
 
-import Math.Combinatorics.Species
+import Math.Combinatorics.Species.Class
 import Math.Combinatorics.Species.AST
 import Math.Combinatorics.Species.AST.Instances (reflectU)
 import Math.Combinatorics.Species.Simplify
