@@ -20,6 +20,34 @@ import qualified Algebra.Additive as Additive
 import qualified Algebra.Ring as Ring
 import qualified Algebra.Differential as Differential
 
+import Data.Typeable
+
+-- grr -- can't autoderive this because of URec constructor! =P
+instance Eq USpeciesAST where
+  UZero                == UZero                 = True
+  UOne                 == UOne                  = True
+  (UN m)               == (UN n)                = m == n
+  UX                   == UX                    = True
+  UE                   == UE                    = True
+  UC                   == UC                    = True
+  UL                   == UL                    = True
+  USubset              == USubset               = True
+  (UKSubset k)         == (UKSubset j)          = k == j
+  UElt                 == UElt                  = True
+  (f1 :+:% g1)         == (f2 :+:% g2)          = f1 == f2 && g1 == g2
+  (f1 :*:% g1)         == (f2 :*:% g2)          = f1 == f2 && g1 == g2
+  (f1 :.:% g1)         == (f2 :.:% g2)          = f1 == f2 && g1 == g2
+  (f1 :><:% g1)        == (f2 :><:% g2)         = f1 == f2 && g1 == g2
+  (f1 :@:% g1)         == (f2 :@:% g2)          = f1 == f2 && g1 == g2
+  UDer f1              == UDer f2               = f1 == f2
+  -- note, UOfSize will always compare False since we can't compare the functions for equality
+  UOfSizeExactly f1 k1 == UOfSizeExactly f2 k2  = f1 == f2 && k1 == k2
+  UNonEmpty f1         == UNonEmpty f2          = f1 == f2
+  URec f1              == URec f2               = typeOf f1 == typeOf f2
+  UOmega               == UOmega                = True
+  _ == _                                        = False
+
+
 instance Show USpeciesAST where
   showsPrec _ UZero                = shows (0 :: Int)
   showsPrec _ UOne                 = shows (1 :: Int)
