@@ -3,6 +3,7 @@
            , TypeFamilies
            , KindSignatures
            , FlexibleContexts
+           , RankNTypes
   #-}
 
 -- | A data structure to reify combinatorial species.
@@ -14,6 +15,8 @@ module Math.Combinatorics.Species.AST
     , ASTFunctor(..)
 
     , needsZ, needsZE
+
+    , USpeciesAST(..), erase, erase', unerase
 
     ) where
 
@@ -156,3 +159,90 @@ wrap = Wrap . annI
 -- | A version of 'needsZ' for 'ESpeciesAST'.
 needsZE :: ESpeciesAST -> Bool
 needsZE (Wrap s) = needsZ (stripI s)
+
+-- | A plain old untyped variant of the species AST, for more easily
+--   doing things like analysis, simplification, deriving
+--   isomorphisms, and so on.  Converting between 'ESpeciesAST' and
+--   'USpeciesAST' can be done with 'erase' and 'unerase'.
+data USpeciesAST where
+  UZero          :: USpeciesAST
+  UOne           :: USpeciesAST
+  UN             :: Integer -> USpeciesAST
+  UX             :: USpeciesAST
+  UE             :: USpeciesAST
+  UC             :: USpeciesAST
+  UL             :: USpeciesAST
+  USubset        :: USpeciesAST
+  UKSubset       :: Integer -> USpeciesAST
+  UElt           :: USpeciesAST
+  (:+:%)         :: USpeciesAST -> USpeciesAST -> USpeciesAST
+  (:*:%)         :: USpeciesAST -> USpeciesAST -> USpeciesAST
+  (:.:%)         :: USpeciesAST -> USpeciesAST -> USpeciesAST
+  (:><:%)        :: USpeciesAST -> USpeciesAST -> USpeciesAST
+  (:@:%)         :: USpeciesAST -> USpeciesAST -> USpeciesAST
+  UDer           :: USpeciesAST -> USpeciesAST
+  UOfSize        :: USpeciesAST -> (Integer -> Bool) -> USpeciesAST
+  UOfSizeExactly :: USpeciesAST -> Integer -> USpeciesAST
+  UNonEmpty      :: USpeciesAST -> USpeciesAST
+  URec           :: ASTFunctor f => f -> USpeciesAST
+  UOmega         :: USpeciesAST
+
+-- | Erase the type and interval information from a species AST.
+erase :: ESpeciesAST -> USpeciesAST
+erase (Wrap s) = erase' (stripI s)
+
+erase' :: SpeciesAST f -> USpeciesAST
+erase' Zero                = UZero
+erase' One                 = UOne
+erase' (N n)               = UN n
+erase' X                   = UX
+erase' E                   = UE
+erase' C                   = UC
+erase' L                   = UL
+erase' Subset              = USubset
+erase' (KSubset k)         = UKSubset k
+erase' Elt                 = UElt
+erase' (f :+: g)           = erase' (stripI f) :+:% erase' (stripI g)
+erase' (f :*: g)           = erase' (stripI f) :*:% erase' (stripI g)
+erase' (f :.: g)           = erase' (stripI f) :.:% erase' (stripI g)
+erase' (f :><: g)          = erase' (stripI f) :><:% erase' (stripI g)
+erase' (f :@: g)           = erase' (stripI f) :@:% erase' (stripI g)
+erase' (Der f)             = UDer . erase' . stripI $ f
+erase' (OfSize f p)        = UOfSize (erase' . stripI $ f) p
+erase' (OfSizeExactly f k) = UOfSizeExactly (erase' . stripI $ f) k
+erase' (NonEmpty f)        = UNonEmpty . erase' . stripI $ f
+erase' (Rec f)             = URec f
+erase' Omega               = UOmega
+
+-- | Reconstruct the type and interval annotations on a species AST.
+unerase :: USpeciesAST -> ESpeciesAST
+unerase UZero                = wrap Zero
+unerase UOne                 = wrap One
+unerase (UN n)               = wrap (N n)
+unerase UX                   = wrap X
+unerase UE                   = wrap E
+unerase UC                   = wrap C
+unerase UL                   = wrap L
+unerase USubset              = wrap Subset
+unerase (UKSubset k)         = wrap (KSubset k)
+unerase UElt                 = wrap Elt
+unerase (f :+:% g)           = unerase f + unerase g
+  where Wrap f + Wrap g      = wrap $ f :+: g
+unerase (f :*:% g)           = unerase f * unerase g
+  where Wrap f * Wrap g      = wrap $ f :*: g
+unerase (f :.:% g)           = unerase f . unerase g
+  where Wrap f . Wrap g      = wrap $ f :.: g
+unerase (f :><:% g)          = unerase f >< unerase g
+  where Wrap f >< Wrap g     = wrap $ f :><: g
+unerase (f :@:% g)           = unerase f @@ unerase g
+  where Wrap f @@ Wrap g     = wrap $ f :@: g
+unerase (UDer f)             = der $ unerase f
+  where der (Wrap f)         = wrap (Der f)
+unerase (UOfSize f p)        = ofSize $ unerase f
+  where ofSize (Wrap f)      = wrap $ OfSize f p
+unerase (UOfSizeExactly f k) = ofSize $ unerase f
+  where ofSize (Wrap f)      = wrap $ OfSizeExactly f k
+unerase (UNonEmpty f)        = nonEmpty $ unerase f
+  where nonEmpty (Wrap f)    = wrap $ NonEmpty f
+unerase (URec f)             = wrap $ Rec f
+unerase UOmega               = wrap Omega

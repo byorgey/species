@@ -1,8 +1,8 @@
 {-# LANGUAGE GADTs #-}
 
--- | Type class instances for 'ESpeciesAST' and 'SpeciesAST', in a
---   separate module to avoid a dependency cycle between
---   "Math.Combinatorics.Species.AST" and
+-- | Type class instances for 'SpeciesAST', 'ESpeciesAST', and
+--   'USpeciesAST', in a separate module to avoid a dependency cycle
+--   between "Math.Combinatorics.Species.AST" and
 --   "Math.Combinatorics.Species.Class".
 module Math.Combinatorics.Species.AST.Instances
     ( reify, reflectT, reflect )
@@ -20,40 +20,43 @@ import qualified Algebra.Additive as Additive
 import qualified Algebra.Ring as Ring
 import qualified Algebra.Differential as Differential
 
-instance Show (SpeciesAST s) where
-  showsPrec _ Zero                = shows (0 :: Int)
-  showsPrec _ One                 = shows (1 :: Int)
-  showsPrec _ (N n)               = shows n
-  showsPrec _ X                   = showChar 'X'
-  showsPrec _ E                   = showChar 'E'
-  showsPrec _ C                   = showChar 'C'
-  showsPrec _ L                   = showChar 'L'
-  showsPrec _ Subset              = showChar 'p'
-  showsPrec _ (KSubset n)         = showChar 'p' . shows n
-  showsPrec _ (Elt)               = showChar 'e'
-  showsPrec p (f :+: g)           = showParen (p>6)  $ showsPrec 6 (stripI f)
+instance Show USpeciesAST where
+  showsPrec _ UZero                = shows (0 :: Int)
+  showsPrec _ UOne                 = shows (1 :: Int)
+  showsPrec _ (UN n)               = shows n
+  showsPrec _ UX                   = showChar 'X'
+  showsPrec _ UE                   = showChar 'E'
+  showsPrec _ UC                   = showChar 'C'
+  showsPrec _ UL                   = showChar 'L'
+  showsPrec _ USubset              = showChar 'p'
+  showsPrec _ (UKSubset n)         = showChar 'p' . shows n
+  showsPrec _ (UElt)               = showChar 'e'
+  showsPrec p (f :+:% g)           = showParen (p>6)  $ showsPrec 6 f
                                                      . showString " + "
-                                                     . showsPrec 6 (stripI g)
-  showsPrec p (f :*: g)           = showParen (p>=7) $ showsPrec 7 (stripI f)
+                                                     . showsPrec 6 g
+  showsPrec p (f :*:% g)           = showParen (p>=7) $ showsPrec 7 f
                                                      . showString " * "
-                                                     . showsPrec 7 (stripI g)
-  showsPrec p (f :.: g)           = showParen (p>=7) $ showsPrec 7 (stripI f)
+                                                     . showsPrec 7 g
+  showsPrec p (f :.:% g)           = showParen (p>=7) $ showsPrec 7 f
                                                      . showString " . "
-                                                     . showsPrec 7 (stripI g)
-  showsPrec p (f :><: g)          = showParen (p>=7) $ showsPrec 7 (stripI f)
+                                                     . showsPrec 7 g
+  showsPrec p (f :><:% g)          = showParen (p>=7) $ showsPrec 7 f
                                                      . showString " >< "
-                                                     . showsPrec 7 (stripI g)
-  showsPrec p (f :@: g)           = showParen (p>=7) $ showsPrec 7 (stripI f)
+                                                     . showsPrec 7 g
+  showsPrec p (f :@:% g)           = showParen (p>=7) $ showsPrec 7 f
                                                      . showString " @ "
-                                                     . showsPrec 7 (stripI g)
-  showsPrec p (Der f)             = showsPrec 11 (stripI f) . showChar '\''
-  showsPrec _ (OfSize f p)        = showChar '<' .  showsPrec 0 (stripI f) . showChar '>'
-  showsPrec _ (OfSizeExactly f n) = showsPrec 11 (stripI f) . shows n
-  showsPrec _ (NonEmpty f)        = showsPrec 11 (stripI f) . showChar '+'
-  showsPrec _ (Rec f)             = shows f
+                                                     . showsPrec 7 g
+  showsPrec p (UDer f)             = showsPrec 11 f . showChar '\''
+  showsPrec _ (UOfSize f p)        = showChar '<' .  showsPrec 0 f . showChar '>'
+  showsPrec _ (UOfSizeExactly f n) = showsPrec 11 f . shows n
+  showsPrec _ (UNonEmpty f)        = showsPrec 11 f . showChar '+'
+  showsPrec _ (URec f)             = shows f
+
+instance Show (SpeciesAST s) where
+  show = show . erase'
 
 instance Show ESpeciesAST where
-  show (Wrap f) = show (stripI f)
+  show = show . erase
 
 instance Additive.C ESpeciesAST where
   zero   = wrap Zero
