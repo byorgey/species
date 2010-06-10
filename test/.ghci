@@ -1,4 +1,4 @@
 :set -XNoImplicitPrelude
 :m -Prelude
-:m +MyPrelude Math.Combinatorics.Species Math.Combinatorics.Species.AST
+:m +MyPrelude Math.Combinatorics.Species Math.Combinatorics.Species.AST Math.Combinatorics.Species.Simplify Math.Combinatorics.Species.NewtonRaphson
 :set prompt "> "

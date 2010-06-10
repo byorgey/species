@@ -37,4 +37,5 @@ Library
     Math.Combinatorics.Species.TH
     Math.Combinatorics.Species.Util.Interval
     Math.Combinatorics.Species.NewtonRaphson
+    Math.Combinatorics.Species.Simplify
   extensions: NoImplicitPrelude
