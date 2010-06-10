@@ -41,18 +41,25 @@ simplify (URec f)       = URec f
 simplify UOmega         = UOmega
 
 simplSum :: USpeciesAST -> USpeciesAST -> USpeciesAST
-simplSum UZero g       = g
-simplSum f UZero       = f
-simplSum UOne UOne     = UN 2
-simplSum UOne (UN n)   = UN $ succ n
-simplSum (UN n) UOne   = UN $ succ n
-simplSum (UN m) (UN n) = UN $ m + n
-simplSum (f :+:% g) h  = simplSum f (simplSum g h)
-simplSum f g | f == g  = simplProd (UN 2) f
-simplSum (UN n :*:% f) g | f == g = UN (succ n) :*:% f
-simplSum f (UN n :*:% g) | f == g = UN (succ n) :*:% f
-simplSum (UN m :*:% f) (UN n :*:% g) | f == g = UN (m + n) :*:% f
-simplSum f g = f :+:% g
+simplSum UZero g                               = g
+simplSum f UZero                               = f
+simplSum UOne UOne                             = UN 2
+simplSum UOne (UN n)                           = UN $ succ n
+simplSum (UN n) UOne                           = UN $ succ n
+simplSum (UN m) (UN n)                         = UN $ m + n
+simplSum UOne (UOne :+:% g)                    = simplSum (UN 2) g
+simplSum UOne ((UN n) :+:% g)                  = simplSum (UN $ succ n) g
+simplSum (UN n) (UOne :+:% g)                  = simplSum (UN $ succ n) g
+simplSum (UN m) ((UN n) :+:% g)                = simplSum (UN (m + n)) g
+simplSum (f :+:% g) h                          = simplSum f (simplSum g h)
+simplSum f g | f == g                          = simplProd (UN 2) f
+simplSum f (g :+:% h) | f == g                 = simplSum (simplProd (UN 2) f) h
+simplSum (UN n :*:% f) g | f == g              = UN (succ n) :*:% f
+simplSum f (UN n :*:% g) | f == g              = UN (succ n) :*:% f
+simplSum (UN m :*:% f) (UN n :*:% g) | f == g  = UN (m + n) :*:% f
+simplSum f (g :+:% h) | g < f                  = simplSum g (simplSum f h)
+simplSum f g | g < f                           = g :+:% f
+simplSum f g                                   = f :+:% g
 
 simplProd :: USpeciesAST -> USpeciesAST -> USpeciesAST
 simplProd UZero _              = UZero
