@@ -47,6 +47,68 @@ instance Eq USpeciesAST where
   UOmega               == UOmega                = True
   _ == _                                        = False
 
+instance Ord USpeciesAST where
+  compare x y | x == y = EQ
+  compare UZero _ = LT
+  compare _ UZero = GT
+  compare UOne _     = LT
+  compare _ UOne     = GT
+  compare (UN m) (UN n) = compare m n
+  compare (UN _) _ = LT
+  compare _ (UN _) = GT
+  compare UX _ = LT
+  compare _ UX = GT
+  compare UE _ = LT
+  compare _ UE = GT
+  compare UC _ = LT
+  compare _ UC = GT
+  compare UL _ = LT
+  compare _ UL = GT
+  compare USubset _ = LT
+  compare _ USubset = GT
+  compare (UKSubset j) (UKSubset k) = compare j k
+  compare (UKSubset _) _ = LT
+  compare _ (UKSubset _) = GT
+  compare UElt _ = LT
+  compare _ UElt = GT
+  compare (f1 :+:% g1) (f2 :+:% g2) | f1 == f2 = compare g1 g2
+                                    | otherwise = compare f1 f2
+  compare (_ :+:% _) _ = LT
+  compare _ (_ :+:% _) = GT
+  compare (f1 :*:% g1) (f2 :*:% g2) | f1 == f2 = compare g1 g2
+                                    | otherwise = compare f1 f2
+  compare (_ :*:% _) _ = LT
+  compare _ (_ :*:% _) = GT
+  compare (f1 :.:% g1) (f2 :.:% g2) | f1 == f2 = compare g1 g2
+                                    | otherwise = compare f1 f2
+  compare (_ :.:% _) _ = LT
+  compare _ (_ :.:% _) = GT
+  compare (f1 :><:% g1) (f2 :><:% g2) | f1 == f2 = compare g1 g2
+                                      | otherwise = compare f1 f2
+  compare (_ :><:% _) _ = LT
+  compare _ (_ :><:% _) = GT
+  compare (f1 :@:% g1) (f2 :@:% g2) | f1 == f2 = compare g1 g2
+                                    | otherwise = compare f1 f2
+  compare (_ :@:% _) _ = LT
+  compare _ (_ :@:% _) = GT
+  compare (UDer f1) (UDer f2) = compare f1 f2
+  compare (UDer _) _ = LT
+  compare _ (UDer _) = GT
+  compare (UOfSize f1 p1) (UOfSize f2 p2) = compare f1 f2
+  compare (UOfSize _ _) _ = LT
+  compare _ (UOfSize _ _) = GT
+  compare (UOfSizeExactly f1 k1) (UOfSizeExactly f2 k2)
+    | f1 == f2 = compare k1 k2
+    | otherwise = compare f1 f2
+  compare (UOfSizeExactly _ _) _ = LT
+  compare _ (UOfSizeExactly _ _) = GT
+  compare (UNonEmpty f1) (UNonEmpty f2) = compare f1 f2
+  compare (UNonEmpty _) _ = LT
+  compare _ (UNonEmpty _) = GT
+  compare (URec f1) (URec f2) = compare (show $ typeOf f1) (show $ typeOf f2)
+  compare UOmega _ = LT
+  compare _ UOmega = GT
+
 instance Show USpeciesAST where
   showsPrec _ UZero                = shows (0 :: Int)
   showsPrec _ UOne                 = shows (1 :: Int)
