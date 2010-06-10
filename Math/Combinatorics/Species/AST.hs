@@ -17,6 +17,7 @@ module Math.Combinatorics.Species.AST
     , needsZ, needsZE
 
     , USpeciesAST(..), erase, erase', unerase
+    , substRec
 
     ) where
 
@@ -246,3 +247,18 @@ unerase (UNonEmpty f)        = nonEmpty $ unerase f
   where nonEmpty (Wrap f)    = wrap $ NonEmpty f
 unerase (URec f)             = wrap $ Rec f
 unerase UOmega               = wrap Omega
+
+-- | Substitute an expression for recursive occurrences.
+substRec :: ASTFunctor f => f -> USpeciesAST -> USpeciesAST -> USpeciesAST
+substRec c e (f :+:% g)                          = substRec c e f :+:% substRec c e g
+substRec c e (f :*:% g)                          = substRec c e f :*:% substRec c e g
+substRec c e (f :.:% g)                          = substRec c e f :.:% substRec c e g
+substRec c e (f :><:% g)                         = substRec c e f :><:% substRec c e g
+substRec c e (f :@:% g)                          = substRec c e f :@:% substRec c e g
+substRec c e (UDer f)                            = UDer (substRec c e f)
+substRec c e (UOfSize f p)                       = UOfSize (substRec c e f) p
+substRec c e (UOfSizeExactly f k)                = UOfSizeExactly (substRec c e f) k
+substRec c e (UNonEmpty f)                       = UNonEmpty (substRec c e f)
+substRec c e (URec c')
+  | (show . typeOf $ c) == (show . typeOf $ c')  = e
+substRec _ _ f                                   = f
