@@ -5,7 +5,7 @@
 --   between "Math.Combinatorics.Species.AST" and
 --   "Math.Combinatorics.Species.Class".
 module Math.Combinatorics.Species.AST.Instances
-    ( reify, reflectT, reflect )
+    ( reify, reflectT, reflectU, reflect )
     where
 
 import NumericPrelude
@@ -231,29 +231,32 @@ reify :: ESpeciesAST -> ESpeciesAST
 reify = id
 
 -- | Reflect an AST back into any instance of the 'Species' class.
+reflectU :: Species s => USpeciesAST -> s
+reflectU UZero                = 0
+reflectU UOne                 = 1
+reflectU (UN n)               = fromInteger n
+reflectU UX                   = singleton
+reflectU UE                   = set
+reflectU UC                   = cycle
+reflectU UL                   = linOrd
+reflectU USubset              = subset
+reflectU (UKSubset k)         = ksubset k
+reflectU UElt                 = element
+reflectU (f :+:% g)           = reflectU f + reflectU g
+reflectU (f :*:% g)           = reflectU f * reflectU g
+reflectU (f :.:% g)           = reflectU f `o` reflectU g
+reflectU (f :><:% g)          = reflectU f >< reflectU g
+reflectU (f :@:% g)           = reflectU f @@ reflectU g
+reflectU (UDer f)             = oneHole (reflectU f)
+reflectU (UOfSize f p)        = ofSize (reflectU f) p
+reflectU (UOfSizeExactly f n) = ofSizeExactly (reflectU f) n
+reflectU (UNonEmpty f)        = nonEmpty (reflectU f)
+reflectU (URec f)             = rec f
+reflectU UOmega               = omega
+
 reflectT :: Species s => SpeciesAST f -> s
-reflectT Zero                = 0
-reflectT One                 = 1
-reflectT (N n)               = fromInteger n
-reflectT X                   = singleton
-reflectT E                   = set
-reflectT C                   = cycle
-reflectT L                   = linOrd
-reflectT Subset              = subset
-reflectT (KSubset k)         = ksubset k
-reflectT Elt                 = element
-reflectT (f :+: g)           = reflectT (stripI f) + reflectT (stripI g)
-reflectT (f :*: g)           = reflectT (stripI f) * reflectT (stripI g)
-reflectT (f :.: g)           = reflectT (stripI f) `o` reflectT (stripI g)
-reflectT (f :><: g)          = reflectT (stripI f) >< reflectT (stripI g)
-reflectT (f :@: g)           = reflectT (stripI f) @@ reflectT (stripI g)
-reflectT (Der f)             = oneHole (reflectT $ stripI f)
-reflectT (OfSize f p)        = ofSize (reflectT $ stripI f) p
-reflectT (OfSizeExactly f n) = ofSizeExactly (reflectT $ stripI f) n
-reflectT (NonEmpty f)        = nonEmpty (reflectT $ stripI f)
-reflectT (Rec f)             = rec f
-reflectT Omega               = omega
+reflectT = reflectU . erase'
 
 -- | Reflect an AST back into any instance of the 'Species' class.
 reflect :: Species s => ESpeciesAST -> s
-reflect (Wrap f) = reflectT (stripI f)
+reflect = reflectU . erase
