@@ -73,6 +73,8 @@ simplProd f (UN n)             = simplProd (UN n) f
 simplProd (UN m) (UN n :*:% g) = simplProd (UN $ m * n) g
 simplProd f ((UN n) :*:% g)    = simplProd (UN n) (simplProd f g)
 simplProd (f :*:% g) h         = simplProd f (simplProd g h)
+simplProd f (g :*:% h) | g < f = simplProd g (simplProd f h)
+simplProd f g | g < f          = g :*:% f
 simplProd f g                  = f :*:% g
 
 simplComp :: USpeciesAST -> USpeciesAST -> USpeciesAST
