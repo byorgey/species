@@ -168,10 +168,6 @@ conToTy :: Name -> (Name, [Struct]) -> Q Type
 conToTy _    (_, []) = conT ''Unit
 conToTy self (_, ps) = foldl1 (appT . appT (conT ''Prod)) (map (structToTy self) ps)
 
--- XXX just for testing
--- declStructTy :: Struct -> Q Dec
--- declStructTy s = tySynD (mkName "Quux") [] (return (structToTy s))
-
 -- | If the third argument is Nothing, generate normal non-recursive instance.
 --   If the third argument is (Just code), then the instance is for a recursive
 --   type with the given code.
