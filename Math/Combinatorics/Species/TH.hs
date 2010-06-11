@@ -51,64 +51,26 @@ import Data.Typeable
 import Language.Haskell.TH
 import Language.Haskell.TH.Syntax (lift)
 
+------------------------------------------------------------
+--  Preliminaries  -----------------------------------------
+------------------------------------------------------------
+
 instance Applicative Q where
   pure  = return
   (<*>) = ap
 
-data C1_ = C1_
-  deriving (Show, Typeable)
+-- | Report a fatal error and stop processing in the 'Q' monad.
+errorQ :: String -> Q a
+errorQ msg = report True msg >> error msg
 
-deriveSpecies :: Name -> Q [Dec]
-deriveSpecies nm = do
-  st <- nameToStruct nm
-  let spNm = mkName . map toLower . nameBase $ nm
-  if (isRecursive st)
-    then mkEnumerableRec    nm spNm st
-    else mkEnumerableNonrec nm spNm st
- where
-  mkEnumerableRec nm spNm st = do
-    codeNm <- newName (nameBase nm)
-    self   <- newName "self"
+------------------------------------------------------------
+--  Parsing type declarations  -----------------------------
+------------------------------------------------------------
 
-    let declCode = DataD [] codeNm [] [NormalC codeNm []] [''Typeable]
+-- XXX possible improvement: add special cases to Struct for things
+-- like Bool, Either, and (,)
 
-    [showCode] <- [d| instance Show $(conT codeNm) where
-                        show _ = $(lift (nameBase nm))
-                  |]
-
-    [interpCode] <- [d| type instance Interp $(conT codeNm) $(varT self)
-                          = $(structToTy self st)
-                    |]
-
-    applyBody <- NormalB <$> structToSpAST self st
-    let astFunctorInst  = InstanceD [] (AppT (ConT ''ASTFunctor) (ConT codeNm))
-                            [FunD 'apply [Clause [WildP, VarP self] applyBody []]]
-
-    [showMu] <- [d| instance Show a => Show (Mu $(conT codeNm) a) where
-                      show = show . unMu
-                |]
-
-    enum <- mkEnumerableInst nm st (Just codeNm)
-    sig  <- mkSpeciesSig spNm
-    spD  <- mkSpecies spNm st (Just codeNm)
-
-    return $ [ declCode
-             , showCode
-             , interpCode
-             , astFunctorInst
-             , showMu
-             , enum
-             , sig
-             , spD
-             ]
-
-  mkEnumerableNonrec nm spNm st =
-    sequence
-      [ mkEnumerableInst nm st Nothing
-      , mkSpeciesSig spNm
-      , mkSpecies spNm st Nothing
-      ]
-
+-- | A data structure to represent data type declarations.
 data Struct = SId
             | SConst Type    -- ^ for types of kind *
             | SEnum  Type    -- ^ for Enumerable type constructors of kind (* -> *)
@@ -116,10 +78,6 @@ data Struct = SId
             | SComp Struct Struct  -- ^ composition
             | SSelf          -- ^ recursive occurrence
   deriving Show
-
--- | Report a fatal error and stop processing in the 'Q' monad.
-errorQ :: String -> Q a
-errorQ msg = report True msg >> error msg
 
 -- | Extract the relevant information about a type constructor into a
 --   'Struct'.
@@ -130,6 +88,8 @@ nameToStruct nm = reify nm >>= infoToStruct
 
 -- XXX do something with contexts?  Later extension...
 
+-- | Extract the relevant information about a data type declaration
+--   into a 'Struct', given the name of the type and the declaraion.
 decToStruct :: Name -> Dec -> Q Struct
 decToStruct _ (DataD _ nm [bndr] cons _)
   = SSumProd <$> mapM (conToStruct nm (tyVarNm bndr)) cons
@@ -140,10 +100,15 @@ decToStruct _ (TySynD nm [bndr] ty)
 decToStruct nm _
   = errorQ $ "Processing " ++ show nm ++ ": Only type constructors of kind * -> * are supported."
 
+-- | Throw away kind annotations to extract the type variable name.
 tyVarNm :: TyVarBndr -> Name
 tyVarNm (PlainTV n)    = n
 tyVarNm (KindedTV n _) = n
 
+-- | Extract relevant information about a data constructor.  The first
+--   two arguments are the name of the type constructor, and the name
+--   of its type argument.  Returns the name of the data constructor
+--   and a list of descriptions of its arguments.
 conToStruct :: Name -> Name -> Con -> Q (Name, [Struct])
 conToStruct nm var (NormalC cnm tys)
   = (,) cnm <$> mapM (tyToStruct nm var) (map snd tys)
@@ -155,6 +120,8 @@ conToStruct nm var (InfixC ty1 cnm ty2)
 
   -- XXX do something with ForallC?
 
+-- XXX check this...
+-- | Extract a 'Struct' describing an arbitrary type.
 tyToStruct :: Name -> Name -> Type -> Q Struct
 tyToStruct nm var (VarT v) | v == var  = return SId
                            | otherwise = errorQ $ "Unknown variable " ++ show v
@@ -175,24 +142,114 @@ tyToStruct nm vars t@(AppT _ _)
 --     and so on
 -- XXX deal with arrow types?
 
-structToTy :: Name -> Struct -> Q Type
-structToTy _    SId           = conT ''Id
-structToTy _    (SConst t)    = appT (conT ''Const) (return t)
-structToTy _    (SEnum t)     = appT (conT ''StructTy) (return t)
-structToTy _    (SSumProd []) = conT ''Void
-structToTy self (SSumProd ss) = foldl1 (appT . appT (conT ''Sum))
-                                       (map (conToTy self) ss)
-structToTy self (SComp s t)   = appT (appT (conT ''Comp) (structToTy self s))
-                                  (structToTy self t)
-structToTy self SSelf         = varT self
+------------------------------------------------------------
+--  Misc Struct utilities  ---------------------------------
+------------------------------------------------------------
 
-conToTy :: Name -> (Name, [Struct]) -> Q Type
-conToTy _    (_, []) = conT ''Unit
-conToTy self (_, ps) = foldl1 (appT . appT (conT ''Prod)) (map (structToTy self) ps)
+-- | Decide whether a type is recursively defined, given its
+--   description.
+isRecursive :: Struct -> Bool
+isRecursive (SSumProd cons) = any isRecursive (concatMap snd cons)
+isRecursive (SComp s1 s2)   = isRecursive s1 || isRecursive s2
+isRecursive SSelf           = True
+isRecursive _               = False
 
--- If the third argument is Nothing, generate normal non-recursive instance.
--- If the third argument is (Just code), then the instance is for a recursive
--- type with the given code.
+------------------------------------------------------------
+--  Generating default species  ----------------------------
+------------------------------------------------------------
+
+-- | Convert a 'Struct' into a default corresponding species.
+structToSp :: Struct -> USpeciesAST
+structToSp SId           = UX
+structToSp (SConst t)    = error "Can't deal with SConst in structToSp"
+structToSp (SEnum t)     = error "SEnum in structToSp"
+structToSp (SSumProd []) = UZero
+structToSp (SSumProd ss) = foldl1 (+) $ map conToSp ss
+structToSp (SComp s1 s2) = structToSp s1 `o` structToSp s2
+structToSp SSelf         = UOmega
+
+-- | Convert a data constructor and its arguments into a default
+--   species.
+conToSp :: (Name, [Struct]) -> USpeciesAST
+conToSp (_,[]) = UOne
+conToSp (_,ps) = foldl1 (*) $ map structToSp ps
+
+------------------------------------------------------------
+--  Generating things from species  ------------------------
+------------------------------------------------------------
+
+-- | Given a name to use in recursive occurrences, convert a species
+--   AST into an actual splice-able expression of type  Species s => s.
+spToExp :: Name -> USpeciesAST -> Q Exp
+spToExp self = spToExp'
+ where
+  spToExp' UZero                = [| 0 |]
+  spToExp' UOne                 = [| 1 |]
+  spToExp' (UN n)               = lift n
+  spToExp' UX                   = [| singleton |]
+  spToExp' UE                   = [| set |]
+  spToExp' UC                   = [| cycle |]
+  spToExp' UL                   = [| linOrd |]
+  spToExp' USubset              = [| subset |]
+  spToExp' (UKSubset k)         = [| ksubset $(lift k) |]
+  spToExp' UElt                 = [| element |]
+  spToExp' (f :+:% g)           = [| $(spToExp' f) + $(spToExp' g) |]
+  spToExp' (f :*:% g)           = [| $(spToExp' f) * $(spToExp' g) |]
+  spToExp' (f :.:% g)           = [| $(spToExp' f) `o` $(spToExp' g) |]
+  spToExp' (f :><:% g)          = [| $(spToExp' f) >< $(spToExp' g) |]
+  spToExp' (f :@:% g)           = [| $(spToExp' f) @@ $(spToExp' g) |]
+  spToExp' (UDer f)             = [| oneHole $(spToExp' f) |]
+  spToExp' (UOfSize _ _)        = error "Can't reify general size predicate into code"
+  spToExp' (UOfSizeExactly f k) = [| $(spToExp' f) `ofSizeExactly` $(lift k) |]
+  spToExp' (UNonEmpty f)        = [| nonEmpty $(spToExp' f) |]
+  spToExp' (URec _)             = [| rec $(varE self) |]
+  spToExp' UOmega               = [| rec $(varE self) |]
+
+-- | Generate the structure type for a given species.
+spToTy :: Name -> USpeciesAST -> Q Type
+spToTy self = spToTy'
+ where
+  spToTy' UZero                = [t| Void |]
+  spToTy' UOne                 = [t| Unit |]
+  spToTy' (UN n)               = finTy n
+  spToTy' UX                   = [t| Id |]
+  spToTy' UE                   = [t| Set |]
+  spToTy' UC                   = [t| Cycle |]
+  spToTy' UL                   = [t| [] |]
+  spToTy' USubset              = [t| Set |]
+  spToTy' (UKSubset _)         = [t| Set |]
+  spToTy' UElt                 = [t| Id |]
+  spToTy' (f :+:% g)           = [t| Sum  $(spToTy' f) $(spToTy' g) |]
+  spToTy' (f :*:% g)           = [t| Prod $(spToTy' f) $(spToTy' g) |]
+  spToTy' (f :.:% g)           = [t| Comp $(spToTy' f) $(spToTy' g) |]
+  spToTy' (f :><:% g)          = [t| Prod $(spToTy' f) $(spToTy' g) |]
+  spToTy' (f :@:% g)           = [t| Comp $(spToTy' f) $(spToTy' g) |]
+  spToTy' (UDer f)             = [t| Star $(spToTy' f) |]
+  spToTy' (UOfSize f _)        = spToTy' f
+  spToTy' (UOfSizeExactly f _) = spToTy' f
+  spToTy' (UNonEmpty f)        = spToTy' f
+  spToTy' (URec _)             = varT self
+  spToTy' UOmega               = varT self
+
+-- | Generate a finite type of a given size, using a binary scheme.
+finTy :: Integer -> Q Type
+finTy 0 = [t| Void |]
+finTy 1 = [t| Unit |]
+finTy n | even n    = [t| Prod Bool $(finTy $ n `div` 2) |]
+        | otherwise = [t| Sum Unit $(finTy $ pred n) |]
+
+------------------------------------------------------------
+--  Code generation  ---------------------------------------
+------------------------------------------------------------
+
+-- | Generate an instance of the Enumerable type class, i.e. an
+--   isomorphism from the user's data type and the structure type
+--   corresponding to the chosen species (or to the default species if
+--   the user did not specify one).
+--
+--   If the third argument is @Nothing@, generate a normal
+--   non-recursive instance.  If the third argument is @Just code@,
+--   then the instance is for a recursive type with the given code.
 mkEnumerableInst :: Name -> Struct -> Maybe Name -> Q Dec
 mkEnumerableInst nm st code = do
   clauses <- mkIsoClauses (isJust code) st
@@ -237,14 +294,6 @@ mkIsoConMatches (cnm, ps) = map mkProd . sequence <$> mapM mkIsoMatches ps
         mkProd = (foldl1 (\x y -> (ConP 'Prod [x, y])) *** foldl AppE (ConE cnm))
                . unzip
 
--- | Decide whether a type is recursively defined, given its
---   description.
-isRecursive :: Struct -> Bool
-isRecursive (SSumProd cons) = any isRecursive (concatMap snd cons)
-isRecursive (SComp s1 s2)   = isRecursive s1 || isRecursive s2
-isRecursive SSelf           = True
-isRecursive _               = False
-
 -- | Given a name n, generate the declaration
 --
 --   > n :: Species s => s
@@ -257,48 +306,7 @@ mkSpecies :: Name -> Struct -> Maybe Name -> Q Dec
 mkSpecies nm st (Just code) = valD (varP nm) (normalB (appE (varE 'rec) (conE code))) []
 mkSpecies nm st Nothing     = valD (varP nm) (normalB (structToSp undefined st)) []
 
--- | Convert a 'Struct' into a default corresponding species.
-structToSp :: Struct -> USpeciesAST
-structToSp SId           = UX
-structToSp (SConst t)    = error "Can't deal with SConst in structToSp"
-structToSp (SEnum t)     = error "SEnum in structToSp"
-structToSp (SSumProd []) = UZero
-structToSp (SSumProd ss) = foldl1 (+) $ map conToSp ss
-structToSp (SComp s1 s2) = structToSp s1 `o` structToSp s2
-structToSp SSelf         = UOmega
 
--- | Convert a data constructor and its arguments into a default
---   species.
-conToSp :: (Name, [Struct]) -> USpeciesAST
-conToSp (_,[]) = UOne
-conToSp (_,ps) = foldl1 (*) $ map structToSp ps
-
--- | Given a name to use in recursive occurrences, convert a species
---   AST into an actual splice-able expression of type  Species s => s.
-spToExp :: Name -> USpeciesAST -> Q Exp
-spToExp self = spToExp'
- where
-  spToExp' UZero                = [| 0 |]
-  spToExp' UOne                 = [| 1 |]
-  spToExp' (UN n)               = lift n
-  spToExp' UX                   = [| singleton |]
-  spToExp' UE                   = [| set |]
-  spToExp' UC                   = [| cycle |]
-  spToExp' UL                   = [| linOrd |]
-  spToExp' USubset              = [| subset |]
-  spToExp' (UKSubset k)         = [| ksubset $(lift k) |]
-  spToExp' UElt                 = [| element |]
-  spToExp' (f :+:% g)           = [| $(spToExp' f) + $(spToExp' g) |]
-  spToExp' (f :*:% g)           = [| $(spToExp' f) * $(spToExp' g) |]
-  spToExp' (f :.:% g)           = [| $(spToExp' f) `o` $(spToExp' g) |]
-  spToExp' (f :><:% g)          = [| $(spToExp' f) >< $(spToExp' g) |]
-  spToExp' (f :@:% g)           = [| $(spToExp' f) @@ $(spToExp' g) |]
-  spToExp' (UDer f)             = [| oneHole $(spToExp' f) |]
-  spToExp' (UOfSize _ _)        = error "Can't reify general size predicate into code"
-  spToExp' (UOfSizeExactly f k) = [| $(spToExp' f) `ofSizeExactly` $(lift k) |]
-  spToExp' (UNonEmpty f)        = [| nonEmpty $(spToExp' f) |]
-  spToExp' (URec _)             = [| rec $(varE self) |]
-  spToExp' UOmega               = [| rec $(varE self) |]
 
 {-
 typeToSp :: Name -> Type -> Q Exp
@@ -329,3 +337,59 @@ typeToSpAST _    ListT    = [| L |]
 typeToSpAST self (ConT c) | c == ''[] = [| L |]
                        | otherwise = nameToStruct c >>= structToSpAST self -- XXX this is wrong! Need to do something else for recursive types?
 typeToSpAST _ _        = error "non-constructor in typeToSpAST?"
+
+
+------------------------------------------------------------
+--  Putting it all together...  ----------------------------
+------------------------------------------------------------
+
+deriveSpecies :: Name -> USpeciesAST -> Q [Dec]
+deriveSpecies nm sp = do
+  st <- nameToStruct nm
+  let spNm = mkName . map toLower . nameBase $ nm
+  if (isRecursive st)
+    then mkEnumerableRec    nm spNm st sp
+    else mkEnumerableNonrec nm spNm st sp
+ where
+  mkEnumerableRec nm spNm st sp = do
+    codeNm <- newName (nameBase nm)
+    self   <- newName "self"
+
+    let declCode = DataD [] codeNm [] [NormalC codeNm []] [''Typeable]
+
+    [showCode] <- [d| instance Show $(conT codeNm) where
+                        show _ = $(lift (nameBase nm))
+                  |]
+
+    [interpCode] <- [d| type instance Interp $(conT codeNm) $(varT self)
+                          = $(spToTy self sp)
+                    |]
+
+    applyBody <- NormalB <$> structToSpAST self st
+    let astFunctorInst  = InstanceD [] (AppT (ConT ''ASTFunctor) (ConT codeNm))
+                            [FunD 'apply [Clause [WildP, VarP self] applyBody []]]
+
+    [showMu] <- [d| instance Show a => Show (Mu $(conT codeNm) a) where
+                      show = show . unMu
+                |]
+
+    enum <- mkEnumerableInst nm st (Just codeNm)
+    sig  <- mkSpeciesSig spNm
+    spD  <- mkSpecies spNm st (Just codeNm)
+
+    return $ [ declCode
+             , showCode
+             , interpCode
+             , astFunctorInst
+             , showMu
+             , enum
+             , sig
+             , spD
+             ]
+
+  mkEnumerableNonrec nm spNm st sp =
+    sequence
+      [ mkEnumerableInst nm st Nothing
+      , mkSpeciesSig spNm
+      , mkSpecies spNm st Nothing
+      ]
