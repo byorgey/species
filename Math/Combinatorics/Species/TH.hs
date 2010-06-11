@@ -7,6 +7,21 @@
            , DeriveDataTypeable
   #-}
 
+{- Refactoring plan:
+
+   * need function to compute a (default) species from a Struct.
+     - currently have structToSp :: Struct -> Q Exp.
+     - refactor it into two pieces, Struct -> USpeciesAST and USpeciesAST -> Q Exp.
+   * make version of deriveSpecies that takes a USpeciesAST as an argument,
+       and use Struct -> USpeciesAST to generate default
+
+   * deriveSpecies should pass the USpeciesAST to... other things that
+     currently just destruct the Struct to decide what to do.  Will have to
+     pattern-match on both the species and the Struct now and make sure
+     that they match, which is a bit annoying, but can't really be helped.
+
+-}
+
 -- | Code to derive species instances for user-defined data types.
 module Math.Combinatorics.Species.TH where
 
