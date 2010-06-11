@@ -30,12 +30,13 @@
 module Math.Combinatorics.Species.TH where
 
 import NumericPrelude
-import PreludeBase
+import PreludeBase hiding (cycle)
 
 import Math.Combinatorics.Species.Class
 import Math.Combinatorics.Species.Enumerate
 import Math.Combinatorics.Species.Structures
 import Math.Combinatorics.Species.AST
+import Math.Combinatorics.Species.AST.Instances () -- only import instances
 
 import Control.Arrow (first, second, (***))
 import Control.Monad (zipWithM, liftM2, mapM, ap)
@@ -257,29 +258,45 @@ structToSp (SSumProd ss) = foldl1 (+) $ map conToSp ss
 structToSp (SComp s1 s2) = structToSp s1 `o` structToSp s2
 structToSp SSelf         = UOmega
 
--- XXX still need to add conToSp and so on.
+conToSp :: (Name, [Struct]) -> USpeciesAST
+conToSp (_,[]) = UOne
+conToSp (_,ps) = foldl1 (*) $ map structToSp ps
 
 -- XXX stuff below here should be renamed, and should pattern-match on
 -- a species AST rather than Struct.
 
-structToSp :: Name -> Struct -> Q Exp
-structToSp _    SId           = [| singleton |]
-structToSp _    (SConst t)    = error "How to deal with SConst in structToSp?"
-structToSp self (SEnum t)     = typeToSp self t
-structToSp _    (SSumProd []) = [| 0 |]
-structToSp self (SSumProd ss) = foldl1 (\x y -> [| $x + $y |]) $ map (conToSp self) ss
-structToSp self (SComp s1 s2) = [| $(structToSp self s1) `o` $(structToSp self s2) |]
-structToSp self SSelf         = varE self
+spToExp :: Name -> USpeciesAST -> Q Exp
+spToExp self = spToExp'
+ where
+  spToExp' UZero                = [| 0 |]
+  spToExp'    UOne              = [| 1 |]
+  spToExp' (UN n)               = lift n
+  spToExp' UX                   = [| singleton |]
+  spToExp' UE                   = [| set |]
+  spToExp' UC                   = [| cycle |]
+  spToExp' UL                   = [| linOrd |]
+  spToExp' USubset              = [| subset |]
+  spToExp' (UKSubset k)         = [| ksubset $(lift k) |]
+  spToExp' UElt                 = [| element |]
+  spToExp' (f :+:% g)           = [| $(spToExp' f) + $(spToExp' g) |]
+  spToExp' (f :*:% g)           = [| $(spToExp' f) * $(spToExp' g) |]
+  spToExp' (f :.:% g)           = [| $(spToExp' f) `o` $(spToExp' g) |]
+  spToExp' (f :><:% g)          = [| $(spToExp' f) >< $(spToExp' g) |]
+  spToExp' (f :@:% g)           = [| $(spToExp' f) @@ $(spToExp' g) |]
+  spToExp' (UDer f)             = [| oneHole $(spToExp' f) |]
+  spToExp' (UOfSize _ _)        = error "Can't reify general size predicate into code"
+  spToExp' (UOfSizeExactly f k) = [| $(spToExp' f) `ofSizeExactly` $(lift k) |]
+  spToExp' (UNonEmpty f)        = [| nonEmpty $(spToExp' f) |]
+  spToExp' (URec _)             = [| rec $(varE self) |]
+  spToExp' UOmega               = [| rec $(varE self) |]
 
-conToSp :: Name -> (Name, [Struct]) -> Q Exp
-conToSp _    (_,[]) = [| 1 |]
-conToSp self (_,ps) = foldl1 (\x y -> [| $x * $y |]) $ map (structToSp self) ps
-
+{-
 typeToSp :: Name -> Type -> Q Exp
 typeToSp _    ListT    = [| linOrd |]
 typeToSp self (ConT c) | c == ''[] = [| linOrd |]
-                       | otherwise = nameToStruct c >>= structToSp self -- XXX this is wrong! Need to do something else for recursive types?
+                       | otherwise = nameToStruct c >>= spToExp self -- XXX this is wrong! Need to do something else for recursive types?
 typeToSp _ _        = error "non-constructor in typeToSp?"
+-}
 
 -- XXX what is this for?
 
