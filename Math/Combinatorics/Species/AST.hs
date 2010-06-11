@@ -134,18 +134,19 @@ class (Typeable f, Show f, Typeable1 (Interp f (Mu f))) => ASTFunctor f where
 --   generating functions (composition, differentiation, cartesian
 --   product, and functor composition), and hence need cycle index
 --   series.
-needsZ :: SpeciesAST s -> Bool
-needsZ L            = True
-needsZ (f :+: g)    = needsZ (stripI f) || needsZ (stripI g)
-needsZ (f :*: g)    = needsZ (stripI f) || needsZ (stripI g)
-needsZ (_ :.: _)    = True
-needsZ (_ :><: _)   = True
-needsZ (_ :@: _)    = True
-needsZ (Der _)      = True
-needsZ (OfSize f _) = needsZ (stripI f)
-needsZ (OfSizeExactly f _) = needsZ (stripI f)
-needsZ (NonEmpty f) = needsZ (stripI f)
-needsZ _            = False
+needsZ :: USpeciesAST -> Bool
+needsZ UL            = True
+needsZ (f :+:% g)    = needsZ f || needsZ g
+needsZ (f :*:% g)    = needsZ f || needsZ g
+needsZ (_ :.:% _)    = True
+needsZ (_ :><:% _)   = True
+needsZ (_ :@:% _)    = True
+needsZ (UDer _)      = True
+needsZ (UOfSize f _) = needsZ f
+needsZ (UOfSizeExactly f _) = needsZ f
+needsZ (UNonEmpty f) = needsZ f
+needsZ (URec _)      = True    -- Newton-Raphson iteration uses composition
+needsZ _             = False
 
 -- | An existential wrapper to hide the phantom type parameter to
 --   'SizedSpeciesAST', so we can make it an instance of 'Species'.
@@ -159,7 +160,7 @@ wrap = Wrap . annI
 
 -- | A version of 'needsZ' for 'ESpeciesAST'.
 needsZE :: ESpeciesAST -> Bool
-needsZE (Wrap s) = needsZ (stripI s)
+needsZE = needsZ . erase
 
 -- | A plain old untyped variant of the species AST, for more easily
 --   doing things like analysis, simplification, deriving
