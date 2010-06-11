@@ -22,6 +22,8 @@ import Math.Combinatorics.Species.Types
 import Math.Combinatorics.Species.Class
 import Math.Combinatorics.Species.Labelled
 
+import Math.Combinatorics.Species.NewtonRaphson
+
 import qualified MathObj.PowerSeries as PowerSeries
 import qualified MathObj.MultiVarPolynomial as MVP
 import qualified MathObj.Monomial as Monomial
@@ -55,6 +57,11 @@ instance Species CycleIndex where
   ofSizeExactly s n = (liftCI . MVP.lift1 $
                         ( takeWhile ((==n) . Monomial.pDegree)
                         . dropWhile ((<n) . Monomial.pDegree))) s
+
+  rec f = case newtonRaphsonRec f 10 of
+            Nothing -> error $ "Unable to express " ++ show f ++ " in the form T = X*R(T)."
+            Just ls -> ls
+
 
 -- | Convert an integer partition to the corresponding monomial in the
 --   cycle index series for the species of sets.

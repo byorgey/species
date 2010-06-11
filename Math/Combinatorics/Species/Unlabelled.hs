@@ -8,6 +8,7 @@ import Math.Combinatorics.Species.Class
 import Math.Combinatorics.Species.AST
 import Math.Combinatorics.Species.AST.Instances (reflect)
 import Math.Combinatorics.Species.CycleIndex
+import Math.Combinatorics.Species.NewtonRaphson
 
 import qualified MathObj.PowerSeries as PS
 
@@ -31,6 +32,10 @@ instance Species GF where
   fcomp             = needsCI "functor composition"
   ofSize s p        = (liftGF . PS.lift1 $ filterCoeffs p) s
   ofSizeExactly s n = (liftGF . PS.lift1 $ selectIndex n) s
+
+  rec f = case newtonRaphsonRec f 100 of
+            Nothing -> error $ "Unable to express " ++ show f ++ " in the form T = X*R(T)."
+            Just ls -> ls
 
 unlabelledCoeffs :: GF -> [Integer]
 unlabelledCoeffs (GF p) = PS.coeffs p ++ repeat 0
