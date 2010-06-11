@@ -12,6 +12,10 @@
    * need function to compute a (default) species from a Struct.
      - currently have structToSp :: Struct -> Q Exp.
      - refactor it into two pieces, Struct -> USpeciesAST and USpeciesAST -> Q Exp.
+
+   * should really go through and add some comments to things!
+     Unfortunately I wasn't good about that when I wrote the code... =P
+
    * make version of deriveSpecies that takes a USpeciesAST as an argument,
        and use Struct -> USpeciesAST to generate default
 
@@ -243,6 +247,21 @@ mkSpecies :: Name -> Struct -> Maybe Name -> Q Dec
 mkSpecies nm st (Just code) = valD (varP nm) (normalB (appE (varE 'rec) (conE code))) []
 mkSpecies nm st Nothing     = valD (varP nm) (normalB (structToSp undefined st)) []
 
+-- XXX here is the new version which converts a Struct into a species AST.
+structToSp :: Struct -> USpeciesAST
+structToSp SId           = UX
+structToSp (SConst t)    = error "Can't deal with SConst in structToSp"
+structToSp (SEnum t)     = error "SEnum in structToSp"
+structToSp (SSumProd []) = UZero
+structToSp (SSumProd ss) = foldl1 (+) $ map conToSp ss
+structToSp (SComp s1 s2) = structToSp s1 `o` structToSp s2
+structToSp SSelf         = UOmega
+
+-- XXX still need to add conToSp and so on.
+
+-- XXX stuff below here should be renamed, and should pattern-match on
+-- a species AST rather than Struct.
+
 structToSp :: Name -> Struct -> Q Exp
 structToSp _    SId           = [| singleton |]
 structToSp _    (SConst t)    = error "How to deal with SConst in structToSp?"
@@ -261,6 +280,8 @@ typeToSp _    ListT    = [| linOrd |]
 typeToSp self (ConT c) | c == ''[] = [| linOrd |]
                        | otherwise = nameToStruct c >>= structToSp self -- XXX this is wrong! Need to do something else for recursive types?
 typeToSp _ _        = error "non-constructor in typeToSp?"
+
+-- XXX what is this for?
 
 structToSpAST :: Name -> Struct -> Q Exp
 structToSpAST _    SId           = [| X |]
