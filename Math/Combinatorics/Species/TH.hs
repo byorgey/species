@@ -11,10 +11,12 @@
 
    * need function to compute a (default) species from a Struct.
      - currently have structToSp :: Struct -> Q Exp.
-     - refactor it into two pieces, Struct -> USpeciesAST and USpeciesAST -> Q Exp.
+     - [X] refactor it into two pieces, Struct -> USpeciesAST and USpeciesAST -> Q Exp.
 
    * should really go through and add some comments to things!
      Unfortunately I wasn't good about that when I wrote the code... =P
+
+   * Maybe need to do a similar refactoring of the structToTy stuff?
 
    * make version of deriveSpecies that takes a USpeciesAST as an argument,
        and use Struct -> USpeciesAST to generate default
@@ -188,9 +190,9 @@ conToTy :: Name -> (Name, [Struct]) -> Q Type
 conToTy _    (_, []) = conT ''Unit
 conToTy self (_, ps) = foldl1 (appT . appT (conT ''Prod)) (map (structToTy self) ps)
 
--- | If the third argument is Nothing, generate normal non-recursive instance.
---   If the third argument is (Just code), then the instance is for a recursive
---   type with the given code.
+-- If the third argument is Nothing, generate normal non-recursive instance.
+-- If the third argument is (Just code), then the instance is for a recursive
+-- type with the given code.
 mkEnumerableInst :: Name -> Struct -> Maybe Name -> Q Dec
 mkEnumerableInst nm st code = do
   clauses <- mkIsoClauses (isJust code) st
@@ -235,20 +237,27 @@ mkIsoConMatches (cnm, ps) = map mkProd . sequence <$> mapM mkIsoMatches ps
         mkProd = (foldl1 (\x y -> (ConP 'Prod [x, y])) *** foldl AppE (ConE cnm))
                . unzip
 
+-- | Decide whether a type is recursively defined, given its
+--   description.
 isRecursive :: Struct -> Bool
 isRecursive (SSumProd cons) = any isRecursive (concatMap snd cons)
 isRecursive (SComp s1 s2)   = isRecursive s1 || isRecursive s2
 isRecursive SSelf           = True
 isRecursive _               = False
 
+-- | Given a name n, generate the declaration
+--
+--   > n :: Species s => s
+--
 mkSpeciesSig :: Name -> Q Dec
 mkSpeciesSig nm = sigD nm [t| Species s => s |]
 
+-- XXX need to change the parameters to this function??
 mkSpecies :: Name -> Struct -> Maybe Name -> Q Dec
 mkSpecies nm st (Just code) = valD (varP nm) (normalB (appE (varE 'rec) (conE code))) []
 mkSpecies nm st Nothing     = valD (varP nm) (normalB (structToSp undefined st)) []
 
--- XXX here is the new version which converts a Struct into a species AST.
+-- | Convert a 'Struct' into a default corresponding species.
 structToSp :: Struct -> USpeciesAST
 structToSp SId           = UX
 structToSp (SConst t)    = error "Can't deal with SConst in structToSp"
@@ -258,18 +267,19 @@ structToSp (SSumProd ss) = foldl1 (+) $ map conToSp ss
 structToSp (SComp s1 s2) = structToSp s1 `o` structToSp s2
 structToSp SSelf         = UOmega
 
+-- | Convert a data constructor and its arguments into a default
+--   species.
 conToSp :: (Name, [Struct]) -> USpeciesAST
 conToSp (_,[]) = UOne
 conToSp (_,ps) = foldl1 (*) $ map structToSp ps
 
--- XXX stuff below here should be renamed, and should pattern-match on
--- a species AST rather than Struct.
-
+-- | Given a name to use in recursive occurrences, convert a species
+--   AST into an actual splice-able expression of type  Species s => s.
 spToExp :: Name -> USpeciesAST -> Q Exp
 spToExp self = spToExp'
  where
   spToExp' UZero                = [| 0 |]
-  spToExp'    UOne              = [| 1 |]
+  spToExp' UOne                 = [| 1 |]
   spToExp' (UN n)               = lift n
   spToExp' UX                   = [| singleton |]
   spToExp' UE                   = [| set |]
