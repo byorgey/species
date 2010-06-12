@@ -11,7 +11,7 @@ module Math.Combinatorics.Species.AST
     (
       SpeciesAST(..), SizedSpeciesAST(..)
     , interval, annI, getI, stripI
-    , ESpeciesAST(..), wrap
+    , ESpeciesAST(..), wrap, unwrap
     , ASTFunctor(..)
 
     , needsZ, needsZE
@@ -26,6 +26,9 @@ import Math.Combinatorics.Species.Util.Interval
 import qualified Math.Combinatorics.Species.Util.Interval as I
 
 import Data.Typeable
+import Unsafe.Coerce
+
+import Data.Maybe (fromMaybe)
 
 import NumericPrelude
 import PreludeBase hiding (cycle)
@@ -157,6 +160,21 @@ data ESpeciesAST where
 --   annotation.
 wrap :: Typeable1 s => SpeciesAST s -> ESpeciesAST
 wrap = Wrap . annI
+
+-- | Unwrap the existential wrapper and get out a typed AST.  You can
+--   get out any type you like as long as it is the right one.
+--
+--   CAUTION: Don't try this at home.
+unwrap :: Typeable1 s => ESpeciesAST -> SpeciesAST s
+unwrap (Wrap f) = gcast1'
+                . stripI
+                $ f
+  where gcast1' x = r
+          where r = if typeOf1 (getArg x) == typeOf1 (getArg r)
+                      then unsafeCoerce x
+                      else error "unwrap: cast failed"
+                getArg :: c x -> x ()
+                getArg = undefined
 
 -- | A version of 'needsZ' for 'ESpeciesAST'.
 needsZE :: ESpeciesAST -> Bool
