@@ -202,8 +202,8 @@ spToExp self = spToExp'
   spToExp' (UOfSize _ _)        = error "Can't reify general size predicate into code"
   spToExp' (UOfSizeExactly f k) = [| $(spToExp' f) `ofSizeExactly` $(lift k) |]
   spToExp' (UNonEmpty f)        = [| nonEmpty $(spToExp' f) |]
-  spToExp' (URec _)             = [| rec $(varE self) |]
-  spToExp' UOmega               = [| rec $(varE self) |]
+  spToExp' (URec _)             = [| wrap $(varE self) |]
+  spToExp' UOmega               = [| wrap $(varE self) |]
 
 -- | Generate the structure type for a given species.
 spToTy :: Name -> USpeciesAST -> Q Type
@@ -235,12 +235,14 @@ spToTy self = spToTy'
 finTy :: Integer -> Q Type
 finTy 0 = [t| Void |]
 finTy 1 = [t| Unit |]
-finTy n | even n    = [t| Prod Bool $(finTy $ n `div` 2) |]
+finTy n | even n    = [t| Prod (Const Bool) $(finTy $ n `div` 2) |]
         | otherwise = [t| Sum Unit $(finTy $ pred n) |]
 
 ------------------------------------------------------------
 --  Code generation  ---------------------------------------
 ------------------------------------------------------------
+
+-- Enumerable ----------------
 
 -- | Generate an instance of the Enumerable type class, i.e. an
 --   isomorphism from the user's data type and the structure type
@@ -250,49 +252,61 @@ finTy n | even n    = [t| Prod Bool $(finTy $ n `div` 2) |]
 --   If the third argument is @Nothing@, generate a normal
 --   non-recursive instance.  If the third argument is @Just code@,
 --   then the instance is for a recursive type with the given code.
-mkEnumerableInst :: Name -> Struct -> Maybe Name -> Q Dec
-mkEnumerableInst nm st code = do
-  clauses <- mkIsoClauses (isJust code) st
+mkEnumerableInst :: Name -> USpeciesAST -> Struct -> Maybe Name -> Q Dec
+mkEnumerableInst nm sp st code = do
+  clauses <- mkIsoClauses (isJust code) sp st
   let stTy = case code of
                Just cd -> [t| Mu $(conT cd) |]
-               Nothing -> structToTy undefined st
+               Nothing -> spToTy undefined sp  -- undefined is OK, it isn't recursive
+                                               -- so won't use that argument
   instanceD (return []) (appT (conT ''Enumerable) (conT nm))
     [ tySynInstD ''StructTy [conT nm] stTy
     , return $ FunD 'iso clauses
     ]
 
--- the first argument says whether the type is recursive.
-mkIsoClauses :: Bool -> Struct -> Q [Clause]
-mkIsoClauses isRec st = (fmap.map) (mkClause isRec) (mkIsoMatches st)
+-- | Generate the clauses for the definition of the 'iso' method in
+--   the 'Enumerable' instance, which translates from the structure
+--   type of the species to the user's data type.  The first argument
+--   indicates whether the type is recursive.
+mkIsoClauses :: Bool -> USpeciesAST -> Struct -> Q [Clause]
+mkIsoClauses isRec sp st = (fmap.map) (mkClause isRec) (mkIsoMatches sp st)
   where mkClause False (pat, exp) = Clause [pat] (NormalB $ exp) []
         mkClause True  (pat, exp) = Clause [ConP 'Mu [pat]] (NormalB $ exp) []
 
-mkIsoMatches :: Struct -> Q [(Pat, Exp)]
-mkIsoMatches SId        = newName "x" >>= \x ->
-                            return [(ConP 'Id [VarP x], VarE x)]
-mkIsoMatches (SConst t) = newName "x" >>= \x ->
-                            return [(ConP 'Const [VarP x], VarE x)]
-mkIsoMatches (SEnum t)  = newName "x" >>= \x ->
-                            return [(VarP x, AppE (VarE 'iso) (VarE x))]
-mkIsoMatches (SSumProd [])    = return []
-mkIsoMatches (SSumProd [con]) = mkIsoConMatches con
-mkIsoMatches (SSumProd cons)  = addInjs 0 <$> mapM mkIsoConMatches cons
- where addInjs :: Int -> [[(Pat, Exp)]] -> [(Pat, Exp)]
+mkIsoMatches :: USpeciesAST -> Struct -> Q [(Pat, Exp)]
+mkIsoMatches _ SId        = newName "x" >>= \x ->
+                              return [(ConP 'Id [VarP x], VarE x)]
+mkIsoMatches _ (SConst t) = newName "x" >>= \x ->
+                              return [(ConP 'Const [VarP x], VarE x)]
+mkIsoMatches _ (SEnum t)  = newName "x" >>= \x ->
+                              return [(VarP x, AppE (VarE 'iso) (VarE x))]
+mkIsoMatches _ (SSumProd [])     = return []
+mkIsoMatches sp (SSumProd [con]) = mkIsoConMatches sp con
+mkIsoMatches sp (SSumProd cons)  = addInjs 0 <$> zipWithM mkIsoConMatches (terms sp) cons
+ where terms (f :+:% g) = terms f ++ [g]
+       terms f = [f]
+
+       addInjs :: Int -> [[(Pat, Exp)]] -> [(Pat, Exp)]
        addInjs n [ps]     = map (addInj (n-1) 'Inr) ps
        addInjs n (ps:pss) = map (addInj n     'Inl) ps ++ addInjs (n+1) pss
        addInj 0 c = first (ConP c . (:[]))
        addInj n c = first (ConP 'Inr . (:[])) . addInj (n-1) c
-mkIsoMatches (SComp s1 s2) = errorQ "Comp not implemented yet..."
-                           -- (mkIsoMatches s1) (mkIsoMatches s2)  XXX hard!
-mkIsoMatches SSelf         = newName "s" >>= \s ->
-                               return [(VarP s, AppE (VarE 'iso) (VarE s))]
+mkIsoMatches _ (SComp s1 s2) = errorQ "Comp not implemented yet..."
+                             -- (mkIsoMatches s1) (mkIsoMatches s2)  XXX hard!
+mkIsoMatches _ SSelf         = newName "s" >>= \s ->
+                                 return [(VarP s, AppE (VarE 'iso) (VarE s))]
 
-mkIsoConMatches :: (Name, [Struct]) -> Q [(Pat, Exp)]
-mkIsoConMatches (cnm, []) = return [(ConP 'Unit [], ConE cnm)]
-mkIsoConMatches (cnm, ps) = map mkProd . sequence <$> mapM mkIsoMatches ps
-  where mkProd :: [(Pat, Exp)] -> (Pat, Exp)
+mkIsoConMatches :: USpeciesAST -> (Name, [Struct]) -> Q [(Pat, Exp)]
+mkIsoConMatches _ (cnm, []) = return [(ConP 'Unit [], ConE cnm)]
+mkIsoConMatches sp (cnm, ps) = map mkProd . sequence <$> zipWithM mkIsoMatches (factors sp) ps
+  where factors (f :*:% g) = factors f ++ [g]
+        factors f = [f]
+
+        mkProd :: [(Pat, Exp)] -> (Pat, Exp)
         mkProd = (foldl1 (\x y -> (ConP 'Prod [x, y])) *** foldl AppE (ConE cnm))
                . unzip
+
+-- Species definition --------
 
 -- | Given a name n, generate the declaration
 --
@@ -301,23 +315,15 @@ mkIsoConMatches (cnm, ps) = map mkProd . sequence <$> mapM mkIsoMatches ps
 mkSpeciesSig :: Name -> Q Dec
 mkSpeciesSig nm = sigD nm [t| Species s => s |]
 
--- XXX need to change the parameters to this function??
-mkSpecies :: Name -> Struct -> Maybe Name -> Q Dec
-mkSpecies nm st (Just code) = valD (varP nm) (normalB (appE (varE 'rec) (conE code))) []
-mkSpecies nm st Nothing     = valD (varP nm) (normalB (structToSp undefined st)) []
-
-
+-- XXX can this use quasiquoting?
+-- | Given a name n and a species, generate a declaration for it of
+--   that name.  The third parameter indicates whether the species is
+--   recursive, and if so what the name of the code is.
+mkSpecies :: Name -> USpeciesAST -> Maybe Name -> Q Dec
+mkSpecies nm sp (Just code) = valD (varP nm) (normalB (appE (varE 'rec) (conE code))) []
+mkSpecies nm sp Nothing     = valD (varP nm) (normalB (spToExp undefined sp)) []
 
 {-
-typeToSp :: Name -> Type -> Q Exp
-typeToSp _    ListT    = [| linOrd |]
-typeToSp self (ConT c) | c == ''[] = [| linOrd |]
-                       | otherwise = nameToStruct c >>= spToExp self -- XXX this is wrong! Need to do something else for recursive types?
-typeToSp _ _        = error "non-constructor in typeToSp?"
--}
-
--- XXX what is this for?
-
 structToSpAST :: Name -> Struct -> Q Exp
 structToSpAST _    SId           = [| X |]
 structToSpAST _    (SConst t)    = error "SConst in structToSpAST?"
@@ -337,11 +343,19 @@ typeToSpAST _    ListT    = [| L |]
 typeToSpAST self (ConT c) | c == ''[] = [| L |]
                        | otherwise = nameToStruct c >>= structToSpAST self -- XXX this is wrong! Need to do something else for recursive types?
 typeToSpAST _ _        = error "non-constructor in typeToSpAST?"
-
+-}
 
 ------------------------------------------------------------
---  Putting it all together...  ----------------------------
+--  Putting it all together  -------------------------------
 ------------------------------------------------------------
+
+-- XXX need to add something to check whether the type and given
+-- species are compatible.
+
+deriveDefaultSpecies :: Name -> Q [Dec]
+deriveDefaultSpecies nm = do
+  st <- nameToStruct nm
+  deriveSpecies nm (structToSp st)
 
 deriveSpecies :: Name -> USpeciesAST -> Q [Dec]
 deriveSpecies nm sp = do
@@ -365,7 +379,7 @@ deriveSpecies nm sp = do
                           = $(spToTy self sp)
                     |]
 
-    applyBody <- NormalB <$> structToSpAST self st
+    applyBody <- NormalB <$> [| unwrap $(spToExp self sp) |]
     let astFunctorInst  = InstanceD [] (AppT (ConT ''ASTFunctor) (ConT codeNm))
                             [FunD 'apply [Clause [WildP, VarP self] applyBody []]]
 
@@ -373,9 +387,9 @@ deriveSpecies nm sp = do
                       show = show . unMu
                 |]
 
-    enum <- mkEnumerableInst nm st (Just codeNm)
+    enum <- mkEnumerableInst nm sp st (Just codeNm)
     sig  <- mkSpeciesSig spNm
-    spD  <- mkSpecies spNm st (Just codeNm)
+    spD  <- mkSpecies spNm sp (Just codeNm)
 
     return $ [ declCode
              , showCode
@@ -389,7 +403,7 @@ deriveSpecies nm sp = do
 
   mkEnumerableNonrec nm spNm st sp =
     sequence
-      [ mkEnumerableInst nm st Nothing
+      [ mkEnumerableInst nm sp st Nothing
       , mkSpeciesSig spNm
-      , mkSpecies spNm st Nothing
+      , mkSpecies spNm sp Nothing
       ]

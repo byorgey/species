@@ -9,29 +9,29 @@ import Math.Combinatorics.Species
 
 import MyPrelude
 
-data Florp a = Fleep [a] a
-  deriving Show
+-- data Florp a = Fleep [a] a
+--   deriving Show
 
 data Foo a = Baz | Bar a (Foo a)
   deriving Show
 
-$(deriveSpecies ''Florp)
-$(deriveSpecies ''Foo)
+-- $(deriveDefaultSpecies ''Florp)
+$(deriveDefaultSpecies ''Foo)
 
 data Tree a = Leaf | Node a (Tree a) (Tree a)
   deriving Show
 
-$(deriveSpecies ''Tree)
+$(deriveDefaultSpecies ''Tree)
 
 data Tree2 a = Leaf2 | Node2 (Tree2 a) a (Tree2 a)
   deriving Show
 
-$(deriveSpecies ''Tree2)
+$(deriveDefaultSpecies ''Tree2)
 
 data Parens a = LeafP a | NodeP (Parens a) (Parens a)
   deriving Show
 
-$(deriveSpecies ''Parens)
+$(deriveDefaultSpecies ''Parens)
 
 main = do
   print $ (enumerate tree [1,2] :: [Tree Int])
