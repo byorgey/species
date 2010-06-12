@@ -72,6 +72,7 @@ errorQ msg = report True msg >> error msg
 
 -- | A data structure to represent data type declarations.
 data Struct = SId
+            | SList
             | SConst Type    -- ^ for types of kind *
             | SEnum  Type    -- ^ for Enumerable type constructors of kind (* -> *)
             | SSumProd [(Name, [Struct])] -- ^ sum-of-products
@@ -125,8 +126,10 @@ conToStruct nm var (InfixC ty1 cnm ty2)
 tyToStruct :: Name -> Name -> Type -> Q Struct
 tyToStruct nm var (VarT v) | v == var  = return SId
                            | otherwise = errorQ $ "Unknown variable " ++ show v
-tyToStruct nm var t@(ConT b) = return $ SConst t
---  | b == ''Bool = SSumProd [('False, [sUnit]), ('True, [sUnit])]   -- XXX keep this?
+tyToStruct nm var ListT = return SList
+tyToStruct nm var t@(ConT b)
+  | b == ''[] = return SList
+  | otherwise = return $ SConst t
 
 tyToStruct nm var (AppT t (VarT v))       -- F `o` X === F
   | v == var && t == (ConT nm) = return $ SSelf    -- recursive occurrence
@@ -161,7 +164,10 @@ isRecursive _               = False
 -- | Convert a 'Struct' into a default corresponding species.
 structToSp :: Struct -> USpeciesAST
 structToSp SId           = UX
-structToSp (SConst t)    = error "Can't deal with SConst in structToSp"
+structToSp SList         = UL
+structToSp (SConst (ConT t))
+  | t == ''Bool = UN 2
+  | otherwise   = error $ "structToSp: unrecognized type " ++ show t ++ " in SConst"
 structToSp (SEnum t)     = error "SEnum in structToSp"
 structToSp (SSumProd []) = UZero
 structToSp (SSumProd ss) = foldl1 (+) $ map conToSp ss
@@ -211,7 +217,9 @@ spToTy self = spToTy'
  where
   spToTy' UZero                = [t| Void |]
   spToTy' UOne                 = [t| Unit |]
-  spToTy' (UN n)               = finTy n
+  spToTy' (UN n)               = [t| Const Integer |]  -- was finTy n, but that
+                                                       -- doesn't match up with the
+                                                       -- type annotation on SpeciesAST
   spToTy' UX                   = [t| Id |]
   spToTy' UE                   = [t| Set |]
   spToTy' UC                   = [t| Cycle |]
@@ -231,12 +239,15 @@ spToTy self = spToTy'
   spToTy' (URec _)             = varT self
   spToTy' UOmega               = varT self
 
+{-
 -- | Generate a finite type of a given size, using a binary scheme.
 finTy :: Integer -> Q Type
 finTy 0 = [t| Void |]
 finTy 1 = [t| Unit |]
+finTy 2 = [t| Const Bool |]
 finTy n | even n    = [t| Prod (Const Bool) $(finTy $ n `div` 2) |]
         | otherwise = [t| Sum Unit $(finTy $ pred n) |]
+-}
 
 ------------------------------------------------------------
 --  Code generation  ---------------------------------------
@@ -276,8 +287,10 @@ mkIsoClauses isRec sp st = (fmap.map) (mkClause isRec) (mkIsoMatches sp st)
 mkIsoMatches :: USpeciesAST -> Struct -> Q [(Pat, Exp)]
 mkIsoMatches _ SId        = newName "x" >>= \x ->
                               return [(ConP 'Id [VarP x], VarE x)]
-mkIsoMatches _ (SConst t) = newName "x" >>= \x ->
-                              return [(ConP 'Const [VarP x], VarE x)]
+mkIsoMatches _ (SConst t)
+  | t == ConT ''Bool = return [(ConP 'Const [LitP $ IntegerL 1], ConE 'False)
+                              ,(ConP 'Const [LitP $ IntegerL 2], ConE 'True)]
+  | otherwise        = error "mkIsoMatches: unrecognized type in SConst case"
 mkIsoMatches _ (SEnum t)  = newName "x" >>= \x ->
                               return [(VarP x, AppE (VarE 'iso) (VarE x))]
 mkIsoMatches _ (SSumProd [])     = return []
@@ -291,8 +304,9 @@ mkIsoMatches sp (SSumProd cons)  = addInjs 0 <$> zipWithM mkIsoConMatches (terms
        addInjs n (ps:pss) = map (addInj n     'Inl) ps ++ addInjs (n+1) pss
        addInj 0 c = first (ConP c . (:[]))
        addInj n c = first (ConP 'Inr . (:[])) . addInj (n-1) c
-mkIsoMatches _ (SComp s1 s2) = errorQ "Comp not implemented yet..."
-                             -- (mkIsoMatches s1) (mkIsoMatches s2)  XXX hard!
+mkIsoMatches _ (SComp s1 s2) = newName "x" >>= \x ->
+                                 return [ (ConP 'Comp [VarP x]
+                                        , AppE (VarE 'iso) (AppE (AppE (VarE 'fmap) (VarE 'iso)) (VarE x))) ]
 mkIsoMatches _ SSelf         = newName "s" >>= \s ->
                                  return [(VarP s, AppE (VarE 'iso) (VarE s))]
 

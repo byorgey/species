@@ -172,7 +172,10 @@ unwrap (Wrap f) = gcast1'
   where gcast1' x = r
           where r = if typeOf1 (getArg x) == typeOf1 (getArg r)
                       then unsafeCoerce x
-                      else error "unwrap: cast failed"
+                      else error ("unwrap: cast failed. Wanted " ++
+                                  show (typeOf1 (getArg r)) ++
+                                  ", instead got " ++
+                                  show (typeOf1 (getArg x)))
                 getArg :: c x -> x ()
                 getArg = undefined
 
