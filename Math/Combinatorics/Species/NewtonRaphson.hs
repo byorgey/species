@@ -68,11 +68,11 @@ solveForR code = do
                       ([UN n] : ts) -> (UN n, ts)
                       ts          -> (UZero, ts)
 
-  -- Now we need to be able to factor an X out of the rest.
+  -- Now we need to be able to factor an TX out of the rest.
   guard $ all (UX `elem`) terms'
 
-  -- XXX this is wrong, what if there are still occurrences of X remaining?
-  -- Now replace every recursive occurrence by (n + X).
+  -- XXX this is wrong, what if there are still occurrences of TX remaining?
+  -- Now replace every recursive occurrence by (n + TX).
   let r = foldr1 (+) $ map ( foldr1 (*)
                            . map (substRec code (n + x))
                            . delete UX)

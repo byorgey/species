@@ -183,16 +183,16 @@ instance Show ESpeciesAST where
   show = show . erase
 
 instance Additive.C ESpeciesAST where
-  zero   = wrap Zero
+  zero   = wrap TZero
   Wrap f + Wrap g = wrap $ f :+: g
   negate = error "negation is not implemented yet!  wait until virtual species..."
 
 instance Ring.C ESpeciesAST where
   Wrap f * Wrap g = wrap $ f :*: g
-  one = wrap One
+  one = wrap TOne
   fromInteger 0 = zero
   fromInteger 1 = one
-  fromInteger n = wrap $ N n
+  fromInteger n = wrap $ TN n
   _ ^ 0 = one
   w@(Wrap{}) ^ 1 = w
   (Wrap f) ^ n   = case (Wrap f) ^ (n-1) of
@@ -202,10 +202,10 @@ instance Differential.C ESpeciesAST where
   differentiate (Wrap f) = wrap (Der f)
 
 instance Species ESpeciesAST where
-  singleton                         = wrap X
-  set                               = wrap E
+  singleton                         = wrap TX
+  set                               = wrap TE
   cycle                             = wrap C
-  linOrd                            = wrap L
+  linOrd                            = wrap TL
   subset                            = wrap Subset
   ksubset k                         = wrap $ KSubset k
   element                           = wrap Elt
@@ -223,9 +223,9 @@ instance Species ESpeciesAST where
 --   example:
 --
 -- > > reify octopus
--- > C . L+
+-- > C . TL+
 -- > > reify (ksubset 3)
--- > E3 * E
+-- > E3 * TE
 
 reify :: ESpeciesAST -> ESpeciesAST
 reify = id

@@ -59,7 +59,7 @@ instance Species CycleIndex where
                         . dropWhile ((<n) . Monomial.pDegree))) s
 
   rec f = case newtonRaphsonRec f 10 of
-            Nothing -> error $ "Unable to express " ++ show f ++ " in the form T = X*R(T)."
+            Nothing -> error $ "Unable to express " ++ show f ++ " in the form T = TX*R(T)."
             Just ls -> ls
 
 

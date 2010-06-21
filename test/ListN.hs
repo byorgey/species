@@ -16,8 +16,8 @@ instance Iso List5 where
 data Z
 data S n
 
-type One = S Z
-type Two = S One
+type TOne = S Z
+type Two = S TOne
 type Three = S Two
 type Four = S Three
 type Five = S Four

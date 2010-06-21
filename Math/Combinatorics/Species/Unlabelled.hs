@@ -34,7 +34,7 @@ instance Species GF where
   ofSizeExactly s n = (liftGF . PS.lift1 $ selectIndex n) s
 
   rec f = case newtonRaphsonRec f 100 of
-            Nothing -> error $ "Unable to express " ++ show f ++ " in the form T = X*R(T)."
+            Nothing -> error $ "Unable to express " ++ show f ++ " in the form T = TX*R(T)."
             Just ls -> ls
 
 unlabelledCoeffs :: GF -> [Integer]

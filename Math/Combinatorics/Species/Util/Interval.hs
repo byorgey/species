@@ -2,7 +2,7 @@
   #-}
 -- | A simple implementation of intervals of natural numbers, for use
 --   in tracking the possible sizes of structures of a species.  For
---   example, the species X + X^2 + X^3 will correspond to the
+--   example, the species TX + TX^2 + TX^3 will correspond to the
 --   interval [1,3].
 module Math.Combinatorics.Species.Util.Interval
     (
@@ -41,7 +41,7 @@ natO :: (Integer -> a) -> a -> NatO -> a
 natO _ o Omega = o
 natO f _ (Nat n) = f n
 
--- | Decrement a possibly infinite natural. Zero and omega are both
+-- | Decrement a possibly infinite natural. TZero and omega are both
 --   fixed points of 'decr'.
 decr :: NatO -> NatO
 decr (Nat 0) = Nat 0

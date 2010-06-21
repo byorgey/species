@@ -22,7 +22,7 @@ data Tree2 a = Leaf2 | Node2 (Tree2 a) a (Tree2 a)
   deriving Show
 
 instance ASTFunctor Tree2C where
-  apply _ self = annI One :+: annI (annI self :*: annI (annI X :*: annI self))
+  apply _ self = annI TOne :+: annI (annI self :*: annI (annI TX :*: annI self))
 
 instance Show a => Show (Mu Tree2C a) where
   show = show . unMu

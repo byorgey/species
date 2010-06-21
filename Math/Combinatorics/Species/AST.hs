@@ -50,13 +50,13 @@ import PreludeBase hiding (cycle)
 --   A value of 'SizedSpeciesAST' is thus an annotated species
 --   expression tree with interval annotations at every node.
 data TSpeciesAST (s :: * -> *) where
-   Zero     :: TSpeciesAST Void
-   One      :: TSpeciesAST Unit
-   N        :: Integer -> TSpeciesAST (Const Integer)
-   X        :: TSpeciesAST Id
-   E        :: TSpeciesAST Set
+   TZero     :: TSpeciesAST Void
+   TOne      :: TSpeciesAST Unit
+   TN        :: Integer -> TSpeciesAST (Const Integer)
+   TX        :: TSpeciesAST Id
+   TE        :: TSpeciesAST Set
    C        :: TSpeciesAST Cycle
-   L        :: TSpeciesAST []
+   TL        :: TSpeciesAST []
    Subset   :: TSpeciesAST Set
    KSubset  :: Integer -> TSpeciesAST Set
    Elt      :: TSpeciesAST Id
@@ -80,13 +80,13 @@ data SizedSpeciesAST (s :: * -> *) where
 --   the interval of label set sizes on which the species yields any
 --   structures.
 interval :: TSpeciesAST s -> Interval
-interval Zero                = emptyI
-interval One                 = 0
-interval (N n)               = 0
-interval X                   = 1
-interval E                   = natsI
+interval TZero                = emptyI
+interval TOne                 = 0
+interval (TN n)               = 0
+interval TX                   = 1
+interval TE                   = natsI
 interval C                   = fromI 1
-interval L                   = natsI
+interval TL                   = natsI
 interval Subset              = natsI
 interval (KSubset k)         = fromI (fromInteger k)
 interval Elt                 = fromI 1
@@ -215,13 +215,13 @@ erase :: ESpeciesAST -> SpeciesAST
 erase (Wrap s) = erase' (stripI s)
 
 erase' :: TSpeciesAST f -> SpeciesAST
-erase' Zero                = UZero
-erase' One                 = UOne
-erase' (N n)               = UN n
-erase' X                   = UX
-erase' E                   = UE
+erase' TZero                = UZero
+erase' TOne                 = UOne
+erase' (TN n)               = UN n
+erase' TX                   = UX
+erase' TE                   = UE
 erase' C                   = UC
-erase' L                   = UL
+erase' TL                   = UL
 erase' Subset              = USubset
 erase' (KSubset k)         = UKSubset k
 erase' Elt                 = UElt
@@ -239,13 +239,13 @@ erase' Omega               = UOmega
 
 -- | Reconstruct the type and interval annotations on a species AST.
 unerase :: SpeciesAST -> ESpeciesAST
-unerase UZero                = wrap Zero
-unerase UOne                 = wrap One
-unerase (UN n)               = wrap (N n)
-unerase UX                   = wrap X
-unerase UE                   = wrap E
+unerase UZero                = wrap TZero
+unerase UOne                 = wrap TOne
+unerase (UN n)               = wrap (TN n)
+unerase UX                   = wrap TX
+unerase UE                   = wrap TE
 unerase UC                   = wrap C
-unerase UL                   = wrap L
+unerase UL                   = wrap TL
 unerase USubset              = wrap Subset
 unerase (UKSubset k)         = wrap (KSubset k)
 unerase UElt                 = wrap Elt

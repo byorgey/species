@@ -51,7 +51,7 @@ instance Species EGF where
   -- XXX Think about this more carefully -- is there a way to make this actually
   --   return a lazy, infinite list?
   rec f = case newtonRaphsonRec f 100 of
-            Nothing -> error $ "Unable to express " ++ show f ++ " in the form T = X*R(T)."
+            Nothing -> error $ "Unable to express " ++ show f ++ " in the form T = TX*R(T)."
             Just ls -> ls
 
 -- | Extract the coefficients of an exponential generating function as

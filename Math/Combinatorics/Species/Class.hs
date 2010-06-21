@@ -70,27 +70,27 @@ import Math.Combinatorics.Species.AST
 --   species expressions).
 class (Differential.C s) => Species s where
 
-  -- | The species X of singletons. X puts a singleton structure on an
+  -- | The species TX of singletons. TX puts a singleton structure on an
   --   underlying set of size 1, and no structures on any other
   --   underlying sets.
   singleton :: s
 
-  -- | The species E of sets.  E puts a singleton structure on any
+  -- | The species TE of sets.  TE puts a singleton structure on any
   --   underlying set.
   set       :: s
 
   -- | The species C of cyclical orderings (cycles/rings).
   cycle     :: s
 
-  -- | The species L of linear orderings (lists): since linear
+  -- | The species TL of linear orderings (lists): since linear
   --   orderings are isomorphic to cyclic orderings with a hole, we
-  --   may take L = C' as the default implementation; linOrd is
+  --   may take TL = C' as the default implementation; linOrd is
   --   included in the 'Species' class so it can be special-cased for
   --   enumeration.
   linOrd    :: s
   linOrd = oneHole cycle
 
-  -- | The species p of subsets is given by p = E * E. 'subset' has a
+  -- | The species p of subsets is given by p = TE * TE. 'subset' has a
   --   default implementation of @set * set@, but is included in the
   --   'Species' class so it can be overridden when enumerating
   --   structures: since subset is defined as @set * set@, the
@@ -102,14 +102,14 @@ class (Differential.C s) => Species s where
   subset :: s
   subset = set * set
 
-  -- | Subsets of size exactly k, p[k] = E_k * E.  Included with a
+  -- | Subsets of size exactly k, p[k] = E_k * TE.  Included with a
   --   default definition in the 'Species' class for the same reason
   --   as 'subset'.
   ksubset :: Integer -> s
   ksubset k = (set `ofSizeExactly` k) * set
 
   -- | Structures of the species e of elements are just elements of
-  --   the underlying set: e = X * E.  Included with a default
+  --   the underlying set: e = TX * TE.  Included with a default
   --   definition in 'Species' class for the same reason as 'subset'
   --   and 'ksubset'.
   element :: s
@@ -205,18 +205,18 @@ elements = element
 
 -- | An octopus is a cyclic arrangement of lists, so called because
 --   the lists look like \"tentacles\" attached to the cyclic
---   \"body\": Oct = C o E+ .
+--   \"body\": Oct = C o TE+ .
 octopi, octopus :: Species s => s
 octopus = cycle `o` nonEmpty linOrds
 octopi  = octopus
 
--- | The species of set partitions is just the composition E o E+,
+-- | The species of set partitions is just the composition TE o TE+,
 --   that is, sets of nonempty sets.
 partitions, partition :: Species s => s
 partition  = set `o` nonEmpty sets
 partitions = partition
 
--- | A permutation is a set of disjoint cycles: S = E o C.
+-- | A permutation is a set of disjoint cycles: S = TE o C.
 permutations, permutation :: Species s => s
 permutation = set `o` cycles
 permutations = permutation
@@ -225,7 +225,7 @@ subsets :: Species s => s
 subsets = subset
 
 -- | The species Bal of ballots consists of linear orderings of
---   nonempty sets: Bal = L o E+.
+--   nonempty sets: Bal = TL o TE+.
 ballots, ballot :: Species s => s
 ballot = linOrd `o` nonEmpty sets
 ballots = ballot

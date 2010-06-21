@@ -73,16 +73,16 @@ import PreludeBase hiding (cycle)
 --   'enumerate'' does all the actual work, but is not meant to be used
 --   directly; use one of the specialized @enumerateXX@ methods.
 enumerate' :: TSpeciesAST s -> Multiset a -> [s a]
-enumerate' Zero _               = []
-enumerate' One (MS [])          = [Unit]
-enumerate' One _                = []
-enumerate' (N n) (MS [])        = map Const [1..n]
-enumerate' (N _) _              = []
-enumerate' X (MS [(x,1)])       = [Id x]
-enumerate' X _                  = []
-enumerate' E xs                 = [Set (MS.toList xs)]
+enumerate' TZero _               = []
+enumerate' TOne (MS [])          = [Unit]
+enumerate' TOne _                = []
+enumerate' (TN n) (MS [])        = map Const [1..n]
+enumerate' (TN _) _              = []
+enumerate' TX (MS [(x,1)])       = [Id x]
+enumerate' TX _                  = []
+enumerate' TE xs                 = [Set (MS.toList xs)]
 enumerate' C m                  = map Cycle (MS.cycles m)
-enumerate' L xs                 = MS.permutations xs
+enumerate' TL xs                 = MS.permutations xs
 enumerate' Subset xs            = map (Set . MS.toList . fst) (MS.splits xs)
 enumerate' (KSubset k) xs       = map (Set . MS.toList)
                                       (MS.kSubsets (fromIntegral k) xs)
@@ -166,9 +166,9 @@ unsafeExtractStructure = either error id . extractStructure
 --   In particular, if @structureType s@ prints @\"T\"@, then you can
 --   safely use 'enumerate' and friends by writing
 --
--- > enumerate s ls :: [T L]
+-- > enumerate s ls :: [T TL]
 --
---   where @ls :: [L]@.
+--   where @ls :: [TL]@.
 --
 --   For example,
 --

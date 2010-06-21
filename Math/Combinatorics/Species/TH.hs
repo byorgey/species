@@ -11,7 +11,7 @@
 
    * need function to compute a (default) species from a Struct.
      - currently have structToSp :: Struct -> Q Exp.
-     - [X] refactor it into two pieces, Struct -> SpeciesAST and SpeciesAST -> Q Exp.
+     - [TX] refactor it into two pieces, Struct -> SpeciesAST and SpeciesAST -> Q Exp.
 
    * should really go through and add some comments to things!
      Unfortunately I wasn't good about that when I wrote the code... =P
@@ -131,7 +131,7 @@ tyToStruct nm var t@(ConT b)
   | b == ''[] = return SList
   | otherwise = return $ SConst t
 
-tyToStruct nm var (AppT t (VarT v))       -- F `o` X === F
+tyToStruct nm var (AppT t (VarT v))       -- F `o` TX === F
   | v == var && t == (ConT nm) = return $ SSelf    -- recursive occurrence
   | v == var                   = return $ SEnum t  -- t had better be Enumerable
   | otherwise     = errorQ $ "Unknown variable " ++ show v
@@ -343,22 +343,22 @@ mkSpecies nm sp Nothing     = valD (varP nm) (normalB (spToExp undefined sp)) []
 
 {-
 structToSpAST :: Name -> Struct -> Q Exp
-structToSpAST _    SId           = [| X |]
+structToSpAST _    SId           = [| TX |]
 structToSpAST _    (SConst t)    = error "SConst in structToSpAST?"
 structToSpAST self (SEnum t)     = typeToSpAST self t
-structToSpAST _    (SSumProd []) = [| Zero |]
+structToSpAST _    (SSumProd []) = [| TZero |]
 structToSpAST self (SSumProd ss) = foldl1 (\x y -> [| annI $x :+: annI $y |])
                                      $ map (conToSpAST self) ss
 structToSpAST self (SComp s1 s2) = [| annI $(structToSpAST self s1) :.: annI $(structToSpAST self s2) |]
 structToSpAST self SSelf         = varE self
 
 conToSpAST :: Name -> (Name, [Struct]) -> Q Exp
-conToSpAST _    (_,[]) = [| One |]
+conToSpAST _    (_,[]) = [| TOne |]
 conToSpAST self (_,ps) = foldl1 (\x y -> [| annI $x :*: annI $y |]) $ map (structToSpAST self) ps
 
 typeToSpAST :: Name -> Type -> Q Exp
-typeToSpAST _    ListT    = [| L |]
-typeToSpAST self (ConT c) | c == ''[] = [| L |]
+typeToSpAST _    ListT    = [| TL |]
+typeToSpAST self (ConT c) | c == ''[] = [| TL |]
                        | otherwise = nameToStruct c >>= structToSpAST self -- XXX this is wrong! Need to do something else for recursive types?
 typeToSpAST _ _        = error "non-constructor in typeToSpAST?"
 -}
