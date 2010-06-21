@@ -55,7 +55,7 @@ data TSpeciesAST (s :: * -> *) where
    TN        :: Integer -> TSpeciesAST (Const Integer)
    TX        :: TSpeciesAST Id
    TE        :: TSpeciesAST Set
-   C        :: TSpeciesAST Cycle
+   TC        :: TSpeciesAST Cycle
    TL        :: TSpeciesAST []
    TSubset   :: TSpeciesAST Set
    TKSubset  :: Integer -> TSpeciesAST Set
@@ -71,7 +71,7 @@ data TSpeciesAST (s :: * -> *) where
    TNonEmpty :: SizedSpeciesAST f -> TSpeciesAST f
    TRec      :: ASTFunctor f => f -> TSpeciesAST (Mu f)
 
-   Omega    :: TSpeciesAST Void
+   TOmega    :: TSpeciesAST Void
 
 data SizedSpeciesAST (s :: * -> *) where
   Sized :: Interval -> TSpeciesAST s -> SizedSpeciesAST s
@@ -85,7 +85,7 @@ interval TOne                 = 0
 interval (TN n)               = 0
 interval TX                   = 1
 interval TE                   = natsI
-interval C                   = fromI 1
+interval TC                   = fromI 1
 interval TL                   = natsI
 interval TSubset              = natsI
 interval (TKSubset k)         = fromI (fromInteger k)
@@ -104,8 +104,8 @@ interval (TDer f)             = decrI (getI f)
 interval (TOfSize f p)        = fromI $ smallestIn (getI f) p
 interval (TOfSizeExactly f n) = fromInteger n `I.intersect` getI f
 interval (TNonEmpty f)        = fromI 1 `I.intersect` getI f
-interval (TRec f)             = interval (apply f Omega)
-interval Omega               = omegaI
+interval (TRec f)             = interval (apply f TOmega)
+interval TOmega               = omegaI
 
 -- | Find the smallest integer in the given interval satisfying a predicate.
 smallestIn :: Interval -> (Integer -> Bool) -> NatO
@@ -220,7 +220,7 @@ erase' TOne                 = UOne
 erase' (TN n)               = UN n
 erase' TX                   = UX
 erase' TE                   = UE
-erase' C                   = UC
+erase' TC                   = UC
 erase' TL                   = UL
 erase' TSubset              = USubset
 erase' (TKSubset k)         = UKSubset k
@@ -235,7 +235,7 @@ erase' (TOfSize f p)        = UOfSize (erase' . stripI $ f) p
 erase' (TOfSizeExactly f k) = UOfSizeExactly (erase' . stripI $ f) k
 erase' (TNonEmpty f)        = UNonEmpty . erase' . stripI $ f
 erase' (TRec f)             = URec f
-erase' Omega               = UOmega
+erase' TOmega               = UOmega
 
 -- | Reconstruct the type and interval annotations on a species AST.
 unerase :: SpeciesAST -> ESpeciesAST
@@ -244,7 +244,7 @@ unerase UOne                 = wrap TOne
 unerase (UN n)               = wrap (TN n)
 unerase UX                   = wrap TX
 unerase UE                   = wrap TE
-unerase UC                   = wrap C
+unerase UC                   = wrap TC
 unerase UL                   = wrap TL
 unerase USubset              = wrap TSubset
 unerase (UKSubset k)         = wrap (TKSubset k)
@@ -268,7 +268,7 @@ unerase (UOfSizeExactly f k) = ofSize $ unerase f
 unerase (UNonEmpty f)        = nonEmpty $ unerase f
   where nonEmpty (Wrap f)    = wrap $ TNonEmpty f
 unerase (URec f)             = wrap $ TRec f
-unerase UOmega               = wrap Omega
+unerase UOmega               = wrap TOmega
 
 -- | Substitute an expression for recursive occurrences.
 substRec :: ASTFunctor f => f -> SpeciesAST -> SpeciesAST -> SpeciesAST

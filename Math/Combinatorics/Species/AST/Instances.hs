@@ -204,7 +204,7 @@ instance Differential.C ESpeciesAST where
 instance Species ESpeciesAST where
   singleton                         = wrap TX
   set                               = wrap TE
-  cycle                             = wrap C
+  cycle                             = wrap TC
   linOrd                            = wrap TL
   subset                            = wrap TSubset
   ksubset k                         = wrap $ TKSubset k
@@ -216,7 +216,7 @@ instance Species ESpeciesAST where
   ofSizeExactly (Wrap f) n          = wrap $ TOfSizeExactly f n
   nonEmpty (Wrap f)                 = wrap $ TNonEmpty f
   rec f                             = wrap $ TRec f
-  omega                             = wrap Omega
+  omega                             = wrap TOmega
 
 -- | Reify a species expression into an AST.  Of course, this is just
 --   the identity function with a usefully restricted type.  For
