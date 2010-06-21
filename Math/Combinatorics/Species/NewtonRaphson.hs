@@ -71,6 +71,7 @@ solveForR code = do
   -- Now we need to be able to factor an X out of the rest.
   guard $ all (UX `elem`) terms'
 
+  -- XXX this is wrong, what if there are still occurrences of X remaining?
   -- Now replace every recursive occurrence by (n + X).
   let r = foldr1 (+) $ map ( foldr1 (*)
                            . map (substRec code (n + x))

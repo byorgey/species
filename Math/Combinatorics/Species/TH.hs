@@ -11,17 +11,17 @@
 
    * need function to compute a (default) species from a Struct.
      - currently have structToSp :: Struct -> Q Exp.
-     - [X] refactor it into two pieces, Struct -> USpeciesAST and USpeciesAST -> Q Exp.
+     - [X] refactor it into two pieces, Struct -> SpeciesAST and SpeciesAST -> Q Exp.
 
    * should really go through and add some comments to things!
      Unfortunately I wasn't good about that when I wrote the code... =P
 
    * Maybe need to do a similar refactoring of the structToTy stuff?
 
-   * make version of deriveSpecies that takes a USpeciesAST as an argument,
-       and use Struct -> USpeciesAST to generate default
+   * make version of deriveSpecies that takes a SpeciesAST as an argument,
+       and use Struct -> SpeciesAST to generate default
 
-   * deriveSpecies should pass the USpeciesAST to... other things that
+   * deriveSpecies should pass the SpeciesAST to... other things that
      currently just destruct the Struct to decide what to do.  Will have to
      pattern-match on both the species and the Struct now and make sure
      that they match, which is a bit annoying, but can't really be helped.
@@ -162,7 +162,7 @@ isRecursive _               = False
 ------------------------------------------------------------
 
 -- | Convert a 'Struct' into a default corresponding species.
-structToSp :: Struct -> USpeciesAST
+structToSp :: Struct -> SpeciesAST
 structToSp SId           = UX
 structToSp SList         = UL
 structToSp (SConst (ConT t))
@@ -176,7 +176,7 @@ structToSp SSelf         = UOmega
 
 -- | Convert a data constructor and its arguments into a default
 --   species.
-conToSp :: (Name, [Struct]) -> USpeciesAST
+conToSp :: (Name, [Struct]) -> SpeciesAST
 conToSp (_,[]) = UOne
 conToSp (_,ps) = foldl1 (*) $ map structToSp ps
 
@@ -186,7 +186,7 @@ conToSp (_,ps) = foldl1 (*) $ map structToSp ps
 
 -- | Given a name to use in recursive occurrences, convert a species
 --   AST into an actual splice-able expression of type  Species s => s.
-spToExp :: Name -> USpeciesAST -> Q Exp
+spToExp :: Name -> SpeciesAST -> Q Exp
 spToExp self = spToExp'
  where
   spToExp' UZero                = [| 0 |]
@@ -212,14 +212,14 @@ spToExp self = spToExp'
   spToExp' UOmega               = [| wrap $(varE self) |]
 
 -- | Generate the structure type for a given species.
-spToTy :: Name -> USpeciesAST -> Q Type
+spToTy :: Name -> SpeciesAST -> Q Type
 spToTy self = spToTy'
  where
   spToTy' UZero                = [t| Void |]
   spToTy' UOne                 = [t| Unit |]
   spToTy' (UN n)               = [t| Const Integer |]  -- was finTy n, but that
                                                        -- doesn't match up with the
-                                                       -- type annotation on SpeciesAST
+                                                       -- type annotation on TSpeciesAST
   spToTy' UX                   = [t| Id |]
   spToTy' UE                   = [t| Set |]
   spToTy' UC                   = [t| Cycle |]
@@ -263,7 +263,7 @@ finTy n | even n    = [t| Prod (Const Bool) $(finTy $ n `div` 2) |]
 --   If the third argument is @Nothing@, generate a normal
 --   non-recursive instance.  If the third argument is @Just code@,
 --   then the instance is for a recursive type with the given code.
-mkEnumerableInst :: Name -> USpeciesAST -> Struct -> Maybe Name -> Q Dec
+mkEnumerableInst :: Name -> SpeciesAST -> Struct -> Maybe Name -> Q Dec
 mkEnumerableInst nm sp st code = do
   clauses <- mkIsoClauses (isJust code) sp st
   let stTy = case code of
@@ -279,12 +279,12 @@ mkEnumerableInst nm sp st code = do
 --   the 'Enumerable' instance, which translates from the structure
 --   type of the species to the user's data type.  The first argument
 --   indicates whether the type is recursive.
-mkIsoClauses :: Bool -> USpeciesAST -> Struct -> Q [Clause]
+mkIsoClauses :: Bool -> SpeciesAST -> Struct -> Q [Clause]
 mkIsoClauses isRec sp st = (fmap.map) (mkClause isRec) (mkIsoMatches sp st)
   where mkClause False (pat, exp) = Clause [pat] (NormalB $ exp) []
         mkClause True  (pat, exp) = Clause [ConP 'Mu [pat]] (NormalB $ exp) []
 
-mkIsoMatches :: USpeciesAST -> Struct -> Q [(Pat, Exp)]
+mkIsoMatches :: SpeciesAST -> Struct -> Q [(Pat, Exp)]
 mkIsoMatches _ SId        = newName "x" >>= \x ->
                               return [(ConP 'Id [VarP x], VarE x)]
 mkIsoMatches _ (SConst t)
@@ -304,13 +304,17 @@ mkIsoMatches sp (SSumProd cons)  = addInjs 0 <$> zipWithM mkIsoConMatches (terms
        addInjs n (ps:pss) = map (addInj n     'Inl) ps ++ addInjs (n+1) pss
        addInj 0 c = first (ConP c . (:[]))
        addInj n c = first (ConP 'Inr . (:[])) . addInj (n-1) c
+
+-- XXX the below is not correct...
+-- should really do  iso1 . fmap iso2 where iso1 = ...  iso2 = ...
+--   which are obtained from recursive calls.
 mkIsoMatches _ (SComp s1 s2) = newName "x" >>= \x ->
                                  return [ (ConP 'Comp [VarP x]
                                         , AppE (VarE 'iso) (AppE (AppE (VarE 'fmap) (VarE 'iso)) (VarE x))) ]
 mkIsoMatches _ SSelf         = newName "s" >>= \s ->
                                  return [(VarP s, AppE (VarE 'iso) (VarE s))]
 
-mkIsoConMatches :: USpeciesAST -> (Name, [Struct]) -> Q [(Pat, Exp)]
+mkIsoConMatches :: SpeciesAST -> (Name, [Struct]) -> Q [(Pat, Exp)]
 mkIsoConMatches _ (cnm, []) = return [(ConP 'Unit [], ConE cnm)]
 mkIsoConMatches sp (cnm, ps) = map mkProd . sequence <$> zipWithM mkIsoMatches (factors sp) ps
   where factors (f :*:% g) = factors f ++ [g]
@@ -333,7 +337,7 @@ mkSpeciesSig nm = sigD nm [t| Species s => s |]
 -- | Given a name n and a species, generate a declaration for it of
 --   that name.  The third parameter indicates whether the species is
 --   recursive, and if so what the name of the code is.
-mkSpecies :: Name -> USpeciesAST -> Maybe Name -> Q Dec
+mkSpecies :: Name -> SpeciesAST -> Maybe Name -> Q Dec
 mkSpecies nm sp (Just code) = valD (varP nm) (normalB (appE (varE 'rec) (conE code))) []
 mkSpecies nm sp Nothing     = valD (varP nm) (normalB (spToExp undefined sp)) []
 
@@ -371,7 +375,7 @@ deriveDefaultSpecies nm = do
   st <- nameToStruct nm
   deriveSpecies nm (structToSp st)
 
-deriveSpecies :: Name -> USpeciesAST -> Q [Dec]
+deriveSpecies :: Name -> SpeciesAST -> Q [Dec]
 deriveSpecies nm sp = do
   st <- nameToStruct nm
   let spNm = mkName . map toLower . nameBase $ nm

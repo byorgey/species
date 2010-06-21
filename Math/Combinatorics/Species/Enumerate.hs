@@ -54,7 +54,7 @@ import PreludeBase hiding (cycle)
 --   built over the underlying multiset.  (Of course, it would be
 --   really nice to have a real dependently-typed language for this!)
 --
---   Unfortunately, 'SpeciesAST' cannot be made an instance of
+--   Unfortunately, 'TSpeciesAST' cannot be made an instance of
 --   'Species', so if we want to be able to enumerate structures given
 --   an expression of the 'Species' DSL as input, we must take
 --   'ESpeciesAST' as input, which existentially wraps the phantom
@@ -72,7 +72,7 @@ import PreludeBase hiding (cycle)
 --
 --   'enumerate'' does all the actual work, but is not meant to be used
 --   directly; use one of the specialized @enumerateXX@ methods.
-enumerate' :: SpeciesAST s -> Multiset a -> [s a]
+enumerate' :: TSpeciesAST s -> Multiset a -> [s a]
 enumerate' Zero _               = []
 enumerate' One (MS [])          = [Unit]
 enumerate' One _                = []
@@ -181,7 +181,7 @@ unsafeExtractStructure = either error id . extractStructure
 -- > ,<[1],[2],[3]>]
 structureType :: ESpeciesAST -> String
 structureType (Wrap s) = showStructureType . extractType $ (stripI s)
-  where extractType :: forall s. Typeable1 s => SpeciesAST s -> TypeRep
+  where extractType :: forall s. Typeable1 s => TSpeciesAST s -> TypeRep
         extractType _ = typeOf1 (undefined :: s ())
 
 -- | Show a 'TypeRep' while stripping off qualifier portions of 'TyCon'

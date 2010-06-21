@@ -15,7 +15,7 @@ import Math.Combinatorics.Species.AST.Instances
 import Data.List (genericLength)
 import Data.Typeable
 
-simplify :: USpeciesAST -> USpeciesAST
+simplify :: SpeciesAST -> SpeciesAST
 simplify UZero          = UZero
 simplify UOne           = UOne
 simplify (UN 0)         = UZero
@@ -40,7 +40,7 @@ simplify (UNonEmpty f)  = simplNonEmpty (simplify f)
 simplify (URec f)       = URec f
 simplify UOmega         = UOmega
 
-simplSum :: USpeciesAST -> USpeciesAST -> USpeciesAST
+simplSum :: SpeciesAST -> SpeciesAST -> SpeciesAST
 simplSum UZero g                               = g
 simplSum f UZero                               = f
 simplSum UOne UOne                             = UN 2
@@ -61,7 +61,7 @@ simplSum f (g :+:% h) | g < f                  = simplSum g (simplSum f h)
 simplSum f g | g < f                           = g :+:% f
 simplSum f g                                   = f :+:% g
 
-simplProd :: USpeciesAST -> USpeciesAST -> USpeciesAST
+simplProd :: SpeciesAST -> SpeciesAST -> SpeciesAST
 simplProd UZero _              = UZero
 simplProd _ UZero              = UZero
 simplProd UOne g               = g
@@ -77,7 +77,7 @@ simplProd f (g :*:% h) | g < f = simplProd g (simplProd f h)
 simplProd f g | g < f          = g :*:% f
 simplProd f g                  = f :*:% g
 
-simplComp :: USpeciesAST -> USpeciesAST -> USpeciesAST
+simplComp :: SpeciesAST -> SpeciesAST -> SpeciesAST
 simplComp UZero _        = UZero
 simplComp UOne _         = UOne
 simplComp (UN n) _       = UN n
@@ -89,13 +89,13 @@ simplComp (f1 :*:% f2) g = simplProd (simplComp f1 g) (simplComp f2 g)
 simplComp (f :.:% g) h   = f :.:% (g :.:% h)
 simplComp f g            = f :.:% g
 
-simplCart :: USpeciesAST -> USpeciesAST -> USpeciesAST
+simplCart :: SpeciesAST -> SpeciesAST -> SpeciesAST
 simplCart f g = f :><:% g  -- XXX
 
-simplFunc :: USpeciesAST -> USpeciesAST -> USpeciesAST
+simplFunc :: SpeciesAST -> SpeciesAST -> SpeciesAST
 simplFunc f g = f :@:% g  -- XXX
 
-simplDer :: USpeciesAST -> USpeciesAST
+simplDer :: SpeciesAST -> SpeciesAST
 simplDer UZero      = UZero
 simplDer UOne       = UZero
 simplDer (UN _)     = UZero
@@ -108,10 +108,10 @@ simplDer (f :*:% g) = simplSum (simplProd f (simplDer g)) (simplProd (simplDer f
 simplDer (f :.:% g) = simplProd (simplComp (simplDer f) g) (simplDer g)
 simplDer f          = UDer f
 
-simplOfSize :: USpeciesAST -> (Integer -> Bool) -> USpeciesAST
+simplOfSize :: SpeciesAST -> (Integer -> Bool) -> SpeciesAST
 simplOfSize f p = UOfSize f p  -- XXX
 
-simplOfSizeExactly :: USpeciesAST -> Integer -> USpeciesAST
+simplOfSizeExactly :: SpeciesAST -> Integer -> SpeciesAST
 simplOfSizeExactly UZero _ = UZero
 simplOfSizeExactly UOne 0 = UOne
 simplOfSizeExactly UOne _ = UZero
@@ -138,7 +138,7 @@ simplOfSizeExactly (f :*:% g) k = foldr simplSum UZero
 
 simplOfSizeExactly f k = UOfSizeExactly f k
 
-simplNonEmpty :: USpeciesAST -> USpeciesAST
+simplNonEmpty :: SpeciesAST -> SpeciesAST
 simplNonEmpty f = UNonEmpty f  -- XXX
 
 intPartitions :: Integer -> [[Integer]]
@@ -150,7 +150,7 @@ intPartitions k = intPartitions' k k
                           ++ intPartitions' k (j-1)
 
 -- | Simplify a species and decompose it into a sum of products.
-sumOfProducts :: USpeciesAST -> [[USpeciesAST]]
+sumOfProducts :: SpeciesAST -> [[SpeciesAST]]
 sumOfProducts = terms . simplify
   where terms (f :+:% g)   = factors f : terms g
         terms f            = [factors f]

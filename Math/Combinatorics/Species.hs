@@ -76,7 +76,7 @@ module Math.Combinatorics.Species
 
       -- * Species AST
       -- $ast
-    , SpeciesAST(..)
+    , TSpeciesAST(..)
     , ESpeciesAST(..)
     , reify
     , reflect

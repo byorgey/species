@@ -9,14 +9,14 @@
 -- | A data structure to reify combinatorial species.
 module Math.Combinatorics.Species.AST
     (
-      SpeciesAST(..), SizedSpeciesAST(..)
+      TSpeciesAST(..), SizedSpeciesAST(..)
     , interval, annI, getI, stripI
     , ESpeciesAST(..), wrap, unwrap
     , ASTFunctor(..)
 
     , needsZ, needsZE
 
-    , USpeciesAST(..), erase, erase', unerase
+    , SpeciesAST(..), erase, erase', unerase
     , substRec
 
     ) where
@@ -33,53 +33,53 @@ import Data.Maybe (fromMaybe)
 import NumericPrelude
 import PreludeBase hiding (cycle)
 
--- | Reified combinatorial species.  Note that 'SpeciesAST' has a
+-- | Reified combinatorial species.  Note that 'TSpeciesAST' has a
 --   phantom type parameter which also reflects the structure, so we
 --   can write quasi-dependently-typed functions over species, in
 --   particular for species enumeration.
 --
 --   Of course, the non-uniform type parameter means that
---   'SpeciesAST' cannot be an instance of the 'Species' class;
+--   'TSpeciesAST' cannot be an instance of the 'Species' class;
 --   for that purpose the existential wrapper 'ESpeciesAST' is
 --   provided.
 --
---   'SpeciesAST' is defined via mutual recursion with
---   'SizedSpeciesAST', which pairs a 'SpeciesAST' with an interval
+--   'TSpeciesAST' is defined via mutual recursion with
+--   'SizedSpeciesAST', which pairs a 'TSpeciesAST' with an interval
 --   annotation indicating (a conservative approximation of) the label
 --   set sizes for which the species actually yields any structures.
 --   A value of 'SizedSpeciesAST' is thus an annotated species
 --   expression tree with interval annotations at every node.
-data SpeciesAST (s :: * -> *) where
-   Zero     :: SpeciesAST Void
-   One      :: SpeciesAST Unit
-   N        :: Integer -> SpeciesAST (Const Integer)
-   X        :: SpeciesAST Id
-   E        :: SpeciesAST Set
-   C        :: SpeciesAST Cycle
-   L        :: SpeciesAST []
-   Subset   :: SpeciesAST Set
-   KSubset  :: Integer -> SpeciesAST Set
-   Elt      :: SpeciesAST Id
-   (:+:)    :: SizedSpeciesAST f -> SizedSpeciesAST g -> SpeciesAST (Sum f g)
-   (:*:)    :: SizedSpeciesAST f -> SizedSpeciesAST g -> SpeciesAST (Prod f g)
-   (:.:)    :: SizedSpeciesAST f -> SizedSpeciesAST g -> SpeciesAST (Comp f g)
-   (:><:)   :: SizedSpeciesAST f -> SizedSpeciesAST g -> SpeciesAST (Prod f g)
-   (:@:)    :: SizedSpeciesAST f -> SizedSpeciesAST g -> SpeciesAST (Comp f g)
-   Der      :: SizedSpeciesAST f -> SpeciesAST (Comp f Star)
-   OfSize   :: SizedSpeciesAST f -> (Integer -> Bool) -> SpeciesAST f
-   OfSizeExactly :: SizedSpeciesAST f -> Integer -> SpeciesAST f
-   NonEmpty :: SizedSpeciesAST f -> SpeciesAST f
-   Rec      :: ASTFunctor f => f -> SpeciesAST (Mu f)
+data TSpeciesAST (s :: * -> *) where
+   Zero     :: TSpeciesAST Void
+   One      :: TSpeciesAST Unit
+   N        :: Integer -> TSpeciesAST (Const Integer)
+   X        :: TSpeciesAST Id
+   E        :: TSpeciesAST Set
+   C        :: TSpeciesAST Cycle
+   L        :: TSpeciesAST []
+   Subset   :: TSpeciesAST Set
+   KSubset  :: Integer -> TSpeciesAST Set
+   Elt      :: TSpeciesAST Id
+   (:+:)    :: SizedSpeciesAST f -> SizedSpeciesAST g -> TSpeciesAST (Sum f g)
+   (:*:)    :: SizedSpeciesAST f -> SizedSpeciesAST g -> TSpeciesAST (Prod f g)
+   (:.:)    :: SizedSpeciesAST f -> SizedSpeciesAST g -> TSpeciesAST (Comp f g)
+   (:><:)   :: SizedSpeciesAST f -> SizedSpeciesAST g -> TSpeciesAST (Prod f g)
+   (:@:)    :: SizedSpeciesAST f -> SizedSpeciesAST g -> TSpeciesAST (Comp f g)
+   Der      :: SizedSpeciesAST f -> TSpeciesAST (Comp f Star)
+   OfSize   :: SizedSpeciesAST f -> (Integer -> Bool) -> TSpeciesAST f
+   OfSizeExactly :: SizedSpeciesAST f -> Integer -> TSpeciesAST f
+   NonEmpty :: SizedSpeciesAST f -> TSpeciesAST f
+   Rec      :: ASTFunctor f => f -> TSpeciesAST (Mu f)
 
-   Omega    :: SpeciesAST Void
+   Omega    :: TSpeciesAST Void
 
 data SizedSpeciesAST (s :: * -> *) where
-  Sized :: Interval -> SpeciesAST s -> SizedSpeciesAST s
+  Sized :: Interval -> TSpeciesAST s -> SizedSpeciesAST s
 
--- | Given a 'SpeciesAST', compute (a conservative approximation of)
+-- | Given a 'TSpeciesAST', compute (a conservative approximation of)
 --   the interval of label set sizes on which the species yields any
 --   structures.
-interval :: SpeciesAST s -> Interval
+interval :: TSpeciesAST s -> Interval
 interval Zero                = emptyI
 interval One                 = 0
 interval (N n)               = 0
@@ -114,13 +114,13 @@ smallestIn i p = case filter p (toList i) of
                    (x:_) -> fromIntegral x
 
 
--- | Annotate a 'SpeciesAST' with the interval of label set sizes for
+-- | Annotate a 'TSpeciesAST' with the interval of label set sizes for
 --   which it yields structures.
-annI :: SpeciesAST s -> SizedSpeciesAST s
+annI :: TSpeciesAST s -> SizedSpeciesAST s
 annI s = Sized (interval s) s
 
 -- | Strip the interval annotation from a 'SizedSpeciesAST'.
-stripI :: SizedSpeciesAST s -> SpeciesAST s
+stripI :: SizedSpeciesAST s -> TSpeciesAST s
 stripI (Sized _ s) = s
 
 -- | Retrieve the interval annotation.
@@ -130,14 +130,14 @@ getI (Sized i _) = i
 -- | Type class for codes which can be interpreted as higher-order
 --   functors.
 class (Typeable f, Show f, Typeable1 (Interp f (Mu f))) => ASTFunctor f where
-  apply :: Typeable1 g => f -> SpeciesAST g -> SpeciesAST (Interp f g)
+  apply :: Typeable1 g => f -> TSpeciesAST g -> TSpeciesAST (Interp f g)
 
 -- | 'needsZ' is a predicate which checks whether a species uses any
 --   of the operations which are not supported directly by ordinary
 --   generating functions (composition, differentiation, cartesian
 --   product, and functor composition), and hence need cycle index
 --   series.
-needsZ :: USpeciesAST -> Bool
+needsZ :: SpeciesAST -> Bool
 needsZ UL            = True
 needsZ (f :+:% g)    = needsZ f || needsZ g
 needsZ (f :*:% g)    = needsZ f || needsZ g
@@ -158,14 +158,14 @@ data ESpeciesAST where
 
 -- | Smart wrap constructor which also adds an appropriate interval
 --   annotation.
-wrap :: Typeable1 s => SpeciesAST s -> ESpeciesAST
+wrap :: Typeable1 s => TSpeciesAST s -> ESpeciesAST
 wrap = Wrap . annI
 
 -- | Unwrap the existential wrapper and get out a typed AST.  You can
 --   get out any type you like as long as it is the right one.
 --
 --   CAUTION: Don't try this at home.
-unwrap :: Typeable1 s => ESpeciesAST -> SpeciesAST s
+unwrap :: Typeable1 s => ESpeciesAST -> TSpeciesAST s
 unwrap (Wrap f) = gcast1'
                 . stripI
                 $ f
@@ -186,35 +186,35 @@ needsZE = needsZ . erase
 -- | A plain old untyped variant of the species AST, for more easily
 --   doing things like analysis, simplification, deriving
 --   isomorphisms, and so on.  Converting between 'ESpeciesAST' and
---   'USpeciesAST' can be done with 'erase' and 'unerase'.
-data USpeciesAST where
-  UZero          :: USpeciesAST
-  UOne           :: USpeciesAST
-  UN             :: Integer -> USpeciesAST
-  UX             :: USpeciesAST
-  UE             :: USpeciesAST
-  UC             :: USpeciesAST
-  UL             :: USpeciesAST
-  USubset        :: USpeciesAST
-  UKSubset       :: Integer -> USpeciesAST
-  UElt           :: USpeciesAST
-  (:+:%)         :: USpeciesAST -> USpeciesAST -> USpeciesAST
-  (:*:%)         :: USpeciesAST -> USpeciesAST -> USpeciesAST
-  (:.:%)         :: USpeciesAST -> USpeciesAST -> USpeciesAST
-  (:><:%)        :: USpeciesAST -> USpeciesAST -> USpeciesAST
-  (:@:%)         :: USpeciesAST -> USpeciesAST -> USpeciesAST
-  UDer           :: USpeciesAST -> USpeciesAST
-  UOfSize        :: USpeciesAST -> (Integer -> Bool) -> USpeciesAST
-  UOfSizeExactly :: USpeciesAST -> Integer -> USpeciesAST
-  UNonEmpty      :: USpeciesAST -> USpeciesAST
-  URec           :: ASTFunctor f => f -> USpeciesAST
-  UOmega         :: USpeciesAST
+--   'SpeciesAST' can be done with 'erase' and 'unerase'.
+data SpeciesAST where
+  UZero          :: SpeciesAST
+  UOne           :: SpeciesAST
+  UN             :: Integer -> SpeciesAST
+  UX             :: SpeciesAST
+  UE             :: SpeciesAST
+  UC             :: SpeciesAST
+  UL             :: SpeciesAST
+  USubset        :: SpeciesAST
+  UKSubset       :: Integer -> SpeciesAST
+  UElt           :: SpeciesAST
+  (:+:%)         :: SpeciesAST -> SpeciesAST -> SpeciesAST
+  (:*:%)         :: SpeciesAST -> SpeciesAST -> SpeciesAST
+  (:.:%)         :: SpeciesAST -> SpeciesAST -> SpeciesAST
+  (:><:%)        :: SpeciesAST -> SpeciesAST -> SpeciesAST
+  (:@:%)         :: SpeciesAST -> SpeciesAST -> SpeciesAST
+  UDer           :: SpeciesAST -> SpeciesAST
+  UOfSize        :: SpeciesAST -> (Integer -> Bool) -> SpeciesAST
+  UOfSizeExactly :: SpeciesAST -> Integer -> SpeciesAST
+  UNonEmpty      :: SpeciesAST -> SpeciesAST
+  URec           :: ASTFunctor f => f -> SpeciesAST
+  UOmega         :: SpeciesAST
 
 -- | Erase the type and interval information from a species AST.
-erase :: ESpeciesAST -> USpeciesAST
+erase :: ESpeciesAST -> SpeciesAST
 erase (Wrap s) = erase' (stripI s)
 
-erase' :: SpeciesAST f -> USpeciesAST
+erase' :: TSpeciesAST f -> SpeciesAST
 erase' Zero                = UZero
 erase' One                 = UOne
 erase' (N n)               = UN n
@@ -238,7 +238,7 @@ erase' (Rec f)             = URec f
 erase' Omega               = UOmega
 
 -- | Reconstruct the type and interval annotations on a species AST.
-unerase :: USpeciesAST -> ESpeciesAST
+unerase :: SpeciesAST -> ESpeciesAST
 unerase UZero                = wrap Zero
 unerase UOne                 = wrap One
 unerase (UN n)               = wrap (N n)
@@ -271,7 +271,7 @@ unerase (URec f)             = wrap $ Rec f
 unerase UOmega               = wrap Omega
 
 -- | Substitute an expression for recursive occurrences.
-substRec :: ASTFunctor f => f -> USpeciesAST -> USpeciesAST -> USpeciesAST
+substRec :: ASTFunctor f => f -> SpeciesAST -> SpeciesAST -> SpeciesAST
 substRec c e (f :+:% g)                          = substRec c e f :+:% substRec c e g
 substRec c e (f :*:% g)                          = substRec c e f :*:% substRec c e g
 substRec c e (f :.:% g)                          = substRec c e f :.:% substRec c e g

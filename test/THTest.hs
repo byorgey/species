@@ -29,7 +29,10 @@ data Tree2 a = Leaf2 | Node2 (Tree2 a) a (Tree2 a)
 $(deriveDefaultSpecies ''Tree2)
 
 data Parens a = LeafP a | NodeP (Parens a) (Parens a)
-  deriving Show
+
+instance Show (Parens a) where
+  show (LeafP _) = "."
+  show (NodeP p1 p2) = "(" ++ show p1 ++ show p2 ++ ")"
 
 $(deriveDefaultSpecies ''Parens)
 

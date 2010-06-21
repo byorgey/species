@@ -1,7 +1,7 @@
 {-# LANGUAGE GADTs #-}
 
--- | Type class instances for 'SpeciesAST', 'ESpeciesAST', and
---   'USpeciesAST', in a separate module to avoid a dependency cycle
+-- | Type class instances for 'TSpeciesAST', 'ESpeciesAST', and
+--   'SpeciesAST', in a separate module to avoid a dependency cycle
 --   between "Math.Combinatorics.Species.AST" and
 --   "Math.Combinatorics.Species.Class".
 module Math.Combinatorics.Species.AST.Instances
@@ -23,7 +23,7 @@ import qualified Algebra.Differential as Differential
 import Data.Typeable
 
 -- grr -- can't autoderive this because of URec constructor! =P
-instance Eq USpeciesAST where
+instance Eq SpeciesAST where
   UZero                == UZero                 = True
   UOne                 == UOne                  = True
   (UN m)               == (UN n)                = m == n
@@ -47,7 +47,7 @@ instance Eq USpeciesAST where
   UOmega               == UOmega                = True
   _ == _                                        = False
 
-instance Ord USpeciesAST where
+instance Ord SpeciesAST where
   compare x y | x == y = EQ
   compare UZero _ = LT
   compare _ UZero = GT
@@ -109,7 +109,7 @@ instance Ord USpeciesAST where
   compare UOmega _ = LT
   compare _ UOmega = GT
 
-instance Show USpeciesAST where
+instance Show SpeciesAST where
   showsPrec _ UZero                = shows (0 :: Int)
   showsPrec _ UOne                 = shows (1 :: Int)
   showsPrec _ (UN n)               = shows n
@@ -141,12 +141,12 @@ instance Show USpeciesAST where
   showsPrec _ (UNonEmpty f)        = showsPrec 11 f . showChar '+'
   showsPrec _ (URec f)             = shows f
 
-instance Additive.C USpeciesAST where
+instance Additive.C SpeciesAST where
   zero   = UZero
   (+)    = (:+:%)
   negate = error "negation is not implemented yet!  wait until virtual species..."
 
-instance Ring.C USpeciesAST where
+instance Ring.C SpeciesAST where
   (*) = (:*:%)
   one = UOne
   fromInteger 0 = zero
@@ -156,10 +156,10 @@ instance Ring.C USpeciesAST where
   w ^ 1 = w
   f ^ n = f * (f ^ (n-1))
 
-instance Differential.C USpeciesAST where
+instance Differential.C SpeciesAST where
   differentiate = UDer
 
-instance Species USpeciesAST where
+instance Species SpeciesAST where
   singleton     = UX
   set           = UE
   cycle         = UC
@@ -176,7 +176,7 @@ instance Species USpeciesAST where
   rec           = URec
   omega         = UOmega
 
-instance Show (SpeciesAST s) where
+instance Show (TSpeciesAST s) where
   show = show . erase'
 
 instance Show ESpeciesAST where
@@ -231,7 +231,7 @@ reify :: ESpeciesAST -> ESpeciesAST
 reify = id
 
 -- | Reflect an AST back into any instance of the 'Species' class.
-reflectU :: Species s => USpeciesAST -> s
+reflectU :: Species s => SpeciesAST -> s
 reflectU UZero                = 0
 reflectU UOne                 = 1
 reflectU (UN n)               = fromInteger n
@@ -254,7 +254,7 @@ reflectU (UNonEmpty f)        = nonEmpty (reflectU f)
 reflectU (URec f)             = rec f
 reflectU UOmega               = omega
 
-reflectT :: Species s => SpeciesAST f -> s
+reflectT :: Species s => TSpeciesAST f -> s
 reflectT = reflectU . erase'
 
 -- | Reflect an AST back into any instance of the 'Species' class.
