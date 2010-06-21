@@ -199,11 +199,11 @@ spToExp self = spToExp'
   spToExp' Subset              = [| subset |]
   spToExp' (KSubset k)         = [| ksubset $(lift k) |]
   spToExp' Elt                 = [| element |]
-  spToExp' (f :+:% g)           = [| $(spToExp' f) + $(spToExp' g) |]
-  spToExp' (f :*:% g)           = [| $(spToExp' f) * $(spToExp' g) |]
-  spToExp' (f :.:% g)           = [| $(spToExp' f) `o` $(spToExp' g) |]
-  spToExp' (f :><:% g)          = [| $(spToExp' f) >< $(spToExp' g) |]
-  spToExp' (f :@:% g)           = [| $(spToExp' f) @@ $(spToExp' g) |]
+  spToExp' (f :+: g)           = [| $(spToExp' f) + $(spToExp' g) |]
+  spToExp' (f :*: g)           = [| $(spToExp' f) * $(spToExp' g) |]
+  spToExp' (f :.: g)           = [| $(spToExp' f) `o` $(spToExp' g) |]
+  spToExp' (f :><: g)          = [| $(spToExp' f) >< $(spToExp' g) |]
+  spToExp' (f :@: g)           = [| $(spToExp' f) @@ $(spToExp' g) |]
   spToExp' (Der f)             = [| oneHole $(spToExp' f) |]
   spToExp' (OfSize _ _)        = error "Can't reify general size predicate into code"
   spToExp' (OfSizeExactly f k) = [| $(spToExp' f) `ofSizeExactly` $(lift k) |]
@@ -227,11 +227,11 @@ spToTy self = spToTy'
   spToTy' Subset              = [t| Set |]
   spToTy' (KSubset _)         = [t| Set |]
   spToTy' Elt                 = [t| Id |]
-  spToTy' (f :+:% g)           = [t| Sum  $(spToTy' f) $(spToTy' g) |]
-  spToTy' (f :*:% g)           = [t| Prod $(spToTy' f) $(spToTy' g) |]
-  spToTy' (f :.:% g)           = [t| Comp $(spToTy' f) $(spToTy' g) |]
-  spToTy' (f :><:% g)          = [t| Prod $(spToTy' f) $(spToTy' g) |]
-  spToTy' (f :@:% g)           = [t| Comp $(spToTy' f) $(spToTy' g) |]
+  spToTy' (f :+: g)           = [t| Sum  $(spToTy' f) $(spToTy' g) |]
+  spToTy' (f :*: g)           = [t| Prod $(spToTy' f) $(spToTy' g) |]
+  spToTy' (f :.: g)           = [t| Comp $(spToTy' f) $(spToTy' g) |]
+  spToTy' (f :><: g)          = [t| Prod $(spToTy' f) $(spToTy' g) |]
+  spToTy' (f :@: g)           = [t| Comp $(spToTy' f) $(spToTy' g) |]
   spToTy' (Der f)             = [t| Star $(spToTy' f) |]
   spToTy' (OfSize f _)        = spToTy' f
   spToTy' (OfSizeExactly f _) = spToTy' f
@@ -296,7 +296,7 @@ mkIsoMatches _ (SEnum t)  = newName "x" >>= \x ->
 mkIsoMatches _ (SSumProd [])     = return []
 mkIsoMatches sp (SSumProd [con]) = mkIsoConMatches sp con
 mkIsoMatches sp (SSumProd cons)  = addInjs 0 <$> zipWithM mkIsoConMatches (terms sp) cons
- where terms (f :+:% g) = terms f ++ [g]
+ where terms (f :+: g) = terms f ++ [g]
        terms f = [f]
 
        addInjs :: Int -> [[(Pat, Exp)]] -> [(Pat, Exp)]
@@ -317,7 +317,7 @@ mkIsoMatches _ SSelf         = newName "s" >>= \s ->
 mkIsoConMatches :: SpeciesAST -> (Name, [Struct]) -> Q [(Pat, Exp)]
 mkIsoConMatches _ (cnm, []) = return [(ConP 'Unit [], ConE cnm)]
 mkIsoConMatches sp (cnm, ps) = map mkProd . sequence <$> zipWithM mkIsoMatches (factors sp) ps
-  where factors (f :*:% g) = factors f ++ [g]
+  where factors (f :*: g) = factors f ++ [g]
         factors f = [f]
 
         mkProd :: [(Pat, Exp)] -> (Pat, Exp)

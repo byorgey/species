@@ -28,11 +28,11 @@ simplify L             =  L
 simplify Subset        =  Subset
 simplify f@(KSubset _) =  f
 simplify Elt           =  Elt
-simplify (f :+:% g)     = simplSum (simplify f) (simplify g)
-simplify (f :*:% g)     = simplProd (simplify f) (simplify g)
-simplify (f :.:% g)     = simplComp (simplify f) (simplify g)
-simplify (f :><:% g)    = simplCart (simplify f) (simplify g)
-simplify (f :@:% g)     = simplFunc (simplify f) (simplify g)
+simplify (f :+: g)     = simplSum (simplify f) (simplify g)
+simplify (f :*: g)     = simplProd (simplify f) (simplify g)
+simplify (f :.: g)     = simplComp (simplify f) (simplify g)
+simplify (f :><: g)    = simplCart (simplify f) (simplify g)
+simplify (f :@: g)     = simplFunc (simplify f) (simplify g)
 simplify (Der f)       = simplDer (simplify f)
 simplify (OfSize f p)  = simplOfSize (simplify f) p
 simplify (OfSizeExactly f k) = simplOfSizeExactly (simplify f) k
@@ -47,19 +47,19 @@ simplSum One One                             = N 2
 simplSum One (N n)                           = N $ succ n
 simplSum (N n) One                           = N $ succ n
 simplSum (N m) (N n)                         = N $ m + n
-simplSum One (One :+:% g)                    = simplSum (N 2) g
-simplSum One ((N n) :+:% g)                  = simplSum (N $ succ n) g
-simplSum (N n) (One :+:% g)                  = simplSum (N $ succ n) g
-simplSum (N m) ((N n) :+:% g)                = simplSum (N (m + n)) g
-simplSum (f :+:% g) h                          = simplSum f (simplSum g h)
+simplSum One (One :+: g)                    = simplSum (N 2) g
+simplSum One ((N n) :+: g)                  = simplSum (N $ succ n) g
+simplSum (N n) (One :+: g)                  = simplSum (N $ succ n) g
+simplSum (N m) ((N n) :+: g)                = simplSum (N (m + n)) g
+simplSum (f :+: g) h                          = simplSum f (simplSum g h)
 simplSum f g | f == g                          = simplProd (N 2) f
-simplSum f (g :+:% h) | f == g                 = simplSum (simplProd (N 2) f) h
-simplSum (N n :*:% f) g | f == g              = N (succ n) :*:% f
-simplSum f (N n :*:% g) | f == g              = N (succ n) :*:% f
-simplSum (N m :*:% f) (N n :*:% g) | f == g  = N (m + n) :*:% f
-simplSum f (g :+:% h) | g < f                  = simplSum g (simplSum f h)
-simplSum f g | g < f                           = g :+:% f
-simplSum f g                                   = f :+:% g
+simplSum f (g :+: h) | f == g                 = simplSum (simplProd (N 2) f) h
+simplSum (N n :*: f) g | f == g              = N (succ n) :*: f
+simplSum f (N n :*: g) | f == g              = N (succ n) :*: f
+simplSum (N m :*: f) (N n :*: g) | f == g  = N (m + n) :*: f
+simplSum f (g :+: h) | g < f                  = simplSum g (simplSum f h)
+simplSum f g | g < f                           = g :+: f
+simplSum f g                                   = f :+: g
 
 simplProd :: SpeciesAST -> SpeciesAST -> SpeciesAST
 simplProd Zero _              = Zero
@@ -67,15 +67,15 @@ simplProd _ Zero              = Zero
 simplProd One g               = g
 simplProd f One               = f
 simplProd (N m) (N n)        = N $ m * n
-simplProd (f1 :+:% f2) g       = simplSum (simplProd f1 g) (simplProd f2 g)
-simplProd f (g1 :+:% g2)       = simplSum (simplProd f g1) (simplProd f g2)
+simplProd (f1 :+: f2) g       = simplSum (simplProd f1 g) (simplProd f2 g)
+simplProd f (g1 :+: g2)       = simplSum (simplProd f g1) (simplProd f g2)
 simplProd f (N n)             = simplProd (N n) f
-simplProd (N m) (N n :*:% g) = simplProd (N $ m * n) g
-simplProd f ((N n) :*:% g)    = simplProd (N n) (simplProd f g)
-simplProd (f :*:% g) h         = simplProd f (simplProd g h)
-simplProd f (g :*:% h) | g < f = simplProd g (simplProd f h)
-simplProd f g | g < f          = g :*:% f
-simplProd f g                  = f :*:% g
+simplProd (N m) (N n :*: g) = simplProd (N $ m * n) g
+simplProd f ((N n) :*: g)    = simplProd (N n) (simplProd f g)
+simplProd (f :*: g) h         = simplProd f (simplProd g h)
+simplProd f (g :*: h) | g < f = simplProd g (simplProd f h)
+simplProd f g | g < f          = g :*: f
+simplProd f g                  = f :*: g
 
 simplComp :: SpeciesAST -> SpeciesAST -> SpeciesAST
 simplComp Zero _        = Zero
@@ -84,16 +84,16 @@ simplComp (N n) _       = N n
 simplComp X g           = g
 simplComp f X           = f
 simplComp f Zero        = simplOfSizeExactly f 0
-simplComp (f1 :+:% f2) g = simplSum (simplComp f1 g) (simplComp f2 g)
-simplComp (f1 :*:% f2) g = simplProd (simplComp f1 g) (simplComp f2 g)
-simplComp (f :.:% g) h   = f :.:% (g :.:% h)
-simplComp f g            = f :.:% g
+simplComp (f1 :+: f2) g = simplSum (simplComp f1 g) (simplComp f2 g)
+simplComp (f1 :*: f2) g = simplProd (simplComp f1 g) (simplComp f2 g)
+simplComp (f :.: g) h   = f :.: (g :.: h)
+simplComp f g            = f :.: g
 
 simplCart :: SpeciesAST -> SpeciesAST -> SpeciesAST
-simplCart f g = f :><:% g  -- XXX
+simplCart f g = f :><: g  -- XXX
 
 simplFunc :: SpeciesAST -> SpeciesAST -> SpeciesAST
-simplFunc f g = f :@:% g  -- XXX
+simplFunc f g = f :@: g  -- XXX
 
 simplDer :: SpeciesAST -> SpeciesAST
 simplDer Zero      = Zero
@@ -102,10 +102,10 @@ simplDer (N _)     = Zero
 simplDer X         = One
 simplDer E         = E
 simplDer C         = L
-simplDer L         = L :*:% L
-simplDer (f :+:% g) = simplSum (simplDer f) (simplDer g)
-simplDer (f :*:% g) = simplSum (simplProd f (simplDer g)) (simplProd (simplDer f) g)
-simplDer (f :.:% g) = simplProd (simplComp (simplDer f) g) (simplDer g)
+simplDer L         = L :*: L
+simplDer (f :+: g) = simplSum (simplDer f) (simplDer g)
+simplDer (f :*: g) = simplSum (simplProd f (simplDer g)) (simplProd (simplDer f) g)
+simplDer (f :.: g) = simplProd (simplComp (simplDer f) g) (simplDer g)
 simplDer f          = Der f
 
 simplOfSize :: SpeciesAST -> (Integer -> Bool) -> SpeciesAST
@@ -122,8 +122,8 @@ simplOfSizeExactly X _ = Zero
 simplOfSizeExactly E 0 = One
 simplOfSizeExactly C 0 = Zero
 simplOfSizeExactly L 0 = One
-simplOfSizeExactly (f :+:% g) k = simplSum (simplOfSizeExactly f k) (simplOfSizeExactly g k)
-simplOfSizeExactly (f :*:% g) k = foldr simplSum Zero
+simplOfSizeExactly (f :+: g) k = simplSum (simplOfSizeExactly f k) (simplOfSizeExactly g k)
+simplOfSizeExactly (f :*: g) k = foldr simplSum Zero
                                     [ simplProd (simplOfSizeExactly f j) (simplOfSizeExactly g (k - j)) | j <- [0..k] ]
 
 -- XXX get this to work?
@@ -132,7 +132,7 @@ simplOfSizeExactly (f :*:% g) k = foldr simplSum Zero
 -- multiply together all the g's.  However for non-regular f this
 -- doesn't work.  Seems difficult to do this properly...
 
--- simplOfSizeExactly (f :.:% g) k = foldr simplSum Zero $
+-- simplOfSizeExactly (f :.: g) k = foldr simplSum Zero $
 --                                     map (\gs -> simplProd (simplOfSizeExactly f (genericLength gs)) (foldr simplProd One gs))
 --                                     [ map (simplOfSizeExactly g) p | p <- intPartitions k ]
 
@@ -152,7 +152,7 @@ intPartitions k = intPartitions' k k
 -- | Simplify a species and decompose it into a sum of products.
 sumOfProducts :: SpeciesAST -> [[SpeciesAST]]
 sumOfProducts = terms . simplify
-  where terms (f :+:% g)   = factors f : terms g
+  where terms (f :+: g)   = factors f : terms g
         terms f            = [factors f]
-        factors (f :*:% g) = f : factors g
+        factors (f :*: g) = f : factors g
         factors f          = [f]

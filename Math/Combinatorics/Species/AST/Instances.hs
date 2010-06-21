@@ -34,11 +34,11 @@ instance Eq SpeciesAST where
   Subset              == Subset               = True
   (KSubset k)         == (KSubset j)          = k == j
   Elt                 == Elt                  = True
-  (f1 :+:% g1)         == (f2 :+:% g2)          = f1 == f2 && g1 == g2
-  (f1 :*:% g1)         == (f2 :*:% g2)          = f1 == f2 && g1 == g2
-  (f1 :.:% g1)         == (f2 :.:% g2)          = f1 == f2 && g1 == g2
-  (f1 :><:% g1)        == (f2 :><:% g2)         = f1 == f2 && g1 == g2
-  (f1 :@:% g1)         == (f2 :@:% g2)          = f1 == f2 && g1 == g2
+  (f1 :+: g1)         == (f2 :+: g2)          = f1 == f2 && g1 == g2
+  (f1 :*: g1)         == (f2 :*: g2)          = f1 == f2 && g1 == g2
+  (f1 :.: g1)         == (f2 :.: g2)          = f1 == f2 && g1 == g2
+  (f1 :><: g1)        == (f2 :><: g2)         = f1 == f2 && g1 == g2
+  (f1 :@: g1)         == (f2 :@: g2)          = f1 == f2 && g1 == g2
   Der f1              == Der f2               = f1 == f2
   -- note, OfSize will always compare False since we can't compare the functions for equality
   OfSizeExactly f1 k1 == OfSizeExactly f2 k2  = f1 == f2 && k1 == k2
@@ -71,26 +71,26 @@ instance Ord SpeciesAST where
   compare _ (KSubset _) = GT
   compare Elt _ = LT
   compare _ Elt = GT
-  compare (f1 :+:% g1) (f2 :+:% g2) | f1 == f2 = compare g1 g2
+  compare (f1 :+: g1) (f2 :+: g2) | f1 == f2 = compare g1 g2
                                     | otherwise = compare f1 f2
-  compare (_ :+:% _) _ = LT
-  compare _ (_ :+:% _) = GT
-  compare (f1 :*:% g1) (f2 :*:% g2) | f1 == f2 = compare g1 g2
+  compare (_ :+: _) _ = LT
+  compare _ (_ :+: _) = GT
+  compare (f1 :*: g1) (f2 :*: g2) | f1 == f2 = compare g1 g2
                                     | otherwise = compare f1 f2
-  compare (_ :*:% _) _ = LT
-  compare _ (_ :*:% _) = GT
-  compare (f1 :.:% g1) (f2 :.:% g2) | f1 == f2 = compare g1 g2
+  compare (_ :*: _) _ = LT
+  compare _ (_ :*: _) = GT
+  compare (f1 :.: g1) (f2 :.: g2) | f1 == f2 = compare g1 g2
                                     | otherwise = compare f1 f2
-  compare (_ :.:% _) _ = LT
-  compare _ (_ :.:% _) = GT
-  compare (f1 :><:% g1) (f2 :><:% g2) | f1 == f2 = compare g1 g2
+  compare (_ :.: _) _ = LT
+  compare _ (_ :.: _) = GT
+  compare (f1 :><: g1) (f2 :><: g2) | f1 == f2 = compare g1 g2
                                       | otherwise = compare f1 f2
-  compare (_ :><:% _) _ = LT
-  compare _ (_ :><:% _) = GT
-  compare (f1 :@:% g1) (f2 :@:% g2) | f1 == f2 = compare g1 g2
+  compare (_ :><: _) _ = LT
+  compare _ (_ :><: _) = GT
+  compare (f1 :@: g1) (f2 :@: g2) | f1 == f2 = compare g1 g2
                                     | otherwise = compare f1 f2
-  compare (_ :@:% _) _ = LT
-  compare _ (_ :@:% _) = GT
+  compare (_ :@: _) _ = LT
+  compare _ (_ :@: _) = GT
   compare (Der f1) (Der f2) = compare f1 f2
   compare (Der _) _ = LT
   compare _ (Der _) = GT
@@ -120,19 +120,19 @@ instance Show SpeciesAST where
   showsPrec _ Subset              = showChar 'p'
   showsPrec _ (KSubset n)         = showChar 'p' . shows n
   showsPrec _ (Elt)               = showChar 'e'
-  showsPrec p (f :+:% g)           = showParen (p>6)  $ showsPrec 6 f
+  showsPrec p (f :+: g)           = showParen (p>6)  $ showsPrec 6 f
                                                      . showString " + "
                                                      . showsPrec 6 g
-  showsPrec p (f :*:% g)           = showParen (p>=7) $ showsPrec 7 f
+  showsPrec p (f :*: g)           = showParen (p>=7) $ showsPrec 7 f
                                                      . showString " * "
                                                      . showsPrec 7 g
-  showsPrec p (f :.:% g)           = showParen (p>=7) $ showsPrec 7 f
+  showsPrec p (f :.: g)           = showParen (p>=7) $ showsPrec 7 f
                                                      . showString " . "
                                                      . showsPrec 7 g
-  showsPrec p (f :><:% g)          = showParen (p>=7) $ showsPrec 7 f
+  showsPrec p (f :><: g)          = showParen (p>=7) $ showsPrec 7 f
                                                      . showString " >< "
                                                      . showsPrec 7 g
-  showsPrec p (f :@:% g)           = showParen (p>=7) $ showsPrec 7 f
+  showsPrec p (f :@: g)           = showParen (p>=7) $ showsPrec 7 f
                                                      . showString " @ "
                                                      . showsPrec 7 g
   showsPrec p (Der f)             = showsPrec 11 f . showChar '\''
@@ -143,11 +143,11 @@ instance Show SpeciesAST where
 
 instance Additive.C SpeciesAST where
   zero   = Zero
-  (+)    = (:+:%)
+  (+)    = (:+:)
   negate = error "negation is not implemented yet!  wait until virtual species..."
 
 instance Ring.C SpeciesAST where
-  (*) = (:*:%)
+  (*) = (:*:)
   one = One
   fromInteger 0 = zero
   fromInteger 1 = one
@@ -167,9 +167,9 @@ instance Species SpeciesAST where
   subset        = Subset
   ksubset k     = KSubset k
   element       = Elt
-  o             = (:.:%)
-  cartesian     = (:><:%)
-  fcomp         = (:@:%)
+  o             = (:.:)
+  cartesian     = (:><:)
+  fcomp         = (:@:)
   ofSize        = OfSize
   ofSizeExactly = OfSizeExactly
   nonEmpty      = NonEmpty
@@ -242,11 +242,11 @@ reflectU L                   = linOrd
 reflectU Subset              = subset
 reflectU (KSubset k)         = ksubset k
 reflectU Elt                 = element
-reflectU (f :+:% g)           = reflectU f + reflectU g
-reflectU (f :*:% g)           = reflectU f * reflectU g
-reflectU (f :.:% g)           = reflectU f `o` reflectU g
-reflectU (f :><:% g)          = reflectU f >< reflectU g
-reflectU (f :@:% g)           = reflectU f @@ reflectU g
+reflectU (f :+: g)           = reflectU f + reflectU g
+reflectU (f :*: g)           = reflectU f * reflectU g
+reflectU (f :.: g)           = reflectU f `o` reflectU g
+reflectU (f :><: g)          = reflectU f >< reflectU g
+reflectU (f :@: g)           = reflectU f @@ reflectU g
 reflectU (Der f)             = oneHole (reflectU f)
 reflectU (OfSize f p)        = ofSize (reflectU f) p
 reflectU (OfSizeExactly f n) = ofSizeExactly (reflectU f) n
