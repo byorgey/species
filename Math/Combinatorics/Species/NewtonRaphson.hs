@@ -64,18 +64,18 @@ solveForR code = do
   -- If there is a constant term, it will be the first one; pull it
   -- out.
   let (n, terms') = case terms of
-                      ([UOne] : ts) -> (UOne, ts)
-                      ([UN n] : ts) -> (UN n, ts)
-                      ts          -> (UZero, ts)
+                      ([One] : ts) -> (One, ts)
+                      ([N n] : ts) -> (N n, ts)
+                      ts          -> (Zero, ts)
 
   -- Now we need to be able to factor an TX out of the rest.
-  guard $ all (UX `elem`) terms'
+  guard $ all (X `elem`) terms'
 
   -- XXX this is wrong, what if there are still occurrences of TX remaining?
   -- Now replace every recursive occurrence by (n + TX).
   let r = foldr1 (+) $ map ( foldr1 (*)
                            . map (substRec code (n + x))
-                           . delete UX)
+                           . delete X)
                        terms'
 
   return (reflectU n, reflectU r)

@@ -163,13 +163,13 @@ isRecursive _               = False
 
 -- | Convert a 'Struct' into a default corresponding species.
 structToSp :: Struct -> SpeciesAST
-structToSp SId           = UX
-structToSp SList         = UL
+structToSp SId           = X
+structToSp SList         = L
 structToSp (SConst (ConT t))
-  | t == ''Bool = UN 2
+  | t == ''Bool = N 2
   | otherwise   = error $ "structToSp: unrecognized type " ++ show t ++ " in SConst"
 structToSp (SEnum t)     = error "SEnum in structToSp"
-structToSp (SSumProd []) = UZero
+structToSp (SSumProd []) = Zero
 structToSp (SSumProd ss) = foldl1 (+) $ map conToSp ss
 structToSp (SComp s1 s2) = structToSp s1 `o` structToSp s2
 structToSp SSelf         = UOmega
@@ -177,7 +177,7 @@ structToSp SSelf         = UOmega
 -- | Convert a data constructor and its arguments into a default
 --   species.
 conToSp :: (Name, [Struct]) -> SpeciesAST
-conToSp (_,[]) = UOne
+conToSp (_,[]) = One
 conToSp (_,ps) = foldl1 (*) $ map structToSp ps
 
 ------------------------------------------------------------
@@ -189,13 +189,13 @@ conToSp (_,ps) = foldl1 (*) $ map structToSp ps
 spToExp :: Name -> SpeciesAST -> Q Exp
 spToExp self = spToExp'
  where
-  spToExp' UZero                = [| 0 |]
-  spToExp' UOne                 = [| 1 |]
-  spToExp' (UN n)               = lift n
-  spToExp' UX                   = [| singleton |]
-  spToExp' UE                   = [| set |]
-  spToExp' UC                   = [| cycle |]
-  spToExp' UL                   = [| linOrd |]
+  spToExp' Zero                = [| 0 |]
+  spToExp' One                 = [| 1 |]
+  spToExp' (N n)               = lift n
+  spToExp' X                   = [| singleton |]
+  spToExp' E                   = [| set |]
+  spToExp' C                   = [| cycle |]
+  spToExp' L                   = [| linOrd |]
   spToExp' USubset              = [| subset |]
   spToExp' (UKSubset k)         = [| ksubset $(lift k) |]
   spToExp' UElt                 = [| element |]
@@ -215,15 +215,15 @@ spToExp self = spToExp'
 spToTy :: Name -> SpeciesAST -> Q Type
 spToTy self = spToTy'
  where
-  spToTy' UZero                = [t| Void |]
-  spToTy' UOne                 = [t| Unit |]
-  spToTy' (UN n)               = [t| Const Integer |]  -- was finTy n, but that
+  spToTy' Zero                = [t| Void |]
+  spToTy' One                 = [t| Unit |]
+  spToTy' (N n)               = [t| Const Integer |]  -- was finTy n, but that
                                                        -- doesn't match up with the
                                                        -- type annotation on TSpeciesAST
-  spToTy' UX                   = [t| Id |]
-  spToTy' UE                   = [t| Set |]
-  spToTy' UC                   = [t| Cycle |]
-  spToTy' UL                   = [t| [] |]
+  spToTy' X                   = [t| Id |]
+  spToTy' E                   = [t| Set |]
+  spToTy' C                   = [t| Cycle |]
+  spToTy' L                   = [t| [] |]
   spToTy' USubset              = [t| Set |]
   spToTy' (UKSubset _)         = [t| Set |]
   spToTy' UElt                 = [t| Id |]

@@ -16,15 +16,15 @@ import Data.List (genericLength)
 import Data.Typeable
 
 simplify :: SpeciesAST -> SpeciesAST
-simplify UZero          = UZero
-simplify UOne           = UOne
-simplify (UN 0)         = UZero
-simplify (UN 1)         = UOne
-simplify f@(UN _)       = f
-simplify UX             =  UX
-simplify UE             =  UE
-simplify UC             =  UC
-simplify UL             =  UL
+simplify Zero          = Zero
+simplify One           = One
+simplify (N 0)         = Zero
+simplify (N 1)         = One
+simplify f@(N _)       = f
+simplify X             =  X
+simplify E             =  E
+simplify C             =  C
+simplify L             =  L
 simplify USubset        =  USubset
 simplify f@(UKSubset _) =  f
 simplify UElt           =  UElt
@@ -41,49 +41,49 @@ simplify (URec f)       = URec f
 simplify UOmega         = UOmega
 
 simplSum :: SpeciesAST -> SpeciesAST -> SpeciesAST
-simplSum UZero g                               = g
-simplSum f UZero                               = f
-simplSum UOne UOne                             = UN 2
-simplSum UOne (UN n)                           = UN $ succ n
-simplSum (UN n) UOne                           = UN $ succ n
-simplSum (UN m) (UN n)                         = UN $ m + n
-simplSum UOne (UOne :+:% g)                    = simplSum (UN 2) g
-simplSum UOne ((UN n) :+:% g)                  = simplSum (UN $ succ n) g
-simplSum (UN n) (UOne :+:% g)                  = simplSum (UN $ succ n) g
-simplSum (UN m) ((UN n) :+:% g)                = simplSum (UN (m + n)) g
+simplSum Zero g                               = g
+simplSum f Zero                               = f
+simplSum One One                             = N 2
+simplSum One (N n)                           = N $ succ n
+simplSum (N n) One                           = N $ succ n
+simplSum (N m) (N n)                         = N $ m + n
+simplSum One (One :+:% g)                    = simplSum (N 2) g
+simplSum One ((N n) :+:% g)                  = simplSum (N $ succ n) g
+simplSum (N n) (One :+:% g)                  = simplSum (N $ succ n) g
+simplSum (N m) ((N n) :+:% g)                = simplSum (N (m + n)) g
 simplSum (f :+:% g) h                          = simplSum f (simplSum g h)
-simplSum f g | f == g                          = simplProd (UN 2) f
-simplSum f (g :+:% h) | f == g                 = simplSum (simplProd (UN 2) f) h
-simplSum (UN n :*:% f) g | f == g              = UN (succ n) :*:% f
-simplSum f (UN n :*:% g) | f == g              = UN (succ n) :*:% f
-simplSum (UN m :*:% f) (UN n :*:% g) | f == g  = UN (m + n) :*:% f
+simplSum f g | f == g                          = simplProd (N 2) f
+simplSum f (g :+:% h) | f == g                 = simplSum (simplProd (N 2) f) h
+simplSum (N n :*:% f) g | f == g              = N (succ n) :*:% f
+simplSum f (N n :*:% g) | f == g              = N (succ n) :*:% f
+simplSum (N m :*:% f) (N n :*:% g) | f == g  = N (m + n) :*:% f
 simplSum f (g :+:% h) | g < f                  = simplSum g (simplSum f h)
 simplSum f g | g < f                           = g :+:% f
 simplSum f g                                   = f :+:% g
 
 simplProd :: SpeciesAST -> SpeciesAST -> SpeciesAST
-simplProd UZero _              = UZero
-simplProd _ UZero              = UZero
-simplProd UOne g               = g
-simplProd f UOne               = f
-simplProd (UN m) (UN n)        = UN $ m * n
+simplProd Zero _              = Zero
+simplProd _ Zero              = Zero
+simplProd One g               = g
+simplProd f One               = f
+simplProd (N m) (N n)        = N $ m * n
 simplProd (f1 :+:% f2) g       = simplSum (simplProd f1 g) (simplProd f2 g)
 simplProd f (g1 :+:% g2)       = simplSum (simplProd f g1) (simplProd f g2)
-simplProd f (UN n)             = simplProd (UN n) f
-simplProd (UN m) (UN n :*:% g) = simplProd (UN $ m * n) g
-simplProd f ((UN n) :*:% g)    = simplProd (UN n) (simplProd f g)
+simplProd f (N n)             = simplProd (N n) f
+simplProd (N m) (N n :*:% g) = simplProd (N $ m * n) g
+simplProd f ((N n) :*:% g)    = simplProd (N n) (simplProd f g)
 simplProd (f :*:% g) h         = simplProd f (simplProd g h)
 simplProd f (g :*:% h) | g < f = simplProd g (simplProd f h)
 simplProd f g | g < f          = g :*:% f
 simplProd f g                  = f :*:% g
 
 simplComp :: SpeciesAST -> SpeciesAST -> SpeciesAST
-simplComp UZero _        = UZero
-simplComp UOne _         = UOne
-simplComp (UN n) _       = UN n
-simplComp UX g           = g
-simplComp f UX           = f
-simplComp f UZero        = simplOfSizeExactly f 0
+simplComp Zero _        = Zero
+simplComp One _         = One
+simplComp (N n) _       = N n
+simplComp X g           = g
+simplComp f X           = f
+simplComp f Zero        = simplOfSizeExactly f 0
 simplComp (f1 :+:% f2) g = simplSum (simplComp f1 g) (simplComp f2 g)
 simplComp (f1 :*:% f2) g = simplProd (simplComp f1 g) (simplComp f2 g)
 simplComp (f :.:% g) h   = f :.:% (g :.:% h)
@@ -96,13 +96,13 @@ simplFunc :: SpeciesAST -> SpeciesAST -> SpeciesAST
 simplFunc f g = f :@:% g  -- XXX
 
 simplDer :: SpeciesAST -> SpeciesAST
-simplDer UZero      = UZero
-simplDer UOne       = UZero
-simplDer (UN _)     = UZero
-simplDer UX         = UOne
-simplDer UE         = UE
-simplDer UC         = UL
-simplDer UL         = UL :*:% UL
+simplDer Zero      = Zero
+simplDer One       = Zero
+simplDer (N _)     = Zero
+simplDer X         = One
+simplDer E         = E
+simplDer C         = L
+simplDer L         = L :*:% L
 simplDer (f :+:% g) = simplSum (simplDer f) (simplDer g)
 simplDer (f :*:% g) = simplSum (simplProd f (simplDer g)) (simplProd (simplDer f) g)
 simplDer (f :.:% g) = simplProd (simplComp (simplDer f) g) (simplDer g)
@@ -112,18 +112,18 @@ simplOfSize :: SpeciesAST -> (Integer -> Bool) -> SpeciesAST
 simplOfSize f p = UOfSize f p  -- XXX
 
 simplOfSizeExactly :: SpeciesAST -> Integer -> SpeciesAST
-simplOfSizeExactly UZero _ = UZero
-simplOfSizeExactly UOne 0 = UOne
-simplOfSizeExactly UOne _ = UZero
-simplOfSizeExactly (UN n) 0 = UN n
-simplOfSizeExactly (UN _) _ = UZero
-simplOfSizeExactly UX 1 = UX
-simplOfSizeExactly UX _ = UZero
-simplOfSizeExactly UE 0 = UOne
-simplOfSizeExactly UC 0 = UZero
-simplOfSizeExactly UL 0 = UOne
+simplOfSizeExactly Zero _ = Zero
+simplOfSizeExactly One 0 = One
+simplOfSizeExactly One _ = Zero
+simplOfSizeExactly (N n) 0 = N n
+simplOfSizeExactly (N _) _ = Zero
+simplOfSizeExactly X 1 = X
+simplOfSizeExactly X _ = Zero
+simplOfSizeExactly E 0 = One
+simplOfSizeExactly C 0 = Zero
+simplOfSizeExactly L 0 = One
 simplOfSizeExactly (f :+:% g) k = simplSum (simplOfSizeExactly f k) (simplOfSizeExactly g k)
-simplOfSizeExactly (f :*:% g) k = foldr simplSum UZero
+simplOfSizeExactly (f :*:% g) k = foldr simplSum Zero
                                     [ simplProd (simplOfSizeExactly f j) (simplOfSizeExactly g (k - j)) | j <- [0..k] ]
 
 -- XXX get this to work?
@@ -132,8 +132,8 @@ simplOfSizeExactly (f :*:% g) k = foldr simplSum UZero
 -- multiply together all the g's.  However for non-regular f this
 -- doesn't work.  Seems difficult to do this properly...
 
--- simplOfSizeExactly (f :.:% g) k = foldr simplSum UZero $
---                                     map (\gs -> simplProd (simplOfSizeExactly f (genericLength gs)) (foldr simplProd UOne gs))
+-- simplOfSizeExactly (f :.:% g) k = foldr simplSum Zero $
+--                                     map (\gs -> simplProd (simplOfSizeExactly f (genericLength gs)) (foldr simplProd One gs))
 --                                     [ map (simplOfSizeExactly g) p | p <- intPartitions k ]
 
 simplOfSizeExactly f k = UOfSizeExactly f k

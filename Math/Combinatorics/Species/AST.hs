@@ -138,7 +138,7 @@ class (Typeable f, Show f, Typeable1 (Interp f (Mu f))) => ASTFunctor f where
 --   product, and functor composition), and hence need cycle index
 --   series.
 needsZ :: SpeciesAST -> Bool
-needsZ UL            = True
+needsZ L            = True
 needsZ (f :+:% g)    = needsZ f || needsZ g
 needsZ (f :*:% g)    = needsZ f || needsZ g
 needsZ (_ :.:% _)    = True
@@ -188,13 +188,13 @@ needsZE = needsZ . erase
 --   isomorphisms, and so on.  Converting between 'ESpeciesAST' and
 --   'SpeciesAST' can be done with 'erase' and 'unerase'.
 data SpeciesAST where
-  UZero          :: SpeciesAST
-  UOne           :: SpeciesAST
-  UN             :: Integer -> SpeciesAST
-  UX             :: SpeciesAST
-  UE             :: SpeciesAST
-  UC             :: SpeciesAST
-  UL             :: SpeciesAST
+  Zero          :: SpeciesAST
+  One           :: SpeciesAST
+  N             :: Integer -> SpeciesAST
+  X             :: SpeciesAST
+  E             :: SpeciesAST
+  C             :: SpeciesAST
+  L             :: SpeciesAST
   USubset        :: SpeciesAST
   UKSubset       :: Integer -> SpeciesAST
   UElt           :: SpeciesAST
@@ -215,13 +215,13 @@ erase :: ESpeciesAST -> SpeciesAST
 erase (Wrap s) = erase' (stripI s)
 
 erase' :: TSpeciesAST f -> SpeciesAST
-erase' TZero                = UZero
-erase' TOne                 = UOne
-erase' (TN n)               = UN n
-erase' TX                   = UX
-erase' TE                   = UE
-erase' TC                   = UC
-erase' TL                   = UL
+erase' TZero                = Zero
+erase' TOne                 = One
+erase' (TN n)               = N n
+erase' TX                   = X
+erase' TE                   = E
+erase' TC                   = C
+erase' TL                   = L
 erase' TSubset              = USubset
 erase' (TKSubset k)         = UKSubset k
 erase' TElt                 = UElt
@@ -239,13 +239,13 @@ erase' TOmega               = UOmega
 
 -- | Reconstruct the type and interval annotations on a species AST.
 unerase :: SpeciesAST -> ESpeciesAST
-unerase UZero                = wrap TZero
-unerase UOne                 = wrap TOne
-unerase (UN n)               = wrap (TN n)
-unerase UX                   = wrap TX
-unerase UE                   = wrap TE
-unerase UC                   = wrap TC
-unerase UL                   = wrap TL
+unerase Zero                = wrap TZero
+unerase One                 = wrap TOne
+unerase (N n)               = wrap (TN n)
+unerase X                   = wrap TX
+unerase E                   = wrap TE
+unerase C                   = wrap TC
+unerase L                   = wrap TL
 unerase USubset              = wrap TSubset
 unerase (UKSubset k)         = wrap (TKSubset k)
 unerase UElt                 = wrap TElt

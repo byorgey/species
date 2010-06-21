@@ -24,13 +24,13 @@ import Data.Typeable
 
 -- grr -- can't autoderive this because of URec constructor! =P
 instance Eq SpeciesAST where
-  UZero                == UZero                 = True
-  UOne                 == UOne                  = True
-  (UN m)               == (UN n)                = m == n
-  UX                   == UX                    = True
-  UE                   == UE                    = True
-  UC                   == UC                    = True
-  UL                   == UL                    = True
+  Zero                == Zero                 = True
+  One                 == One                  = True
+  (N m)               == (N n)                = m == n
+  X                   == X                    = True
+  E                   == E                    = True
+  C                   == C                    = True
+  L                   == L                    = True
   USubset              == USubset               = True
   (UKSubset k)         == (UKSubset j)          = k == j
   UElt                 == UElt                  = True
@@ -49,21 +49,21 @@ instance Eq SpeciesAST where
 
 instance Ord SpeciesAST where
   compare x y | x == y = EQ
-  compare UZero _ = LT
-  compare _ UZero = GT
-  compare UOne _     = LT
-  compare _ UOne     = GT
-  compare (UN m) (UN n) = compare m n
-  compare (UN _) _ = LT
-  compare _ (UN _) = GT
-  compare UX _ = LT
-  compare _ UX = GT
-  compare UE _ = LT
-  compare _ UE = GT
-  compare UC _ = LT
-  compare _ UC = GT
-  compare UL _ = LT
-  compare _ UL = GT
+  compare Zero _ = LT
+  compare _ Zero = GT
+  compare One _     = LT
+  compare _ One     = GT
+  compare (N m) (N n) = compare m n
+  compare (N _) _ = LT
+  compare _ (N _) = GT
+  compare X _ = LT
+  compare _ X = GT
+  compare E _ = LT
+  compare _ E = GT
+  compare C _ = LT
+  compare _ C = GT
+  compare L _ = LT
+  compare _ L = GT
   compare USubset _ = LT
   compare _ USubset = GT
   compare (UKSubset j) (UKSubset k) = compare j k
@@ -110,13 +110,13 @@ instance Ord SpeciesAST where
   compare _ UOmega = GT
 
 instance Show SpeciesAST where
-  showsPrec _ UZero                = shows (0 :: Int)
-  showsPrec _ UOne                 = shows (1 :: Int)
-  showsPrec _ (UN n)               = shows n
-  showsPrec _ UX                   = showChar 'X'
-  showsPrec _ UE                   = showChar 'E'
-  showsPrec _ UC                   = showChar 'C'
-  showsPrec _ UL                   = showChar 'L'
+  showsPrec _ Zero                = shows (0 :: Int)
+  showsPrec _ One                 = shows (1 :: Int)
+  showsPrec _ (N n)               = shows n
+  showsPrec _ X                   = showChar 'X'
+  showsPrec _ E                   = showChar 'E'
+  showsPrec _ C                   = showChar 'C'
+  showsPrec _ L                   = showChar 'L'
   showsPrec _ USubset              = showChar 'p'
   showsPrec _ (UKSubset n)         = showChar 'p' . shows n
   showsPrec _ (UElt)               = showChar 'e'
@@ -142,16 +142,16 @@ instance Show SpeciesAST where
   showsPrec _ (URec f)             = shows f
 
 instance Additive.C SpeciesAST where
-  zero   = UZero
+  zero   = Zero
   (+)    = (:+:%)
   negate = error "negation is not implemented yet!  wait until virtual species..."
 
 instance Ring.C SpeciesAST where
   (*) = (:*:%)
-  one = UOne
+  one = One
   fromInteger 0 = zero
   fromInteger 1 = one
-  fromInteger n = UN n
+  fromInteger n = N n
   _ ^ 0 = one
   w ^ 1 = w
   f ^ n = f * (f ^ (n-1))
@@ -160,10 +160,10 @@ instance Differential.C SpeciesAST where
   differentiate = UDer
 
 instance Species SpeciesAST where
-  singleton     = UX
-  set           = UE
-  cycle         = UC
-  linOrd        = UL
+  singleton     = X
+  set           = E
+  cycle         = C
+  linOrd        = L
   subset        = USubset
   ksubset k     = UKSubset k
   element       = UElt
@@ -232,13 +232,13 @@ reify = id
 
 -- | Reflect an AST back into any instance of the 'Species' class.
 reflectU :: Species s => SpeciesAST -> s
-reflectU UZero                = 0
-reflectU UOne                 = 1
-reflectU (UN n)               = fromInteger n
-reflectU UX                   = singleton
-reflectU UE                   = set
-reflectU UC                   = cycle
-reflectU UL                   = linOrd
+reflectU Zero                = 0
+reflectU One                 = 1
+reflectU (N n)               = fromInteger n
+reflectU X                   = singleton
+reflectU E                   = set
+reflectU C                   = cycle
+reflectU L                   = linOrd
 reflectU USubset              = subset
 reflectU (UKSubset k)         = ksubset k
 reflectU UElt                 = element
