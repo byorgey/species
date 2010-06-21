@@ -212,10 +212,10 @@ instance Species ESpeciesAST where
   o (Wrap f) (Wrap g)               = wrap $ f :.: g
   cartesian (Wrap f) (Wrap g)       = wrap $ f :><: g
   fcomp (Wrap f) (Wrap g)           = wrap $ f :@: g
-  ofSize (Wrap f) p                 = wrap $ OfSize f p
-  ofSizeExactly (Wrap f) n          = wrap $ OfSizeExactly f n
-  nonEmpty (Wrap f)                 = wrap $ NonEmpty f
-  rec f                             = wrap $ Rec f
+  ofSize (Wrap f) p                 = wrap $ TOfSize f p
+  ofSizeExactly (Wrap f) n          = wrap $ TOfSizeExactly f n
+  nonEmpty (Wrap f)                 = wrap $ TNonEmpty f
+  rec f                             = wrap $ TRec f
   omega                             = wrap Omega
 
 -- | Reify a species expression into an AST.  Of course, this is just

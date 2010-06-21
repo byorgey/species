@@ -58,7 +58,7 @@ newtonRaphsonRec code k = fmap (\(n,r) -> n + newtonRaphson r k) (solveForR code
 
 solveForR :: (ASTFunctor f, Species s) => f -> Maybe (s, s)
 solveForR code = do
-  let terms = sumOfProducts . erase' $ apply code (Rec code)
+  let terms = sumOfProducts . erase' $ apply code (TRec code)
   guard . not . null $ terms
 
   -- If there is a constant term, it will be the first one; pull it

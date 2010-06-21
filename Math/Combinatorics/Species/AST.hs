@@ -66,10 +66,10 @@ data TSpeciesAST (s :: * -> *) where
    (:><:)   :: SizedSpeciesAST f -> SizedSpeciesAST g -> TSpeciesAST (Prod f g)
    (:@:)    :: SizedSpeciesAST f -> SizedSpeciesAST g -> TSpeciesAST (Comp f g)
    TDer      :: SizedSpeciesAST f -> TSpeciesAST (Comp f Star)
-   OfSize   :: SizedSpeciesAST f -> (Integer -> Bool) -> TSpeciesAST f
-   OfSizeExactly :: SizedSpeciesAST f -> Integer -> TSpeciesAST f
-   NonEmpty :: SizedSpeciesAST f -> TSpeciesAST f
-   Rec      :: ASTFunctor f => f -> TSpeciesAST (Mu f)
+   TOfSize   :: SizedSpeciesAST f -> (Integer -> Bool) -> TSpeciesAST f
+   TOfSizeExactly :: SizedSpeciesAST f -> Integer -> TSpeciesAST f
+   TNonEmpty :: SizedSpeciesAST f -> TSpeciesAST f
+   TRec      :: ASTFunctor f => f -> TSpeciesAST (Mu f)
 
    Omega    :: TSpeciesAST Void
 
@@ -101,10 +101,10 @@ interval (f :@: g)           = natsI
     -- whether we were doing labelled or unlabelled enumeration, which
     -- we don't know at this point.
 interval (TDer f)             = decrI (getI f)
-interval (OfSize f p)        = fromI $ smallestIn (getI f) p
-interval (OfSizeExactly f n) = fromInteger n `I.intersect` getI f
-interval (NonEmpty f)        = fromI 1 `I.intersect` getI f
-interval (Rec f)             = interval (apply f Omega)
+interval (TOfSize f p)        = fromI $ smallestIn (getI f) p
+interval (TOfSizeExactly f n) = fromInteger n `I.intersect` getI f
+interval (TNonEmpty f)        = fromI 1 `I.intersect` getI f
+interval (TRec f)             = interval (apply f Omega)
 interval Omega               = omegaI
 
 -- | Find the smallest integer in the given interval satisfying a predicate.
@@ -231,10 +231,10 @@ erase' (f :.: g)           = erase' (stripI f) :.:% erase' (stripI g)
 erase' (f :><: g)          = erase' (stripI f) :><:% erase' (stripI g)
 erase' (f :@: g)           = erase' (stripI f) :@:% erase' (stripI g)
 erase' (TDer f)             = UDer . erase' . stripI $ f
-erase' (OfSize f p)        = UOfSize (erase' . stripI $ f) p
-erase' (OfSizeExactly f k) = UOfSizeExactly (erase' . stripI $ f) k
-erase' (NonEmpty f)        = UNonEmpty . erase' . stripI $ f
-erase' (Rec f)             = URec f
+erase' (TOfSize f p)        = UOfSize (erase' . stripI $ f) p
+erase' (TOfSizeExactly f k) = UOfSizeExactly (erase' . stripI $ f) k
+erase' (TNonEmpty f)        = UNonEmpty . erase' . stripI $ f
+erase' (TRec f)             = URec f
 erase' Omega               = UOmega
 
 -- | Reconstruct the type and interval annotations on a species AST.
@@ -262,12 +262,12 @@ unerase (f :@:% g)           = unerase f @@ unerase g
 unerase (UDer f)             = der $ unerase f
   where der (Wrap f)         = wrap (TDer f)
 unerase (UOfSize f p)        = ofSize $ unerase f
-  where ofSize (Wrap f)      = wrap $ OfSize f p
+  where ofSize (Wrap f)      = wrap $ TOfSize f p
 unerase (UOfSizeExactly f k) = ofSize $ unerase f
-  where ofSize (Wrap f)      = wrap $ OfSizeExactly f k
+  where ofSize (Wrap f)      = wrap $ TOfSizeExactly f k
 unerase (UNonEmpty f)        = nonEmpty $ unerase f
-  where nonEmpty (Wrap f)    = wrap $ NonEmpty f
-unerase (URec f)             = wrap $ Rec f
+  where nonEmpty (Wrap f)    = wrap $ TNonEmpty f
+unerase (URec f)             = wrap $ TRec f
 unerase UOmega               = wrap Omega
 
 -- | Substitute an expression for recursive occurrences.

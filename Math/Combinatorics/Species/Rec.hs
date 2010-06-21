@@ -7,7 +7,7 @@
 -- for documentation/examples/hysterical raisins.
 
 -- | Some common recursively defined species.
-module Math.Combinatorics.Species.Rec
+module Math.Combinatorics.Species.TRec
        (
          -- Binary trees
          BTreeC(..), BTree(..), bTree

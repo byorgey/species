@@ -125,14 +125,14 @@ enumerate' (f :@: g) xs         = map Comp
 enumerate' (TDer f) xs           = map Comp
                                   . enumerate' (stripI f)
                                   $ (Star,1) +: fmap Original xs
-enumerate' (NonEmpty f) (MS []) = []
-enumerate' (NonEmpty f) xs      = enumerate' (stripI f) xs
-enumerate' (Rec f) xs           = map Mu $ enumerate' (apply f (Rec f)) xs
-enumerate' (OfSize f p) xs
+enumerate' (TNonEmpty f) (MS []) = []
+enumerate' (TNonEmpty f) xs      = enumerate' (stripI f) xs
+enumerate' (TRec f) xs           = map Mu $ enumerate' (apply f (TRec f)) xs
+enumerate' (TOfSize f p) xs
   | p (fromIntegral . sum . MS.getCounts $ xs)
     = enumerate' (stripI f) xs
   | otherwise = []
-enumerate' (OfSizeExactly f n) xs
+enumerate' (TOfSizeExactly f n) xs
   | (fromIntegral . sum . MS.getCounts $ xs) == n
     = enumerate' (stripI f) xs
   | otherwise = []
@@ -321,7 +321,7 @@ enumerateAll s = concatMap (\n -> enumerateL s (take n [1..])) [0..]
 --   custom data type as the target of the enumeration if you don't
 --   want to.
 --
---   See "Math.Combinatorics.Species.Rec" for some example instances
+--   See "Math.Combinatorics.Species.TRec" for some example instances
 --   of 'Enumerable'.
 class Typeable1 (StructTy f) => Enumerable (f :: * -> *) where
   -- | The standard structure type (see
