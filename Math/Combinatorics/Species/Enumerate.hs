@@ -83,10 +83,10 @@ enumerate' TX _                  = []
 enumerate' TE xs                 = [Set (MS.toList xs)]
 enumerate' C m                  = map Cycle (MS.cycles m)
 enumerate' TL xs                 = MS.permutations xs
-enumerate' Subset xs            = map (Set . MS.toList . fst) (MS.splits xs)
-enumerate' (KSubset k) xs       = map (Set . MS.toList)
+enumerate' TSubset xs            = map (Set . MS.toList . fst) (MS.splits xs)
+enumerate' (TKSubset k) xs       = map (Set . MS.toList)
                                       (MS.kSubsets (fromIntegral k) xs)
-enumerate' Elt xs               = map (Id . fst) . MS.toCounts $ xs
+enumerate' TElt xs               = map (Id . fst) . MS.toCounts $ xs
 enumerate' (f :+: g) xs         = map Inl (enumerate' (stripI f) xs)
                                ++ map Inr (enumerate' (stripI g) xs)
 
@@ -122,7 +122,7 @@ enumerate' (f :@: g) xs         = map Comp
                                   . MS.fromDistinctList
                                   . enumerate' (stripI g)
                                   $ xs
-enumerate' (Der f) xs           = map Comp
+enumerate' (TDer f) xs           = map Comp
                                   . enumerate' (stripI f)
                                   $ (Star,1) +: fmap Original xs
 enumerate' (NonEmpty f) (MS []) = []

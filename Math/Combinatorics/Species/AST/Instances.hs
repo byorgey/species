@@ -199,16 +199,16 @@ instance Ring.C ESpeciesAST where
                         (Wrap f') -> wrap $ f :*: f'
 
 instance Differential.C ESpeciesAST where
-  differentiate (Wrap f) = wrap (Der f)
+  differentiate (Wrap f) = wrap (TDer f)
 
 instance Species ESpeciesAST where
   singleton                         = wrap TX
   set                               = wrap TE
   cycle                             = wrap C
   linOrd                            = wrap TL
-  subset                            = wrap Subset
-  ksubset k                         = wrap $ KSubset k
-  element                           = wrap Elt
+  subset                            = wrap TSubset
+  ksubset k                         = wrap $ TKSubset k
+  element                           = wrap TElt
   o (Wrap f) (Wrap g)               = wrap $ f :.: g
   cartesian (Wrap f) (Wrap g)       = wrap $ f :><: g
   fcomp (Wrap f) (Wrap g)           = wrap $ f :@: g
