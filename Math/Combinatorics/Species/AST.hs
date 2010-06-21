@@ -144,11 +144,11 @@ needsZ (f :*:% g)    = needsZ f || needsZ g
 needsZ (_ :.:% _)    = True
 needsZ (_ :><:% _)   = True
 needsZ (_ :@:% _)    = True
-needsZ (UDer _)      = True
-needsZ (UOfSize f _) = needsZ f
-needsZ (UOfSizeExactly f _) = needsZ f
-needsZ (UNonEmpty f) = needsZ f
-needsZ (URec _)      = True    -- Newton-Raphson iteration uses composition
+needsZ (Der _)      = True
+needsZ (OfSize f _) = needsZ f
+needsZ (OfSizeExactly f _) = needsZ f
+needsZ (NonEmpty f) = needsZ f
+needsZ (Rec _)      = True    -- Newton-Raphson iteration uses composition
 needsZ _             = False
 
 -- | An existential wrapper to hide the phantom type parameter to
@@ -195,20 +195,20 @@ data SpeciesAST where
   E             :: SpeciesAST
   C             :: SpeciesAST
   L             :: SpeciesAST
-  USubset        :: SpeciesAST
-  UKSubset       :: Integer -> SpeciesAST
-  UElt           :: SpeciesAST
+  Subset        :: SpeciesAST
+  KSubset       :: Integer -> SpeciesAST
+  Elt           :: SpeciesAST
   (:+:%)         :: SpeciesAST -> SpeciesAST -> SpeciesAST
   (:*:%)         :: SpeciesAST -> SpeciesAST -> SpeciesAST
   (:.:%)         :: SpeciesAST -> SpeciesAST -> SpeciesAST
   (:><:%)        :: SpeciesAST -> SpeciesAST -> SpeciesAST
   (:@:%)         :: SpeciesAST -> SpeciesAST -> SpeciesAST
-  UDer           :: SpeciesAST -> SpeciesAST
-  UOfSize        :: SpeciesAST -> (Integer -> Bool) -> SpeciesAST
-  UOfSizeExactly :: SpeciesAST -> Integer -> SpeciesAST
-  UNonEmpty      :: SpeciesAST -> SpeciesAST
-  URec           :: ASTFunctor f => f -> SpeciesAST
-  UOmega         :: SpeciesAST
+  Der           :: SpeciesAST -> SpeciesAST
+  OfSize        :: SpeciesAST -> (Integer -> Bool) -> SpeciesAST
+  OfSizeExactly :: SpeciesAST -> Integer -> SpeciesAST
+  NonEmpty      :: SpeciesAST -> SpeciesAST
+  Rec           :: ASTFunctor f => f -> SpeciesAST
+  Omega         :: SpeciesAST
 
 -- | Erase the type and interval information from a species AST.
 erase :: ESpeciesAST -> SpeciesAST
@@ -222,20 +222,20 @@ erase' TX                   = X
 erase' TE                   = E
 erase' TC                   = C
 erase' TL                   = L
-erase' TSubset              = USubset
-erase' (TKSubset k)         = UKSubset k
-erase' TElt                 = UElt
+erase' TSubset              = Subset
+erase' (TKSubset k)         = KSubset k
+erase' TElt                 = Elt
 erase' (f :+:: g)           = erase' (stripI f) :+:% erase' (stripI g)
 erase' (f :*:: g)           = erase' (stripI f) :*:% erase' (stripI g)
 erase' (f :.:: g)           = erase' (stripI f) :.:% erase' (stripI g)
 erase' (f :><:: g)          = erase' (stripI f) :><:% erase' (stripI g)
 erase' (f :@:: g)           = erase' (stripI f) :@:% erase' (stripI g)
-erase' (TDer f)             = UDer . erase' . stripI $ f
-erase' (TOfSize f p)        = UOfSize (erase' . stripI $ f) p
-erase' (TOfSizeExactly f k) = UOfSizeExactly (erase' . stripI $ f) k
-erase' (TNonEmpty f)        = UNonEmpty . erase' . stripI $ f
-erase' (TRec f)             = URec f
-erase' TOmega               = UOmega
+erase' (TDer f)             = Der . erase' . stripI $ f
+erase' (TOfSize f p)        = OfSize (erase' . stripI $ f) p
+erase' (TOfSizeExactly f k) = OfSizeExactly (erase' . stripI $ f) k
+erase' (TNonEmpty f)        = NonEmpty . erase' . stripI $ f
+erase' (TRec f)             = Rec f
+erase' TOmega               = Omega
 
 -- | Reconstruct the type and interval annotations on a species AST.
 unerase :: SpeciesAST -> ESpeciesAST
@@ -246,9 +246,9 @@ unerase X                   = wrap TX
 unerase E                   = wrap TE
 unerase C                   = wrap TC
 unerase L                   = wrap TL
-unerase USubset              = wrap TSubset
-unerase (UKSubset k)         = wrap (TKSubset k)
-unerase UElt                 = wrap TElt
+unerase Subset              = wrap TSubset
+unerase (KSubset k)         = wrap (TKSubset k)
+unerase Elt                 = wrap TElt
 unerase (f :+:% g)           = unerase f + unerase g
   where Wrap f + Wrap g      = wrap $ f :+:: g
 unerase (f :*:% g)           = unerase f * unerase g
@@ -259,16 +259,16 @@ unerase (f :><:% g)          = unerase f >< unerase g
   where Wrap f >< Wrap g     = wrap $ f :><:: g
 unerase (f :@:% g)           = unerase f @@ unerase g
   where Wrap f @@ Wrap g     = wrap $ f :@:: g
-unerase (UDer f)             = der $ unerase f
+unerase (Der f)             = der $ unerase f
   where der (Wrap f)         = wrap (TDer f)
-unerase (UOfSize f p)        = ofSize $ unerase f
+unerase (OfSize f p)        = ofSize $ unerase f
   where ofSize (Wrap f)      = wrap $ TOfSize f p
-unerase (UOfSizeExactly f k) = ofSize $ unerase f
+unerase (OfSizeExactly f k) = ofSize $ unerase f
   where ofSize (Wrap f)      = wrap $ TOfSizeExactly f k
-unerase (UNonEmpty f)        = nonEmpty $ unerase f
+unerase (NonEmpty f)        = nonEmpty $ unerase f
   where nonEmpty (Wrap f)    = wrap $ TNonEmpty f
-unerase (URec f)             = wrap $ TRec f
-unerase UOmega               = wrap TOmega
+unerase (Rec f)             = wrap $ TRec f
+unerase Omega               = wrap TOmega
 
 -- | Substitute an expression for recursive occurrences.
 substRec :: ASTFunctor f => f -> SpeciesAST -> SpeciesAST -> SpeciesAST
@@ -277,10 +277,10 @@ substRec c e (f :*:% g)                          = substRec c e f :*:% substRec 
 substRec c e (f :.:% g)                          = substRec c e f :.:% substRec c e g
 substRec c e (f :><:% g)                         = substRec c e f :><:% substRec c e g
 substRec c e (f :@:% g)                          = substRec c e f :@:% substRec c e g
-substRec c e (UDer f)                            = UDer (substRec c e f)
-substRec c e (UOfSize f p)                       = UOfSize (substRec c e f) p
-substRec c e (UOfSizeExactly f k)                = UOfSizeExactly (substRec c e f) k
-substRec c e (UNonEmpty f)                       = UNonEmpty (substRec c e f)
-substRec c e (URec c')
+substRec c e (Der f)                            = Der (substRec c e f)
+substRec c e (OfSize f p)                       = OfSize (substRec c e f) p
+substRec c e (OfSizeExactly f k)                = OfSizeExactly (substRec c e f) k
+substRec c e (NonEmpty f)                       = NonEmpty (substRec c e f)
+substRec c e (Rec c')
   | (show . typeOf $ c) == (show . typeOf $ c')  = e
 substRec _ _ f                                   = f

@@ -25,20 +25,20 @@ simplify X             =  X
 simplify E             =  E
 simplify C             =  C
 simplify L             =  L
-simplify USubset        =  USubset
-simplify f@(UKSubset _) =  f
-simplify UElt           =  UElt
+simplify Subset        =  Subset
+simplify f@(KSubset _) =  f
+simplify Elt           =  Elt
 simplify (f :+:% g)     = simplSum (simplify f) (simplify g)
 simplify (f :*:% g)     = simplProd (simplify f) (simplify g)
 simplify (f :.:% g)     = simplComp (simplify f) (simplify g)
 simplify (f :><:% g)    = simplCart (simplify f) (simplify g)
 simplify (f :@:% g)     = simplFunc (simplify f) (simplify g)
-simplify (UDer f)       = simplDer (simplify f)
-simplify (UOfSize f p)  = simplOfSize (simplify f) p
-simplify (UOfSizeExactly f k) = simplOfSizeExactly (simplify f) k
-simplify (UNonEmpty f)  = simplNonEmpty (simplify f)
-simplify (URec f)       = URec f
-simplify UOmega         = UOmega
+simplify (Der f)       = simplDer (simplify f)
+simplify (OfSize f p)  = simplOfSize (simplify f) p
+simplify (OfSizeExactly f k) = simplOfSizeExactly (simplify f) k
+simplify (NonEmpty f)  = simplNonEmpty (simplify f)
+simplify (Rec f)       = Rec f
+simplify Omega         = Omega
 
 simplSum :: SpeciesAST -> SpeciesAST -> SpeciesAST
 simplSum Zero g                               = g
@@ -106,10 +106,10 @@ simplDer L         = L :*:% L
 simplDer (f :+:% g) = simplSum (simplDer f) (simplDer g)
 simplDer (f :*:% g) = simplSum (simplProd f (simplDer g)) (simplProd (simplDer f) g)
 simplDer (f :.:% g) = simplProd (simplComp (simplDer f) g) (simplDer g)
-simplDer f          = UDer f
+simplDer f          = Der f
 
 simplOfSize :: SpeciesAST -> (Integer -> Bool) -> SpeciesAST
-simplOfSize f p = UOfSize f p  -- XXX
+simplOfSize f p = OfSize f p  -- XXX
 
 simplOfSizeExactly :: SpeciesAST -> Integer -> SpeciesAST
 simplOfSizeExactly Zero _ = Zero
@@ -136,10 +136,10 @@ simplOfSizeExactly (f :*:% g) k = foldr simplSum Zero
 --                                     map (\gs -> simplProd (simplOfSizeExactly f (genericLength gs)) (foldr simplProd One gs))
 --                                     [ map (simplOfSizeExactly g) p | p <- intPartitions k ]
 
-simplOfSizeExactly f k = UOfSizeExactly f k
+simplOfSizeExactly f k = OfSizeExactly f k
 
 simplNonEmpty :: SpeciesAST -> SpeciesAST
-simplNonEmpty f = UNonEmpty f  -- XXX
+simplNonEmpty f = NonEmpty f  -- XXX
 
 intPartitions :: Integer -> [[Integer]]
 intPartitions k = intPartitions' k k

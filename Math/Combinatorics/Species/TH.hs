@@ -172,7 +172,7 @@ structToSp (SEnum t)     = error "SEnum in structToSp"
 structToSp (SSumProd []) = Zero
 structToSp (SSumProd ss) = foldl1 (+) $ map conToSp ss
 structToSp (SComp s1 s2) = structToSp s1 `o` structToSp s2
-structToSp SSelf         = UOmega
+structToSp SSelf         = Omega
 
 -- | Convert a data constructor and its arguments into a default
 --   species.
@@ -196,20 +196,20 @@ spToExp self = spToExp'
   spToExp' E                   = [| set |]
   spToExp' C                   = [| cycle |]
   spToExp' L                   = [| linOrd |]
-  spToExp' USubset              = [| subset |]
-  spToExp' (UKSubset k)         = [| ksubset $(lift k) |]
-  spToExp' UElt                 = [| element |]
+  spToExp' Subset              = [| subset |]
+  spToExp' (KSubset k)         = [| ksubset $(lift k) |]
+  spToExp' Elt                 = [| element |]
   spToExp' (f :+:% g)           = [| $(spToExp' f) + $(spToExp' g) |]
   spToExp' (f :*:% g)           = [| $(spToExp' f) * $(spToExp' g) |]
   spToExp' (f :.:% g)           = [| $(spToExp' f) `o` $(spToExp' g) |]
   spToExp' (f :><:% g)          = [| $(spToExp' f) >< $(spToExp' g) |]
   spToExp' (f :@:% g)           = [| $(spToExp' f) @@ $(spToExp' g) |]
-  spToExp' (UDer f)             = [| oneHole $(spToExp' f) |]
-  spToExp' (UOfSize _ _)        = error "Can't reify general size predicate into code"
-  spToExp' (UOfSizeExactly f k) = [| $(spToExp' f) `ofSizeExactly` $(lift k) |]
-  spToExp' (UNonEmpty f)        = [| nonEmpty $(spToExp' f) |]
-  spToExp' (URec _)             = [| wrap $(varE self) |]
-  spToExp' UOmega               = [| wrap $(varE self) |]
+  spToExp' (Der f)             = [| oneHole $(spToExp' f) |]
+  spToExp' (OfSize _ _)        = error "Can't reify general size predicate into code"
+  spToExp' (OfSizeExactly f k) = [| $(spToExp' f) `ofSizeExactly` $(lift k) |]
+  spToExp' (NonEmpty f)        = [| nonEmpty $(spToExp' f) |]
+  spToExp' (Rec _)             = [| wrap $(varE self) |]
+  spToExp' Omega               = [| wrap $(varE self) |]
 
 -- | Generate the structure type for a given species.
 spToTy :: Name -> SpeciesAST -> Q Type
@@ -224,20 +224,20 @@ spToTy self = spToTy'
   spToTy' E                   = [t| Set |]
   spToTy' C                   = [t| Cycle |]
   spToTy' L                   = [t| [] |]
-  spToTy' USubset              = [t| Set |]
-  spToTy' (UKSubset _)         = [t| Set |]
-  spToTy' UElt                 = [t| Id |]
+  spToTy' Subset              = [t| Set |]
+  spToTy' (KSubset _)         = [t| Set |]
+  spToTy' Elt                 = [t| Id |]
   spToTy' (f :+:% g)           = [t| Sum  $(spToTy' f) $(spToTy' g) |]
   spToTy' (f :*:% g)           = [t| Prod $(spToTy' f) $(spToTy' g) |]
   spToTy' (f :.:% g)           = [t| Comp $(spToTy' f) $(spToTy' g) |]
   spToTy' (f :><:% g)          = [t| Prod $(spToTy' f) $(spToTy' g) |]
   spToTy' (f :@:% g)           = [t| Comp $(spToTy' f) $(spToTy' g) |]
-  spToTy' (UDer f)             = [t| Star $(spToTy' f) |]
-  spToTy' (UOfSize f _)        = spToTy' f
-  spToTy' (UOfSizeExactly f _) = spToTy' f
-  spToTy' (UNonEmpty f)        = spToTy' f
-  spToTy' (URec _)             = varT self
-  spToTy' UOmega               = varT self
+  spToTy' (Der f)             = [t| Star $(spToTy' f) |]
+  spToTy' (OfSize f _)        = spToTy' f
+  spToTy' (OfSizeExactly f _) = spToTy' f
+  spToTy' (NonEmpty f)        = spToTy' f
+  spToTy' (Rec _)             = varT self
+  spToTy' Omega               = varT self
 
 {-
 -- | Generate a finite type of a given size, using a binary scheme.

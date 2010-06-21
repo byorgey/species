@@ -22,7 +22,7 @@ import qualified Algebra.Differential as Differential
 
 import Data.Typeable
 
--- grr -- can't autoderive this because of URec constructor! =P
+-- grr -- can't autoderive this because of Rec constructor! =P
 instance Eq SpeciesAST where
   Zero                == Zero                 = True
   One                 == One                  = True
@@ -31,20 +31,20 @@ instance Eq SpeciesAST where
   E                   == E                    = True
   C                   == C                    = True
   L                   == L                    = True
-  USubset              == USubset               = True
-  (UKSubset k)         == (UKSubset j)          = k == j
-  UElt                 == UElt                  = True
+  Subset              == Subset               = True
+  (KSubset k)         == (KSubset j)          = k == j
+  Elt                 == Elt                  = True
   (f1 :+:% g1)         == (f2 :+:% g2)          = f1 == f2 && g1 == g2
   (f1 :*:% g1)         == (f2 :*:% g2)          = f1 == f2 && g1 == g2
   (f1 :.:% g1)         == (f2 :.:% g2)          = f1 == f2 && g1 == g2
   (f1 :><:% g1)        == (f2 :><:% g2)         = f1 == f2 && g1 == g2
   (f1 :@:% g1)         == (f2 :@:% g2)          = f1 == f2 && g1 == g2
-  UDer f1              == UDer f2               = f1 == f2
-  -- note, UOfSize will always compare False since we can't compare the functions for equality
-  UOfSizeExactly f1 k1 == UOfSizeExactly f2 k2  = f1 == f2 && k1 == k2
-  UNonEmpty f1         == UNonEmpty f2          = f1 == f2
-  URec f1              == URec f2               = typeOf f1 == typeOf f2
-  UOmega               == UOmega                = True
+  Der f1              == Der f2               = f1 == f2
+  -- note, OfSize will always compare False since we can't compare the functions for equality
+  OfSizeExactly f1 k1 == OfSizeExactly f2 k2  = f1 == f2 && k1 == k2
+  NonEmpty f1         == NonEmpty f2          = f1 == f2
+  Rec f1              == Rec f2               = typeOf f1 == typeOf f2
+  Omega               == Omega                = True
   _ == _                                        = False
 
 instance Ord SpeciesAST where
@@ -64,13 +64,13 @@ instance Ord SpeciesAST where
   compare _ C = GT
   compare L _ = LT
   compare _ L = GT
-  compare USubset _ = LT
-  compare _ USubset = GT
-  compare (UKSubset j) (UKSubset k) = compare j k
-  compare (UKSubset _) _ = LT
-  compare _ (UKSubset _) = GT
-  compare UElt _ = LT
-  compare _ UElt = GT
+  compare Subset _ = LT
+  compare _ Subset = GT
+  compare (KSubset j) (KSubset k) = compare j k
+  compare (KSubset _) _ = LT
+  compare _ (KSubset _) = GT
+  compare Elt _ = LT
+  compare _ Elt = GT
   compare (f1 :+:% g1) (f2 :+:% g2) | f1 == f2 = compare g1 g2
                                     | otherwise = compare f1 f2
   compare (_ :+:% _) _ = LT
@@ -91,23 +91,23 @@ instance Ord SpeciesAST where
                                     | otherwise = compare f1 f2
   compare (_ :@:% _) _ = LT
   compare _ (_ :@:% _) = GT
-  compare (UDer f1) (UDer f2) = compare f1 f2
-  compare (UDer _) _ = LT
-  compare _ (UDer _) = GT
-  compare (UOfSize f1 p1) (UOfSize f2 p2) = compare f1 f2
-  compare (UOfSize _ _) _ = LT
-  compare _ (UOfSize _ _) = GT
-  compare (UOfSizeExactly f1 k1) (UOfSizeExactly f2 k2)
+  compare (Der f1) (Der f2) = compare f1 f2
+  compare (Der _) _ = LT
+  compare _ (Der _) = GT
+  compare (OfSize f1 p1) (OfSize f2 p2) = compare f1 f2
+  compare (OfSize _ _) _ = LT
+  compare _ (OfSize _ _) = GT
+  compare (OfSizeExactly f1 k1) (OfSizeExactly f2 k2)
     | f1 == f2 = compare k1 k2
     | otherwise = compare f1 f2
-  compare (UOfSizeExactly _ _) _ = LT
-  compare _ (UOfSizeExactly _ _) = GT
-  compare (UNonEmpty f1) (UNonEmpty f2) = compare f1 f2
-  compare (UNonEmpty _) _ = LT
-  compare _ (UNonEmpty _) = GT
-  compare (URec f1) (URec f2) = compare (show $ typeOf f1) (show $ typeOf f2)
-  compare UOmega _ = LT
-  compare _ UOmega = GT
+  compare (OfSizeExactly _ _) _ = LT
+  compare _ (OfSizeExactly _ _) = GT
+  compare (NonEmpty f1) (NonEmpty f2) = compare f1 f2
+  compare (NonEmpty _) _ = LT
+  compare _ (NonEmpty _) = GT
+  compare (Rec f1) (Rec f2) = compare (show $ typeOf f1) (show $ typeOf f2)
+  compare Omega _ = LT
+  compare _ Omega = GT
 
 instance Show SpeciesAST where
   showsPrec _ Zero                = shows (0 :: Int)
@@ -117,9 +117,9 @@ instance Show SpeciesAST where
   showsPrec _ E                   = showChar 'E'
   showsPrec _ C                   = showChar 'C'
   showsPrec _ L                   = showChar 'L'
-  showsPrec _ USubset              = showChar 'p'
-  showsPrec _ (UKSubset n)         = showChar 'p' . shows n
-  showsPrec _ (UElt)               = showChar 'e'
+  showsPrec _ Subset              = showChar 'p'
+  showsPrec _ (KSubset n)         = showChar 'p' . shows n
+  showsPrec _ (Elt)               = showChar 'e'
   showsPrec p (f :+:% g)           = showParen (p>6)  $ showsPrec 6 f
                                                      . showString " + "
                                                      . showsPrec 6 g
@@ -135,11 +135,11 @@ instance Show SpeciesAST where
   showsPrec p (f :@:% g)           = showParen (p>=7) $ showsPrec 7 f
                                                      . showString " @ "
                                                      . showsPrec 7 g
-  showsPrec p (UDer f)             = showsPrec 11 f . showChar '\''
-  showsPrec _ (UOfSize f p)        = showChar '<' .  showsPrec 0 f . showChar '>'
-  showsPrec _ (UOfSizeExactly f n) = showsPrec 11 f . shows n
-  showsPrec _ (UNonEmpty f)        = showsPrec 11 f . showChar '+'
-  showsPrec _ (URec f)             = shows f
+  showsPrec p (Der f)             = showsPrec 11 f . showChar '\''
+  showsPrec _ (OfSize f p)        = showChar '<' .  showsPrec 0 f . showChar '>'
+  showsPrec _ (OfSizeExactly f n) = showsPrec 11 f . shows n
+  showsPrec _ (NonEmpty f)        = showsPrec 11 f . showChar '+'
+  showsPrec _ (Rec f)             = shows f
 
 instance Additive.C SpeciesAST where
   zero   = Zero
@@ -157,24 +157,24 @@ instance Ring.C SpeciesAST where
   f ^ n = f * (f ^ (n-1))
 
 instance Differential.C SpeciesAST where
-  differentiate = UDer
+  differentiate = Der
 
 instance Species SpeciesAST where
   singleton     = X
   set           = E
   cycle         = C
   linOrd        = L
-  subset        = USubset
-  ksubset k     = UKSubset k
-  element       = UElt
+  subset        = Subset
+  ksubset k     = KSubset k
+  element       = Elt
   o             = (:.:%)
   cartesian     = (:><:%)
   fcomp         = (:@:%)
-  ofSize        = UOfSize
-  ofSizeExactly = UOfSizeExactly
-  nonEmpty      = UNonEmpty
-  rec           = URec
-  omega         = UOmega
+  ofSize        = OfSize
+  ofSizeExactly = OfSizeExactly
+  nonEmpty      = NonEmpty
+  rec           = Rec
+  omega         = Omega
 
 instance Show (TSpeciesAST s) where
   show = show . erase'
@@ -239,20 +239,20 @@ reflectU X                   = singleton
 reflectU E                   = set
 reflectU C                   = cycle
 reflectU L                   = linOrd
-reflectU USubset              = subset
-reflectU (UKSubset k)         = ksubset k
-reflectU UElt                 = element
+reflectU Subset              = subset
+reflectU (KSubset k)         = ksubset k
+reflectU Elt                 = element
 reflectU (f :+:% g)           = reflectU f + reflectU g
 reflectU (f :*:% g)           = reflectU f * reflectU g
 reflectU (f :.:% g)           = reflectU f `o` reflectU g
 reflectU (f :><:% g)          = reflectU f >< reflectU g
 reflectU (f :@:% g)           = reflectU f @@ reflectU g
-reflectU (UDer f)             = oneHole (reflectU f)
-reflectU (UOfSize f p)        = ofSize (reflectU f) p
-reflectU (UOfSizeExactly f n) = ofSizeExactly (reflectU f) n
-reflectU (UNonEmpty f)        = nonEmpty (reflectU f)
-reflectU (URec f)             = rec f
-reflectU UOmega               = omega
+reflectU (Der f)             = oneHole (reflectU f)
+reflectU (OfSize f p)        = ofSize (reflectU f) p
+reflectU (OfSizeExactly f n) = ofSizeExactly (reflectU f) n
+reflectU (NonEmpty f)        = nonEmpty (reflectU f)
+reflectU (Rec f)             = rec f
+reflectU Omega               = omega
 
 reflectT :: Species s => TSpeciesAST f -> s
 reflectT = reflectU . erase'
