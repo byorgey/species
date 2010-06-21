@@ -87,8 +87,8 @@ enumerate' TSubset xs            = map (Set . MS.toList . fst) (MS.splits xs)
 enumerate' (TKSubset k) xs       = map (Set . MS.toList)
                                       (MS.kSubsets (fromIntegral k) xs)
 enumerate' TElt xs               = map (Id . fst) . MS.toCounts $ xs
-enumerate' (f :+: g) xs         = map Inl (enumerate' (stripI f) xs)
-                               ++ map Inr (enumerate' (stripI g) xs)
+enumerate' (f :+:: g) xs         = map Inl (enumerate' (stripI f) xs)
+                                ++ map Inr (enumerate' (stripI g) xs)
 
   -- XXX working here.  Need to change this to use the annotations
   -- which are now contained in f and g.  I suppose MS.splits should
@@ -99,32 +99,32 @@ enumerate' (f :+: g) xs         = map Inl (enumerate' (stripI f) xs)
 
   -- XXX use multiset operations instead of 'length'
 
-enumerate' (f :*: g) xs         = [ Prod x y
-                                  | (s1,s2) <- MS.splits xs
-                                  ,            (fromIntegral $ MS.size s1) `I.elem` (getI f)
-                                  ,            (fromIntegral $ MS.size s2) `I.elem` (getI g)
-                                  ,       x <- enumerate' (stripI f) s1
-                                  ,       y <- enumerate' (stripI g) s2
-                                  ]
-enumerate' (f :.: g) xs         = [ Comp y
-                                  | p   <- MS.partitions xs
-                                  ,        (fromIntegral $ MS.size p) `I.elem` (getI f)
-                                  ,        all ((`I.elem` (getI g)) . fromIntegral . MS.size) (MS.toList p)
-                                  , xs' <- MS.sequenceMS . fmap (enumerate' (stripI g)) $ p
-                                  , y   <- enumerate' (stripI f) xs'
-                                  ]
-enumerate' (f :><: g) xs        = [ Prod x y
-                                  | x <- enumerate' (stripI f) xs
-                                  , y <- enumerate' (stripI g) xs
-                                  ]
-enumerate' (f :@: g) xs         = map Comp
-                                  . enumerate' (stripI f)
-                                  . MS.fromDistinctList
-                                  . enumerate' (stripI g)
-                                  $ xs
+enumerate' (f :*:: g) xs         = [ Prod x y
+                                   | (s1,s2) <- MS.splits xs
+                                   ,            (fromIntegral $ MS.size s1) `I.elem` (getI f)
+                                   ,            (fromIntegral $ MS.size s2) `I.elem` (getI g)
+                                   ,       x <- enumerate' (stripI f) s1
+                                   ,       y <- enumerate' (stripI g) s2
+                                   ]
+enumerate' (f :.:: g) xs         = [ Comp y
+                                   | p   <- MS.partitions xs
+                                   ,        (fromIntegral $ MS.size p) `I.elem` (getI f)
+                                   ,        all ((`I.elem` (getI g)) . fromIntegral . MS.size) (MS.toList p)
+                                   , xs' <- MS.sequenceMS . fmap (enumerate' (stripI g)) $ p
+                                   , y   <- enumerate' (stripI f) xs'
+                                   ]
+enumerate' (f :><:: g) xs        = [ Prod x y
+                                   | x <- enumerate' (stripI f) xs
+                                   , y <- enumerate' (stripI g) xs
+                                   ]
+enumerate' (f :@:: g) xs         = map Comp
+                                   . enumerate' (stripI f)
+                                   . MS.fromDistinctList
+                                   . enumerate' (stripI g)
+                                   $ xs
 enumerate' (TDer f) xs           = map Comp
-                                  . enumerate' (stripI f)
-                                  $ (Star,1) +: fmap Original xs
+                                   . enumerate' (stripI f)
+                                   $ (Star,1) +: fmap Original xs
 enumerate' (TNonEmpty f) (MS []) = []
 enumerate' (TNonEmpty f) xs      = enumerate' (stripI f) xs
 enumerate' (TRec f) xs           = map Mu $ enumerate' (apply f (TRec f)) xs

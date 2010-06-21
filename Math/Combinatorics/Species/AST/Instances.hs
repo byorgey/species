@@ -184,11 +184,11 @@ instance Show ESpeciesAST where
 
 instance Additive.C ESpeciesAST where
   zero   = wrap TZero
-  Wrap f + Wrap g = wrap $ f :+: g
+  Wrap f + Wrap g = wrap $ f :+:: g
   negate = error "negation is not implemented yet!  wait until virtual species..."
 
 instance Ring.C ESpeciesAST where
-  Wrap f * Wrap g = wrap $ f :*: g
+  Wrap f * Wrap g = wrap $ f :*:: g
   one = wrap TOne
   fromInteger 0 = zero
   fromInteger 1 = one
@@ -196,7 +196,7 @@ instance Ring.C ESpeciesAST where
   _ ^ 0 = one
   w@(Wrap{}) ^ 1 = w
   (Wrap f) ^ n   = case (Wrap f) ^ (n-1) of
-                        (Wrap f') -> wrap $ f :*: f'
+                        (Wrap f') -> wrap $ f :*:: f'
 
 instance Differential.C ESpeciesAST where
   differentiate (Wrap f) = wrap (TDer f)
@@ -209,9 +209,9 @@ instance Species ESpeciesAST where
   subset                            = wrap TSubset
   ksubset k                         = wrap $ TKSubset k
   element                           = wrap TElt
-  o (Wrap f) (Wrap g)               = wrap $ f :.: g
-  cartesian (Wrap f) (Wrap g)       = wrap $ f :><: g
-  fcomp (Wrap f) (Wrap g)           = wrap $ f :@: g
+  o (Wrap f) (Wrap g)               = wrap $ f :.:: g
+  cartesian (Wrap f) (Wrap g)       = wrap $ f :><:: g
+  fcomp (Wrap f) (Wrap g)           = wrap $ f :@:: g
   ofSize (Wrap f) p                 = wrap $ TOfSize f p
   ofSizeExactly (Wrap f) n          = wrap $ TOfSizeExactly f n
   nonEmpty (Wrap f)                 = wrap $ TNonEmpty f

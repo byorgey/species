@@ -60,11 +60,11 @@ data TSpeciesAST (s :: * -> *) where
    TSubset   :: TSpeciesAST Set
    TKSubset  :: Integer -> TSpeciesAST Set
    TElt      :: TSpeciesAST Id
-   (:+:)    :: SizedSpeciesAST f -> SizedSpeciesAST g -> TSpeciesAST (Sum f g)
-   (:*:)    :: SizedSpeciesAST f -> SizedSpeciesAST g -> TSpeciesAST (Prod f g)
-   (:.:)    :: SizedSpeciesAST f -> SizedSpeciesAST g -> TSpeciesAST (Comp f g)
-   (:><:)   :: SizedSpeciesAST f -> SizedSpeciesAST g -> TSpeciesAST (Prod f g)
-   (:@:)    :: SizedSpeciesAST f -> SizedSpeciesAST g -> TSpeciesAST (Comp f g)
+   (:+::)    :: SizedSpeciesAST f -> SizedSpeciesAST g -> TSpeciesAST (Sum f g)
+   (:*::)    :: SizedSpeciesAST f -> SizedSpeciesAST g -> TSpeciesAST (Prod f g)
+   (:.::)    :: SizedSpeciesAST f -> SizedSpeciesAST g -> TSpeciesAST (Comp f g)
+   (:><::)   :: SizedSpeciesAST f -> SizedSpeciesAST g -> TSpeciesAST (Prod f g)
+   (:@::)    :: SizedSpeciesAST f -> SizedSpeciesAST g -> TSpeciesAST (Comp f g)
    TDer      :: SizedSpeciesAST f -> TSpeciesAST (Comp f Star)
    TOfSize   :: SizedSpeciesAST f -> (Integer -> Bool) -> TSpeciesAST f
    TOfSizeExactly :: SizedSpeciesAST f -> Integer -> TSpeciesAST f
@@ -90,11 +90,11 @@ interval TL                   = natsI
 interval TSubset              = natsI
 interval (TKSubset k)         = fromI (fromInteger k)
 interval TElt                 = fromI 1
-interval (f :+: g)           = getI f `I.union` getI g
-interval (f :*: g)           = getI f + getI g
-interval (f :.: g)           = getI f * getI g
-interval (f :><: g)          = getI f `I.intersect` getI g
-interval (f :@: g)           = natsI
+interval (f :+:: g)           = getI f `I.union` getI g
+interval (f :*:: g)           = getI f + getI g
+interval (f :.:: g)           = getI f * getI g
+interval (f :><:: g)          = getI f `I.intersect` getI g
+interval (f :@:: g)           = natsI
     -- Note, the above interval for functor composition is obviously
     -- overly conservative.  To do this right we'd have to compute the
     -- generating function for g --- and actually it would depend on
@@ -225,11 +225,11 @@ erase' TL                   = UL
 erase' TSubset              = USubset
 erase' (TKSubset k)         = UKSubset k
 erase' TElt                 = UElt
-erase' (f :+: g)           = erase' (stripI f) :+:% erase' (stripI g)
-erase' (f :*: g)           = erase' (stripI f) :*:% erase' (stripI g)
-erase' (f :.: g)           = erase' (stripI f) :.:% erase' (stripI g)
-erase' (f :><: g)          = erase' (stripI f) :><:% erase' (stripI g)
-erase' (f :@: g)           = erase' (stripI f) :@:% erase' (stripI g)
+erase' (f :+:: g)           = erase' (stripI f) :+:% erase' (stripI g)
+erase' (f :*:: g)           = erase' (stripI f) :*:% erase' (stripI g)
+erase' (f :.:: g)           = erase' (stripI f) :.:% erase' (stripI g)
+erase' (f :><:: g)          = erase' (stripI f) :><:% erase' (stripI g)
+erase' (f :@:: g)           = erase' (stripI f) :@:% erase' (stripI g)
 erase' (TDer f)             = UDer . erase' . stripI $ f
 erase' (TOfSize f p)        = UOfSize (erase' . stripI $ f) p
 erase' (TOfSizeExactly f k) = UOfSizeExactly (erase' . stripI $ f) k
@@ -250,15 +250,15 @@ unerase USubset              = wrap TSubset
 unerase (UKSubset k)         = wrap (TKSubset k)
 unerase UElt                 = wrap TElt
 unerase (f :+:% g)           = unerase f + unerase g
-  where Wrap f + Wrap g      = wrap $ f :+: g
+  where Wrap f + Wrap g      = wrap $ f :+:: g
 unerase (f :*:% g)           = unerase f * unerase g
-  where Wrap f * Wrap g      = wrap $ f :*: g
+  where Wrap f * Wrap g      = wrap $ f :*:: g
 unerase (f :.:% g)           = unerase f . unerase g
-  where Wrap f . Wrap g      = wrap $ f :.: g
+  where Wrap f . Wrap g      = wrap $ f :.:: g
 unerase (f :><:% g)          = unerase f >< unerase g
-  where Wrap f >< Wrap g     = wrap $ f :><: g
+  where Wrap f >< Wrap g     = wrap $ f :><:: g
 unerase (f :@:% g)           = unerase f @@ unerase g
-  where Wrap f @@ Wrap g     = wrap $ f :@: g
+  where Wrap f @@ Wrap g     = wrap $ f :@:: g
 unerase (UDer f)             = der $ unerase f
   where der (Wrap f)         = wrap (TDer f)
 unerase (UOfSize f p)        = ofSize $ unerase f
