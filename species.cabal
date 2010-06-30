@@ -1,5 +1,5 @@
 name:           species
-version:        0.3
+version:        0.3.0.1
 license:        BSD3
 license-file:   LICENSE
 build-type:     Simple
@@ -21,7 +21,7 @@ source-repository head
 Library
   build-depends: base >= 3 && < 5, numeric-prelude >= 0.1.1 && < 0.2,
                  np-extras >= 0.2.0.2 && < 0.3, containers >= 0.2 && < 0.4,
-                 multiset-comb >= 0.2,
+                 multiset-comb >= 0.2.1,
                  template-haskell >= 2.4 && < 2.5
   exposed-modules:
     Math.Combinatorics.Species
