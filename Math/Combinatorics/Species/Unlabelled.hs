@@ -17,19 +17,19 @@ import qualified Algebra.Differential as Differential
 import NumericPrelude
 import PreludeBase hiding (cycle)
 
-needsCI :: String -> a
-needsCI op = error ("unlabelled " ++ op ++ " must go via cycle index series.")
+ciErr :: String -> a
+ciErr op = error ("unlabelled " ++ op ++ " must go via cycle index series.")
 
 instance Differential.C GF where
-  differentiate = needsCI "differentiation"
+  differentiate = ciErr "differentiation"
 
 instance Species GF where
   singleton         = gfFromCoeffs [0,1]
   set               = gfFromCoeffs (repeat 1)
   cycle             = set
-  o                 = needsCI "composition"
-  cartesian         = needsCI "cartesian product"
-  fcomp             = needsCI "functor composition"
+  o                 = ciErr "composition"
+  cartesian         = ciErr "cartesian product"
+  fcomp             = ciErr "functor composition"
   ofSize s p        = (liftGF . PS.lift1 $ filterCoeffs p) s
   ofSizeExactly s n = (liftGF . PS.lift1 $ selectIndex n) s
 
@@ -66,5 +66,5 @@ unlabelledCoeffs (GF p) = PS.coeffs p ++ repeat 0
 --   generating functions as appropriate.
 unlabelled :: ESpeciesAST -> [Integer]
 unlabelled s
-  | needsZE s  = unlabelledCoeffs . zToGF . reflect $ s
+  | needsZ $ erase s  = unlabelledCoeffs . zToGF . reflect $ s
   | otherwise = unlabelledCoeffs . reflect $ s

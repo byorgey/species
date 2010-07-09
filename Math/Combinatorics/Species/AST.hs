@@ -29,7 +29,7 @@ module Math.Combinatorics.Species.AST
 
       -- * Miscellaneous AST operations
 
-    , needsZ, needsZE
+    , needsZ
 
     , substRec
 
@@ -301,10 +301,6 @@ needsZ (OfSizeExactly f _) = needsZ f
 needsZ (NonEmpty f) = needsZ f
 needsZ (Rec _)      = True    -- Newton-Raphson iteration uses composition
 needsZ _             = False
-
--- | A version of 'needsZ' for 'ESpeciesAST'.
-needsZE :: ESpeciesAST -> Bool
-needsZE = needsZ . erase
 
 -- | Substitute an expression for recursive occurrences.
 substRec :: ASTFunctor f => f -> SpeciesAST -> SpeciesAST -> SpeciesAST
