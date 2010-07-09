@@ -29,7 +29,7 @@ module Math.Combinatorics.Species.AST
 
       -- * Miscellaneous AST operations
 
-    , needsZ
+    , needsCI
 
     , substRec
 
@@ -283,24 +283,24 @@ class (Typeable f, Show f, Typeable1 (Interp f (Mu f))) => ASTFunctor f where
 --  Miscellaneous AST operations  --------------------------
 ------------------------------------------------------------
 
--- | 'needsZ' is a predicate which checks whether a species expression
+-- | 'needsCI' is a predicate which checks whether a species expression
 --   uses any of the operations which are not supported directly by
 --   ordinary generating functions (composition, differentiation,
 --   cartesian product, and functor composition), and hence need cycle
 --   index series.
-needsZ :: SpeciesAST -> Bool
-needsZ L            = True
-needsZ (f :+: g)    = needsZ f || needsZ g
-needsZ (f :*: g)    = needsZ f || needsZ g
-needsZ (_ :.: _)    = True
-needsZ (_ :><: _)   = True
-needsZ (_ :@: _)    = True
-needsZ (Der _)      = True
-needsZ (OfSize f _) = needsZ f
-needsZ (OfSizeExactly f _) = needsZ f
-needsZ (NonEmpty f) = needsZ f
-needsZ (Rec _)      = True    -- Newton-Raphson iteration uses composition
-needsZ _             = False
+needsCI :: SpeciesAST -> Bool
+needsCI L            = True
+needsCI (f :+: g)    = needsCI f || needsCI g
+needsCI (f :*: g)    = needsCI f || needsCI g
+needsCI (_ :.: _)    = True
+needsCI (_ :><: _)   = True
+needsCI (_ :@: _)    = True
+needsCI (Der _)      = True
+needsCI (OfSize f _) = needsCI f
+needsCI (OfSizeExactly f _) = needsCI f
+needsCI (NonEmpty f) = needsCI f
+needsCI (Rec _)      = True    -- Newton-Raphson iteration uses composition
+needsCI _            = False
 
 -- | Substitute an expression for recursive occurrences.
 substRec :: ASTFunctor f => f -> SpeciesAST -> SpeciesAST -> SpeciesAST

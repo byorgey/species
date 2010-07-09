@@ -66,5 +66,5 @@ unlabelledCoeffs (GF p) = PS.coeffs p ++ repeat 0
 --   generating functions as appropriate.
 unlabelled :: ESpeciesAST -> [Integer]
 unlabelled s
-  | needsZ $ erase s  = unlabelledCoeffs . zToGF . reflect $ s
+  | needsCI $ erase s  = unlabelledCoeffs . zToGF . reflect $ s
   | otherwise = unlabelledCoeffs . reflect $ s
