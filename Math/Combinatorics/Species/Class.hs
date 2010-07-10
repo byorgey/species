@@ -1,9 +1,20 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 
--- | The Species type class, which defines a small DSL for describing
---   combinatorial species.  Other modules in this library provide
---   specific instances which allow computing various properties of
---   combinatorial species.
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Math.Combinatorics.Species.Class
+-- Copyright   :  (c) Brent Yorgey 2010
+-- License     :  BSD-style (see LICENSE)
+-- Maintainer  :  byorgey@cis.upenn.edu
+-- Stability   :  experimental
+--
+-- The Species type class, which defines a small DSL for describing
+-- combinatorial species.  Other modules in this library provide
+-- specific instances which allow computing various properties of
+-- combinatorial species.
+--
+-----------------------------------------------------------------------------
+
 module Math.Combinatorics.Species.Class
     (
       -- * The Species type class
@@ -61,65 +72,58 @@ import Math.Combinatorics.Species.AST
 --   notation for composition, and also to be read as an abbreviation
 --   for \"of\", as in \"top o' the mornin'\": @set \`o\` nonEmpty
 --   sets@.
---
---   In this version of the library, 'Species' has four instances:
---   'EGF' (exponential generating functions, for counting labelled
---   structures), 'GF' (ordinary generating function, for counting
---   unlabelled structures), 'CycleIndex' (cycle index series, a
---   generalization of both 'EGF' and 'GF'), and 'ESpeciesAST' (reified
---   species expressions).
 class (Differential.C s) => Species s where
 
-  -- | The species TX of singletons. TX puts a singleton structure on an
-  --   underlying set of size 1, and no structures on any other
-  --   underlying sets.
+  -- | The species @X@ of singletons. Puts a singleton structure on an
+  --   underlying label set of size 1, and no structures on any other
+  --   underlying label sets.  'x' is also provided as a synonym.
   singleton :: s
 
-  -- | The species TE of sets.  TE puts a singleton structure on any
-  --   underlying set.
-  set       :: s
+  -- | The species @E@ of sets.  Puts a singleton structure on /any/
+  --   underlying label set.
+  set :: s
 
-  -- | The species C of cyclical orderings (cycles/rings).
-  cycle     :: s
+  -- | The species @C@ of cyclical orderings (cycles/rings).
+  cycle :: s
 
-  -- | The species TL of linear orderings (lists): since linear
+  -- | The species @L@ of linear orderings (lists). Since linear
   --   orderings are isomorphic to cyclic orderings with a hole, we
-  --   may take TL = C' as the default implementation; linOrd is
-  --   included in the 'Species' class so it can be special-cased for
-  --   enumeration.
-  linOrd    :: s
+  --   may take @'linOrd' = 'oneHole' 'cycle'@ as the default
+  --   implementation; 'linOrd' is included in the 'Species' class so it
+  --   can be special-cased for enumeration.
+  linOrd :: s
   linOrd = oneHole cycle
 
-  -- | The species p of subsets is given by p = TE * TE. 'subset' has a
-  --   default implementation of @set * set@, but is included in the
-  --   'Species' class so it can be overridden when enumerating
-  --   structures: since subset is defined as @set * set@, the
-  --   enumeration code by default generates a pair of the subset and
-  --   its complement, but normally when thinking about subsets we
-  --   only want to see the elements in the subset.  To explicitly
-  --   enumerate subset/complement pairs, you can use @set * set@
+  -- | The species @p@ of subsets is given by @'subset' = 'set' *
+  --   'set'@. 'subset' is included in the 'Species' class so it can
+  --   be overridden when enumerating structures: by default the
+  --   enumeration code would generate a pair of the subset and its
+  --   complement, but normally when thinking about subsets we only
+  --   want to see the elements in the subset.  To explicitly
+  --   enumerate subset/complement pairs, you can use @'set' * 'set'@
   --   directly.
   subset :: s
   subset = set * set
 
-  -- | Subsets of size exactly k, p[k] = E_k * TE.  Included with a
-  --   default definition in the 'Species' class for the same reason
-  --   as 'subset'.
+  -- | Subsets of size exactly k, @'ksubset' k = ('set'
+  -- ``ofSizeExactly`` k) * 'set'@.  Included with a default definition
+  -- in the 'Species' class for the same reason as 'subset'.
   ksubset :: Integer -> s
   ksubset k = (set `ofSizeExactly` k) * set
 
-  -- | Structures of the species e of elements are just elements of
-  --   the underlying set: e = TX * TE.  Included with a default
-  --   definition in 'Species' class for the same reason as 'subset'
-  --   and 'ksubset'.
+  -- | Structures of the species @e@ of elements are just elements of
+  --   the underlying set, @'element' = 'singleton' * 'set'@.  Included
+  --   with a default definition in 'Species' class for the same
+  --   reason as 'subset' and 'ksubset'.
   element :: s
-  element = x * set
+  element = singleton * set
 
-  -- | Partitional composition.  To form all (F o G)-structures on the
-  --   underlying set U, first form all set partitions of U; for each
-  --   partition p, put an F-structure on the classes of p, and a
-  --   separate G-structure on the elements in each class.
-  o         :: s -> s -> s
+  -- | Partitional composition.  To form all @(f ``o`` g)@-structures on
+  --   the underlying label set U, first form all set partitions of U;
+  --   for each partition @p@, put an @f@-structure on the classes of
+  --   @p@, and a separate @g@-structure on the elements in each
+  --   class.
+  o :: s -> s -> s
 
   -- | Cartisian product of two species.  An (F x G)-structure
   --   consists of an F structure superimposed on a G structure over
@@ -128,11 +132,11 @@ class (Differential.C s) => Species s where
 
   -- | Functor composition of two species.  An (F \@\@ G)-structure
   --   consists of an F-structure on the set of all G-structures.
-  fcomp     :: s -> s -> s
+  fcomp :: s -> s -> s
 
   -- | Only put a structure on underlying sets whose size satisfies
   --   the predicate.
-  ofSize    :: s -> (Integer -> Bool) -> s
+  ofSize :: s -> (Integer -> Bool) -> s
 
   -- | Only put a structure on underlying sets of the given size.  A
   --   default implementation of @ofSize (==k)@ is provided, but this
@@ -146,14 +150,14 @@ class (Differential.C s) => Species s where
   --   uses 'ofSize'; included in the 'Species' class so it can be
   --   overriden in special cases (such as when reifying species
   --   expressions).
-  nonEmpty  :: s -> s
+  nonEmpty :: s -> s
   nonEmpty = flip ofSize (>0)
 
   -- | 'rec f' is the least fixpoint of (the interpretation of) the
   --   higher-order species constructor 'f'.
   rec :: ASTFunctor f => f -> s
 
-  -- XXX  don't export this!
+  -- XXX don't export this!
   omega :: s
 
 -- | A convenient synonym for differentiation.  F'-structures look
