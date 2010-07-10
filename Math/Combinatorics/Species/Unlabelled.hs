@@ -64,7 +64,7 @@ unlabelledCoeffs (GF p) = PS.coeffs p ++ repeat 0
 --   operations are used in its definition, and then choosing to work
 --   with cycle index series or directly with (much faster) ordinary
 --   generating functions as appropriate.
-unlabelled :: ESpeciesAST -> [Integer]
+unlabelled :: SpeciesAST -> [Integer]
 unlabelled s
-  | needsCI $ erase s  = unlabelledCoeffs . zToGF . reflect $ s
+  | needsCI s = unlabelledCoeffs . zToGF . reflect $ s
   | otherwise = unlabelledCoeffs . reflect $ s
