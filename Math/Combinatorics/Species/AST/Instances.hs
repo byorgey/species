@@ -1,9 +1,20 @@
 {-# LANGUAGE GADTs #-}
 
--- | Type class instances for 'TSpeciesAST', 'ESpeciesAST', and
---   'SpeciesAST', in a separate module to avoid a dependency cycle
---   between "Math.Combinatorics.Species.AST" and
---   "Math.Combinatorics.Species.Class".
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Math.Combinatorics.Species.AST.Instances
+-- Copyright   :  (c) Brent Yorgey 2010
+-- License     :  BSD-style (see LICENSE)
+-- Maintainer  :  byorgey@cis.upenn.edu
+-- Stability   :  experimental
+--
+-- Type class instances for 'TSpeciesAST', 'ESpeciesAST', and
+-- 'SpeciesAST', in a separate module to avoid a dependency cycle
+-- between "Math.Combinatorics.Species.AST" and
+-- "Math.Combinatorics.Species.Class".
+--
+-----------------------------------------------------------------------------
+
 module Math.Combinatorics.Species.AST.Instances
     ( reify, reflectT, reflectU, reflect )
     where
@@ -23,6 +34,14 @@ import qualified Algebra.Differential as Differential
 import Data.Typeable
 
 -- grr -- can't autoderive this because of Rec constructor! =P
+
+-- | Species expressions can be compared for /structural/ equality.
+--   (Note that if @s1@ and @s2@ are /isomorphic/ species we do not
+--   necessarily have @s1 == s2@.)
+--
+--   Note, however, that species containing an 'OfSize' constructor
+--   will always compare as @False@ with any other species, since we
+--   cannot decide function equality.
 instance Eq SpeciesAST where
   Zero                == Zero                 = True
   One                 == One                  = True
@@ -45,69 +64,73 @@ instance Eq SpeciesAST where
   NonEmpty f1         == NonEmpty f2          = f1 == f2
   Rec f1              == Rec f2               = typeOf f1 == typeOf f2
   Omega               == Omega                = True
-  _ == _                                        = False
+  _ == _                                      = False
 
+-- | An (arbitrary) 'Ord' instance, so that we can put species
+--   expressions in canonical order when simplifying.
 instance Ord SpeciesAST where
-  compare x y | x == y = EQ
-  compare Zero _ = LT
-  compare _ Zero = GT
-  compare One _     = LT
-  compare _ One     = GT
-  compare (N m) (N n) = compare m n
-  compare (N _) _ = LT
-  compare _ (N _) = GT
-  compare X _ = LT
-  compare _ X = GT
-  compare E _ = LT
-  compare _ E = GT
-  compare C _ = LT
-  compare _ C = GT
-  compare L _ = LT
-  compare _ L = GT
-  compare Subset _ = LT
-  compare _ Subset = GT
-  compare (KSubset j) (KSubset k) = compare j k
-  compare (KSubset _) _ = LT
-  compare _ (KSubset _) = GT
-  compare Elt _ = LT
-  compare _ Elt = GT
-  compare (f1 :+: g1) (f2 :+: g2) | f1 == f2 = compare g1 g2
+  compare x y  | x == y             = EQ
+  compare Zero _                    = LT
+  compare _ Zero                    = GT
+  compare One _                     = LT
+  compare _ One                     = GT
+  compare (N m) (N n)               = compare m n
+  compare (N _) _                   = LT
+  compare _ (N _)                   = GT
+  compare X _                       = LT
+  compare _ X                       = GT
+  compare E _                       = LT
+  compare _ E                       = GT
+  compare C _                       = LT
+  compare _ C                       = GT
+  compare L _                       = LT
+  compare _ L                       = GT
+  compare Subset _                  = LT
+  compare _ Subset                  = GT
+  compare (KSubset j) (KSubset k)   = compare j k
+  compare (KSubset _) _             = LT
+  compare _ (KSubset _)             = GT
+  compare Elt _                     = LT
+  compare _ Elt                     = GT
+  compare (f1 :+: g1) (f2 :+: g2)   | f1 == f2  = compare g1 g2
                                     | otherwise = compare f1 f2
-  compare (_ :+: _) _ = LT
-  compare _ (_ :+: _) = GT
-  compare (f1 :*: g1) (f2 :*: g2) | f1 == f2 = compare g1 g2
+  compare (_ :+: _) _               = LT
+  compare _ (_ :+: _)               = GT
+  compare (f1 :*: g1) (f2 :*: g2)   | f1 == f2  = compare g1 g2
                                     | otherwise = compare f1 f2
-  compare (_ :*: _) _ = LT
-  compare _ (_ :*: _) = GT
-  compare (f1 :.: g1) (f2 :.: g2) | f1 == f2 = compare g1 g2
+  compare (_ :*: _) _               = LT
+  compare _ (_ :*: _)               = GT
+  compare (f1 :.: g1) (f2 :.: g2)   | f1 == f2  = compare g1 g2
                                     | otherwise = compare f1 f2
-  compare (_ :.: _) _ = LT
-  compare _ (_ :.: _) = GT
-  compare (f1 :><: g1) (f2 :><: g2) | f1 == f2 = compare g1 g2
-                                      | otherwise = compare f1 f2
-  compare (_ :><: _) _ = LT
-  compare _ (_ :><: _) = GT
-  compare (f1 :@: g1) (f2 :@: g2) | f1 == f2 = compare g1 g2
+  compare (_ :.: _) _               = LT
+  compare _ (_ :.: _)               = GT
+  compare (f1 :><: g1) (f2 :><: g2) | f1 == f2  = compare g1 g2
                                     | otherwise = compare f1 f2
-  compare (_ :@: _) _ = LT
-  compare _ (_ :@: _) = GT
-  compare (Der f1) (Der f2) = compare f1 f2
-  compare (Der _) _ = LT
-  compare _ (Der _) = GT
-  compare (OfSize f1 p1) (OfSize f2 p2) = compare f1 f2
-  compare (OfSize _ _) _ = LT
-  compare _ (OfSize _ _) = GT
+  compare (_ :><: _) _              = LT
+  compare _ (_ :><: _)              = GT
+  compare (f1 :@: g1) (f2 :@: g2)   | f1 == f2  = compare g1 g2
+                                    | otherwise = compare f1 f2
+  compare (_ :@: _) _               = LT
+  compare _ (_ :@: _)               = GT
+  compare (Der f1) (Der f2)         = compare f1 f2
+  compare (Der _) _                 = LT
+  compare _ (Der _)                 = GT
+  compare (OfSize f1 p1) (OfSize f2 p2)
+                                    = compare f1 f2
+  compare (OfSize _ _) _            = LT
+  compare _ (OfSize _ _)            = GT
   compare (OfSizeExactly f1 k1) (OfSizeExactly f2 k2)
-    | f1 == f2 = compare k1 k2
-    | otherwise = compare f1 f2
-  compare (OfSizeExactly _ _) _ = LT
-  compare _ (OfSizeExactly _ _) = GT
-  compare (NonEmpty f1) (NonEmpty f2) = compare f1 f2
-  compare (NonEmpty _) _ = LT
-  compare _ (NonEmpty _) = GT
-  compare (Rec f1) (Rec f2) = compare (show $ typeOf f1) (show $ typeOf f2)
-  compare Omega _ = LT
-  compare _ Omega = GT
+                                    | f1 == f2  = compare k1 k2
+                                    | otherwise = compare f1 f2
+  compare (OfSizeExactly _ _) _     = LT
+  compare _ (OfSizeExactly _ _)     = GT
+  compare (NonEmpty f1) (NonEmpty f2)
+                                    = compare f1 f2
+  compare (NonEmpty _) _            = LT
+  compare _ (NonEmpty _)            = GT
+  compare (Rec f1) (Rec f2)         = compare (show $ typeOf f1) (show $ typeOf f2)
+  compare Omega _                   = LT
+  compare _ Omega                   = GT
 
 instance Show SpeciesAST where
   showsPrec _ Zero                = shows (0 :: Int)
