@@ -16,7 +16,7 @@
 -----------------------------------------------------------------------------
 
 module Math.Combinatorics.Species.AST.Instances
-    ( reify, reflectT, reflectU, reflect )
+    ( reify, reifyE, reflect, reflectT, reflectE )
     where
 
 import NumericPrelude
@@ -32,6 +32,10 @@ import qualified Algebra.Ring as Ring
 import qualified Algebra.Differential as Differential
 
 import Data.Typeable
+
+------------------------------------------------------------
+--  SpeciesAST instances  ----------------------------------
+------------------------------------------------------------
 
 -- grr -- can't autoderive this because of Rec constructor! =P
 
@@ -66,6 +70,8 @@ instance Eq SpeciesAST where
   Omega               == Omega                = True
   _ == _                                      = False
 
+
+-- argh, can't derive this either.  ugh.
 -- | An (arbitrary) 'Ord' instance, so that we can put species
 --   expressions in canonical order when simplifying.
 instance Ord SpeciesAST where
@@ -132,6 +138,10 @@ instance Ord SpeciesAST where
   compare Omega _                   = LT
   compare _ Omega                   = GT
 
+-- | Display species expressions in a nice human-readable form.  Note
+--   that we commit the unforgivable sin of omitting a corresponding
+--   Read instance.  This will hopefully be remedied in a future
+--   version.
 instance Show SpeciesAST where
   showsPrec _ Zero                = shows (0 :: Int)
   showsPrec _ One                 = shows (1 :: Int)
@@ -164,11 +174,15 @@ instance Show SpeciesAST where
   showsPrec _ (NonEmpty f)        = showsPrec 11 f . showChar '+'
   showsPrec _ (Rec f)             = shows f
 
+-- | Species expressions are additive.
 instance Additive.C SpeciesAST where
   zero   = Zero
   (+)    = (:+:)
   negate = error "negation is not implemented yet!  wait until virtual species..."
 
+-- | Species expressions form a ring.  Well, sort of.  Of course the
+--   ring laws actually only hold up to isomorphism of species, not up
+--   to structural equality.
 instance Ring.C SpeciesAST where
   (*) = (:*:)
   one = One
@@ -179,9 +193,12 @@ instance Ring.C SpeciesAST where
   w ^ 1 = w
   f ^ n = f * (f ^ (n-1))
 
+-- | Species expressions are differentiable.
 instance Differential.C SpeciesAST where
   differentiate = Der
 
+-- | Species expressions are an instance of the 'Species' class, so we
+--   can use the Species class DSL to build species expression ASTs.
 instance Species SpeciesAST where
   singleton     = X
   set           = E
@@ -241,45 +258,55 @@ instance Species ESpeciesAST where
   rec f                             = wrap $ TRec f
   omega                             = wrap TOmega
 
--- | Reify a species expression into an AST.  Of course, this is just
---   the identity function with a usefully restricted type.  For
+------------------------------------------------------------
+--  Reify/reflect  -----------------------------------------
+------------------------------------------------------------
+
+-- | Reify a species expression into an AST.  (Actually, this is just
+--   the identity function with a usefully restricted type!)  For
 --   example:
 --
 -- > > reify octopus
 -- > C . TL+
 -- > > reify (ksubset 3)
 -- > E3 * TE
-
-reify :: ESpeciesAST -> ESpeciesAST
+reify :: SpeciesAST -> SpeciesAST
 reify = id
 
--- | Reflect an AST back into any instance of the 'Species' class.
-reflectU :: Species s => SpeciesAST -> s
-reflectU Zero                = 0
-reflectU One                 = 1
-reflectU (N n)               = fromInteger n
-reflectU X                   = singleton
-reflectU E                   = set
-reflectU C                   = cycle
-reflectU L                   = linOrd
-reflectU Subset              = subset
-reflectU (KSubset k)         = ksubset k
-reflectU Elt                 = element
-reflectU (f :+: g)           = reflectU f + reflectU g
-reflectU (f :*: g)           = reflectU f * reflectU g
-reflectU (f :.: g)           = reflectU f `o` reflectU g
-reflectU (f :><: g)          = reflectU f >< reflectU g
-reflectU (f :@: g)           = reflectU f @@ reflectU g
-reflectU (Der f)             = oneHole (reflectU f)
-reflectU (OfSize f p)        = ofSize (reflectU f) p
-reflectU (OfSizeExactly f n) = ofSizeExactly (reflectU f) n
-reflectU (NonEmpty f)        = nonEmpty (reflectU f)
-reflectU (Rec f)             = rec f
-reflectU Omega               = omega
+-- | The same as reify, but produce a typed, size-annotated AST.
+reifyE :: ESpeciesAST -> ESpeciesAST
+reifyE = id
 
+-- | Reflect an AST back into any instance of the 'Species' class.
+reflect :: Species s => SpeciesAST -> s
+reflect Zero                = 0
+reflect One                 = 1
+reflect (N n)               = fromInteger n
+reflect X                   = singleton
+reflect E                   = set
+reflect C                   = cycle
+reflect L                   = linOrd
+reflect Subset              = subset
+reflect (KSubset k)         = ksubset k
+reflect Elt                 = element
+reflect (f :+: g)           = reflect f + reflect g
+reflect (f :*: g)           = reflect f * reflect g
+reflect (f :.: g)           = reflect f `o` reflect g
+reflect (f :><: g)          = reflect f >< reflect g
+reflect (f :@: g)           = reflect f @@ reflect g
+reflect (Der f)             = oneHole (reflect f)
+reflect (OfSize f p)        = ofSize (reflect f) p
+reflect (OfSizeExactly f n) = ofSizeExactly (reflect f) n
+reflect (NonEmpty f)        = nonEmpty (reflect f)
+reflect (Rec f)             = rec f
+reflect Omega               = omega
+
+-- | Reflect a typed AST back into any instance of the 'Species'
+-- class.
 reflectT :: Species s => TSpeciesAST f -> s
-reflectT = reflectU . erase'
+reflectT = reflect . erase'
 
--- | Reflect an AST back into any instance of the 'Species' class.
-reflect :: Species s => ESpeciesAST -> s
-reflect = reflectU . erase
+-- | Reflect an existentially wrapped typed AST back into any
+-- instance of the 'Species' class.
+reflectE :: Species s => ESpeciesAST -> s
+reflectE = reflect . erase

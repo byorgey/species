@@ -17,7 +17,7 @@ import PreludeBase
 
 import Math.Combinatorics.Species.Class
 import Math.Combinatorics.Species.AST
-import Math.Combinatorics.Species.AST.Instances (reflectU)
+import Math.Combinatorics.Species.AST.Instances (reflect)
 import Math.Combinatorics.Species.Simplify
 
 import Data.Typeable
@@ -78,5 +78,5 @@ solveForR code = do
                            . delete X)
                        terms'
 
-  return (reflectU n, reflectU r)
+  return (reflect n, reflect r)
 
