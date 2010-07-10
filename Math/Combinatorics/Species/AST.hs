@@ -6,8 +6,19 @@
            , RankNTypes
   #-}
 
--- | Various data structures representing reified combinatorial
---   species expressions.
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Math.Combinatorics.Species.AST
+-- Copyright   :  (c) Brent Yorgey 2010
+-- License     :  BSD-style (see LICENSE)
+-- Maintainer  :  byorgey@cis.upenn.edu
+-- Stability   :  experimental
+--
+-- Various data structures representing reified combinatorial species
+-- expressions.  See also "Math.Combinatorics.Species.AST.Instances".
+--
+-----------------------------------------------------------------------------
+
 module Math.Combinatorics.Species.AST
     (
       -- * Basic species expression AST
