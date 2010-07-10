@@ -13,6 +13,11 @@
 -- between "Math.Combinatorics.Species.AST" and
 -- "Math.Combinatorics.Species.Class".
 --
+-- This module also contains functions for reifying species
+-- expressions to ASTs and reflecting ASTs back into other species
+-- instances, which are in this module since they depend on the AST
+-- type class instances.
+--
 -----------------------------------------------------------------------------
 
 module Math.Combinatorics.Species.AST.Instances
@@ -263,7 +268,7 @@ instance Species ESpeciesAST where
 ------------------------------------------------------------
 
 -- | Reify a species expression into an AST.  (Actually, this is just
---   the identity function with a usefully restricted type!)  For
+--   the identity function with a usefully restricted type.)  For
 --   example:
 --
 -- > > reify octopus

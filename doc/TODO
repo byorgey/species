@@ -1,1 +1,2 @@
 * Parser for species expressions
+* Move reify/reflect functions to separate module?
