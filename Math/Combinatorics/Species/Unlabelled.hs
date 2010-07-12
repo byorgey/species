@@ -28,14 +28,15 @@ instance Species GF where
   set               = gfFromCoeffs (repeat 1)
   cycle             = set
   o                 = ciErr "composition"
-  cartesian         = ciErr "cartesian product"
-  fcomp             = ciErr "functor composition"
+  (><)              = ciErr "cartesian product"
+  (@@)              = ciErr "functor composition"
   ofSize s p        = (liftGF . PS.lift1 $ filterCoeffs p) s
   ofSizeExactly s n = (liftGF . PS.lift1 $ selectIndex n) s
 
-  rec f = case newtonRaphsonRec f 100 of
-            Nothing -> error $ "Unable to express " ++ show f ++ " in the form T = TX*R(T)."
-            Just ls -> ls
+  rec f             = case newtonRaphsonRec f 100 of
+                        Nothing -> error $
+                          "Unable to express " ++ show f ++ " in the form T = TX*R(T)."
+                        Just ls -> ls
 
 unlabelledCoeffs :: GF -> [Integer]
 unlabelledCoeffs (GF p) = PS.coeffs p ++ repeat 0

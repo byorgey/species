@@ -33,8 +33,6 @@ module Math.Combinatorics.Species
       -- $synonyms
 
     , oneHole
-    , madeOf
-    , (><), (@@)
     , x, sets, cycles
     , linOrds
     , subsets

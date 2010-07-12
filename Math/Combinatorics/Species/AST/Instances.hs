@@ -213,8 +213,8 @@ instance Species SpeciesAST where
   ksubset k     = KSubset k
   element       = Elt
   o             = (:.:)
-  cartesian     = (:><:)
-  fcomp         = (:@:)
+  (><)          = (:><:)
+  (@@)          = (:@:)
   ofSize        = OfSize
   ofSizeExactly = OfSizeExactly
   nonEmpty      = NonEmpty
@@ -247,21 +247,21 @@ instance Differential.C ESpeciesAST where
   differentiate (Wrap f) = wrap (TDer f)
 
 instance Species ESpeciesAST where
-  singleton                         = wrap TX
-  set                               = wrap TE
-  cycle                             = wrap TC
-  linOrd                            = wrap TL
-  subset                            = wrap TSubset
-  ksubset k                         = wrap $ TKSubset k
-  element                           = wrap TElt
-  o (Wrap f) (Wrap g)               = wrap $ f :.:: g
-  cartesian (Wrap f) (Wrap g)       = wrap $ f :><:: g
-  fcomp (Wrap f) (Wrap g)           = wrap $ f :@:: g
-  ofSize (Wrap f) p                 = wrap $ TOfSize f p
-  ofSizeExactly (Wrap f) n          = wrap $ TOfSizeExactly f n
-  nonEmpty (Wrap f)                 = wrap $ TNonEmpty f
-  rec f                             = wrap $ TRec f
-  omega                             = wrap TOmega
+  singleton                 = wrap TX
+  set                       = wrap TE
+  cycle                     = wrap TC
+  linOrd                    = wrap TL
+  subset                    = wrap TSubset
+  ksubset k                 = wrap $ TKSubset k
+  element                   = wrap TElt
+  o (Wrap f) (Wrap g)       = wrap $ f :.:: g
+  Wrap f >< Wrap g          = wrap $ f :><:: g
+  Wrap f @@ Wrap g          = wrap $ f :@:: g
+  ofSize (Wrap f) p         = wrap $ TOfSize f p
+  ofSizeExactly (Wrap f) n  = wrap $ TOfSizeExactly f n
+  nonEmpty (Wrap f)         = wrap $ TNonEmpty f
+  rec f                     = wrap $ TRec f
+  omega                     = wrap TOmega
 
 ------------------------------------------------------------
 --  Reify/reflect  -----------------------------------------

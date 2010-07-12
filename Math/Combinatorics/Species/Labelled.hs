@@ -31,16 +31,18 @@ facts :: [Integer]
 facts = 1 : zipWith (*) [1..] facts
 
 instance Species EGF where
-  singleton         = egfFromCoeffs [0,1]
-  set               = egfFromCoeffs (map (1%) facts)
-  cycle             = egfFromCoeffs (0 : map (1%) [1..])
-  o                 = liftEGF2 PS.compose
-  cartesian         = liftEGF2 . PS.lift2 $ \xs ys -> zipWith3 mult xs ys (map fromIntegral facts)
-    where mult x y z = x * y * z
-  fcomp             = liftEGF2 . PS.lift2 $ \fs gs -> map (\(n,gn) -> let gn' = numerator $ gn
-                                                                       in (fs `safeIndex` gn')
-                                                                            * toRational (FQ.factorial gn' / FQ.factorial n))
-                                                          (zip [0..] $ zipWith (*) (map fromIntegral facts) gs)
+  singleton  = egfFromCoeffs [0,1]
+  set        = egfFromCoeffs (map (1%) facts)
+  cycle      = egfFromCoeffs (0 : map (1%) [1..])
+  o          = liftEGF2 PS.compose
+  (><)       = liftEGF2 . PS.lift2 $ \xs ys ->
+                 zipWith3 mult xs ys (map fromIntegral facts)
+                   where mult x y z = x * y * z
+  (@@)       = liftEGF2 . PS.lift2 $ \fs gs ->
+                 map (\(n,gn) -> let gn' = numerator $ gn
+                                 in  (fs `safeIndex` gn') *
+                                     toRational (FQ.factorial gn' / FQ.factorial n))
+                     (zip [0..] $ zipWith (*) (map fromIntegral facts) gs)
     where safeIndex [] _     = 0
           safeIndex (x:_)  0 = x
           safeIndex (_:xs) n = safeIndex xs (n-1)

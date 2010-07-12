@@ -23,8 +23,6 @@ module Math.Combinatorics.Species.Class
       -- * Convenience methods
 
     , oneHole
-    , madeOf
-    , (><), (@@)
     , x
     , sets
     , cycles
@@ -125,14 +123,14 @@ class (Differential.C s) => Species s where
   --   class.
   o :: s -> s -> s
 
-  -- | Cartisian product of two species.  An (F x G)-structure
-  --   consists of an F structure superimposed on a G structure over
-  --   the same underlying set.
-  cartesian :: s -> s -> s
+  -- | Cartisian product of two species.  An @(f '><' g)@-structure
+  -- consists of an @f@-structure superimposed on a @g@-structure over
+  -- the same underlying set.
+  (><) :: s -> s -> s
 
-  -- | Functor composition of two species.  An (F \@\@ G)-structure
-  --   consists of an F-structure on the set of all G-structures.
-  fcomp :: s -> s -> s
+  -- | Functor composition of two species.  An @(f \@\@ g)@-structure
+  --   consists of an @f@-structure on the set of all @g@-structures.
+  (@@) :: s -> s -> s
 
   -- | Only put a structure on underlying sets whose size satisfies
   --   the predicate.
@@ -165,18 +163,6 @@ class (Differential.C s) => Species s where
 --   \"hole\" element to the underlying set.
 oneHole :: (Species s) => s -> s
 oneHole = Differential.differentiate
-
--- | A synonym for 'o' (partitional composition).
-madeOf :: Species s => s -> s -> s
-madeOf = o
-
--- | A synonym for cartesian product.
-(><) :: Species s => s -> s -> s
-(><) = cartesian
-
--- | A synonym for functor composition.
-(@@) :: Species s => s -> s -> s
-(@@) = fcomp
 
 -- | A synonym for 'singleton'.
 x :: Species s => s

@@ -42,26 +42,27 @@ import NumericPrelude
 import PreludeBase hiding (cycle)
 
 instance Species CycleIndex where
-  singleton = CI $ MVP.x 1
-  set       = ciFromMonomials . map partToMonomial . concatMap intPartitions $ [0..]
+  singleton  = CI $ MVP.x 1
+  set        = ciFromMonomials . map partToMonomial . concatMap intPartitions $ [0..]
 
-  cycle     = ciFromMonomials . concatMap cycleMonomials $ [1..]
+  cycle      = ciFromMonomials . concatMap cycleMonomials $ [1..]
 
-  o = liftCI2 MVP.compose
+  o          = liftCI2 MVP.compose
 
-  cartesian = liftCI2 . MVP.lift2 $ \x y -> hadamard x y
+  (><)       = liftCI2 . MVP.lift2 $ \x y -> hadamard x y
 
-  fcomp     = zFComp
+  (@@)       = zFComp
 
   ofSize s p = (liftCI . MVP.lift1 $ filter (p . Monomial.pDegree)) s
-  ofSizeExactly s n = (liftCI . MVP.lift1 $
-                        ( takeWhile ((==n) . Monomial.pDegree)
-                        . dropWhile ((<n) . Monomial.pDegree))) s
+  ofSizeExactly s n
+             = (liftCI . MVP.lift1 $
+                 ( takeWhile ((==n) . Monomial.pDegree)
+                 . dropWhile ((<n) . Monomial.pDegree))) s
 
-  rec f = case newtonRaphsonRec f 10 of
-            Nothing -> error $ "Unable to express " ++ show f ++ " in the form T = TX*R(T)."
-            Just ls -> ls
-
+  rec f      = case newtonRaphsonRec f 10 of
+                 Nothing -> error $
+                   "Unable to express " ++ show f ++ " in the form T = TX*R(T)."
+                 Just ls -> ls
 
 -- | Convert an integer partition to the corresponding monomial in the
 --   cycle index series for the species of sets.
