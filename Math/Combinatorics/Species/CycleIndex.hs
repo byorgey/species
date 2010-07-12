@@ -2,9 +2,20 @@
            , FlexibleInstances
   #-}
 
--- | An instance of 'Species' for cycle index series.  For details on
---   cycle index series, see \"Combinatorial Species and Tree-Like
---   Structures\", chapter 1.
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Math.Combinatorics.Species.CycleIndex
+-- Copyright   :  (c) Brent Yorgey 2010
+-- License     :  BSD-style (see LICENSE)
+-- Maintainer  :  byorgey@cis.upenn.edu
+-- Stability   :  experimental
+--
+-- An interpretation of species expressions as cycle index series.
+-- For details on cycle index series, see \"Combinatorial Species and
+-- Tree-Like Structures\", chapter 1.
+--
+-----------------------------------------------------------------------------
+
 module Math.Combinatorics.Species.CycleIndex
     ( zToEGF
     , zToGF
@@ -41,6 +52,9 @@ import Control.Arrow ((&&&), first, second)
 import NumericPrelude
 import PreludeBase hiding (cycle)
 
+-- | An interpretation of species expressions as cycle index series.
+-- For the definition of the 'CycleIndex' type, see
+-- "Math.Combinatorics.Species.Types".
 instance Species CycleIndex where
   singleton  = CI $ MVP.x 1
   set        = ciFromMonomials . map partToMonomial . concatMap intPartitions $ [0..]
@@ -49,7 +63,7 @@ instance Species CycleIndex where
 
   o          = liftCI2 MVP.compose
 
-  (><)       = liftCI2 . MVP.lift2 $ \x y -> hadamard x y
+  (><)       = liftCI2 . MVP.lift2 $ hadamard
 
   (@@)       = zFComp
 
@@ -65,7 +79,7 @@ instance Species CycleIndex where
                  Just ls -> ls
 
 -- | Convert an integer partition to the corresponding monomial in the
---   cycle index series for the species of sets.
+--   cycle index series for the species of sets: 1/aut(js) * prod_i xi^ji.
 partToMonomial :: CycleType -> Monomial.T Rational
 partToMonomial js = Monomial.Cons (ezCoeff js) (M.fromList js)
 

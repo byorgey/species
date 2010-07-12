@@ -7,3 +7,7 @@
   of size constraints, rather than a general Haskell size predicate
 
 * Be sure not to export 'omega' from the Species module
+
+* Improve rec for CycleIndex, right now it has 10 iterations
+  hard-coded etc.  Really, I guess this just means improving the
+  Newton-Raphson interface and figuring out how to make it lazier.
