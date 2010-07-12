@@ -24,6 +24,13 @@ module Math.Combinatorics.Species.Class
 
     , oneHole
     , x
+
+      -- ** Plurals
+
+      -- | It can be grammatically convenient to define plural
+      -- versions of species as synonyms for the singular versions.
+      -- For example, we can use @'set' ``o`` 'nonEmpty' 'sets'@
+      -- instead of @'set' ``o`` 'nonEmpty' 'set'@.
     , sets
     , cycles
     , linOrds
@@ -128,7 +135,7 @@ class (Differential.C s) => Species s where
   -- the same underlying set.
   (><) :: s -> s -> s
 
-  -- | Functor composition of two species.  An @(f \@\@ g)@-structure
+  -- | Functor composition of two species.  An @(f '@@' g)@-structure
   --   consists of an @f@-structure on the set of all @g@-structures.
   (@@) :: s -> s -> s
 
@@ -155,31 +162,34 @@ class (Differential.C s) => Species s where
   --   higher-order species constructor 'f'.
   rec :: ASTFunctor f => f -> s
 
-  -- XXX don't export this!
+  -- | Omega is the pseudo-species which only puts a structure on
+  --   infinite label sets.  Of course this is not really a species,
+  --   but it is sometimes a convenient fiction to use Omega to stand
+  --   in for recursive occurrences of a species.
   omega :: s
 
--- | A convenient synonym for differentiation.  F'-structures look
---   like F-structures on a set formed by adjoining a distinguished
---   \"hole\" element to the underlying set.
+-- | A convenient synonym for differentiation.  @'oneHole'
+-- f@-structures look like @f@-structures on a set formed by adjoining
+-- a distinguished \"hole\" element to the underlying set.
 oneHole :: (Species s) => s -> s
 oneHole = Differential.differentiate
 
 -- | A synonym for 'singleton'.
 x :: Species s => s
-x          = singleton
+x = singleton
 
 sets :: Species s => s
-sets       = set
+sets = set
 
 cycles :: Species s => s
-cycles     = cycle
+cycles = cycle
 
 -- $derived_ops
 -- Some derived operations on species.
 
--- | Combinatorially, the operation of pointing picks out a
+-- | Intuitively, the operation of pointing picks out a
 --   distinguished element from an underlying set.  It is equivalent
---   to the operator @x d/dx@.
+--   to the operator @x d/dx@: @'pointed' s = 'singleton' * 'differentiate' s@.
 pointed :: Species s => s -> s
 pointed = (x *) . Differential.differentiate
 
@@ -195,18 +205,19 @@ elements = element
 
 -- | An octopus is a cyclic arrangement of lists, so called because
 --   the lists look like \"tentacles\" attached to the cyclic
---   \"body\": Oct = C o TE+ .
+--   \"body\": @'octopus' = 'cycle' ``o`` 'nonEmpty' 'linOrds'@.
 octopi, octopus :: Species s => s
 octopus = cycle `o` nonEmpty linOrds
 octopi  = octopus
 
--- | The species of set partitions is just the composition TE o TE+,
---   that is, sets of nonempty sets.
+-- | The species of set partitions is just the composition @'set'
+-- ``o`` 'nonEmpty' 'sets'@.
 partitions, partition :: Species s => s
 partition  = set `o` nonEmpty sets
 partitions = partition
 
--- | A permutation is a set of disjoint cycles: S = TE o C.
+-- | A permutation is a set of disjoint cycles: @'permutation' = 'set'
+-- ``o`` 'cycles'@.
 permutations, permutation :: Species s => s
 permutation = set `o` cycles
 permutations = permutation
@@ -214,8 +225,8 @@ permutations = permutation
 subsets :: Species s => s
 subsets = subset
 
--- | The species Bal of ballots consists of linear orderings of
---   nonempty sets: Bal = TL o TE+.
+-- | The species of ballots consists of linear orderings of
+--   nonempty sets: @'ballot' = 'linOrd' ``o`` 'nonEmpty' 'sets'@.
 ballots, ballot :: Species s => s
 ballot = linOrd `o` nonEmpty sets
 ballots = ballot
@@ -224,15 +235,16 @@ ksubsets :: Species s => Integer -> s
 ksubsets = ksubset
 
 -- | Simple graphs (undirected, without loops). A simple graph is a
---   subset of the set of all size-two subsets of the vertices: G = p
---   \@\@ p_2.
+--   subset of the set of all size-two subsets of the vertices:
+--   @'simpleGraph' = 'subset' '@@' ('ksubset' 2)@.
 simpleGraphs, simpleGraph :: Species s => s
 simpleGraph = subset @@ (ksubset 2)
 simpleGraphs = simpleGraph
 
 -- | A directed graph (with loops) is a subset of all pairs drawn
---   (with replacement) from the set of vertices: D = p \@\@ (e ><
---   e).  It can also be thought of as the species of binary relations.
+--   (with replacement) from the set of vertices: @'subset' '@@'
+--   ('element' '><' 'element')@.  It can also be thought of as the
+--   species of binary relations.
 directedGraphs, directedGraph :: Species s => s
 directedGraph = subset @@ (element >< element)
 directedGraphs = directedGraph
