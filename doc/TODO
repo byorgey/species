@@ -14,6 +14,8 @@
   hard-coded etc.  Really, I guess this just means improving the
   Newton-Raphson interface and figuring out how to make it lazier.
 
+* Lazier Newton-Raphson in Labelled
+
 * Fix unlabelled enumeration bug for cartesian product, I forget what
   the issue is exactly...
 
@@ -25,3 +27,5 @@
 
 * Rework types for enumerate', enumerateE', etc. to be a bit more
   elegant/consistent.
+
+* implementation for omega in Labelled
