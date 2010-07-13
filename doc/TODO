@@ -3,6 +3,8 @@
 
 * Move reify/reflect functions to separate module?
 
+* Better name for unerase?
+
 * Think about having 'ofSize' take an expression from a small language
   of size constraints, rather than a general Haskell size predicate
 
@@ -11,3 +13,15 @@
 * Improve rec for CycleIndex, right now it has 10 iterations
   hard-coded etc.  Really, I guess this just means improving the
   Newton-Raphson interface and figuring out how to make it lazier.
+
+* Fix unlabelled enumeration bug for cartesian product, I forget what
+  the issue is exactly...
+
+* Take care of XXX comments in enumerate'
+
+* Better names for Enumerable (?) and especially for 'iso'
+
+* Add examples in Enumerate for enumerateXX 
+
+* Rework types for enumerate', enumerateE', etc. to be a bit more
+  elegant/consistent.

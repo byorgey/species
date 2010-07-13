@@ -7,7 +7,8 @@
            , DeriveDataTypeable
   #-}
 
--- | Enumeration of labelled and unlabelled species.
+-- | Enumeration (i.e. exhaustive generation of structures) of both
+-- labelled and unlabelled species.
 module Math.Combinatorics.Species.Enumerate
     (
       -- * Enumeration methods
@@ -56,10 +57,8 @@ import PreludeBase hiding (cycle)
 --
 --   Unfortunately, 'TSpeciesAST' cannot be made an instance of
 --   'Species', so if we want to be able to enumerate structures given
---   an expression of the 'Species' DSL as input, we must take
---   'ESpeciesAST' as input, which existentially wraps the phantom
---   structure type---but this means that the output list type must be
---   existentially quantified as well; see 'enumerateE'.
+--   an expression of the 'Species' DSL as input, the output must be
+--   existentially quantified; see 'enumerateE'.
 --
 --   Generating structures over base elements from a /multiset/
 --   unifies labelled and unlabelled generation into one framework.
@@ -166,9 +165,9 @@ unsafeExtractStructure = either error id . extractStructure
 --   In particular, if @structureType s@ prints @\"T\"@, then you can
 --   safely use 'enumerate' and friends by writing
 --
--- > enumerate s ls :: [T TL]
+-- > enumerate s ls :: [T a]
 --
---   where @ls :: [TL]@.
+--   where @ls :: [a]@.
 --
 --   For example,
 --
@@ -179,6 +178,11 @@ unsafeExtractStructure = either error id . extractStructure
 -- > ,<[1,2,3]>,<[1],[3,2]>,<[1],[2,3]>,<[3,1],[2]>
 -- > ,<[1,3],[2]>,<[2,1],[3]>,<[1,2],[3]>,<[2],[1],[3]>
 -- > ,<[1],[2],[3]>]
+--
+-- Note, however, that providing a type annotation on 'enumerate' in
+-- this way is usually only necessary at the @ghci@ prompt; when used
+-- in the context of a larger program the type of a call to
+-- 'enumerate' can often be inferred.
 structureType :: ESpeciesAST -> String
 structureType (Wrap s) = showStructureType . extractType $ (stripI s)
   where extractType :: forall s. Typeable1 s => TSpeciesAST s -> TypeRep
@@ -186,7 +190,7 @@ structureType (Wrap s) = showStructureType . extractType $ (stripI s)
 
 -- | Show a 'TypeRep' while stripping off qualifier portions of 'TyCon'
 --   names.  This is essentially copied and pasted from the
---   "Data.Typeable source", with a number of cases taken out that we
+--   "Data.Typeable" source, with a number of cases taken out that we
 --   don't care about (special cases for @(->)@, tuples, etc.).
 showStructureType :: TypeRep -> String
 showStructureType t = showsPrecST 0 t ""
@@ -210,15 +214,15 @@ showStructureType t = showsPrecST 0 t ""
         dropQuals = reverse . takeWhile (/= '.') . reverse
 
 -- | 'enumerateE' is a variant of 'enumerate'' which takes an
---   (existentially quantified) 'ESpeciesAST' and returns a list of
---   structures wrapped in the (also existentially quantified)
---   'Structure' type.  This is also not meant to be used directly.
---   Instead, you should use one of the other @enumerateX@ methods.
+--   (existentially quantified) typed AST and returns a list of
+--   existentially quantified structures.  This is also not meant to
+--   be used directly.  Instead, you should use one of the other
+--   @enumerateX@ methods.
 enumerateE :: ESpeciesAST -> Multiset a -> [Structure a]
 enumerateE (Wrap s) m
-  | fromIntegral (sum (MS.getCounts m)) `I.elem` (getI s) = map Structure (enumerate' (stripI s) m)
+  | fromIntegral (sum (MS.getCounts m)) `I.elem` (getI s)
+    = map Structure (enumerate' (stripI s) m)
   | otherwise = []
-
 
 -- XXX add examples to all of these.
 
@@ -254,7 +258,8 @@ enumerateE (Wrap s) m
 --   enumerating the structures of a particular species, see the
 --   'structureType' function.  To be able to use your own custom data
 --   type in an enumeration, just make your data type an instance of
---   the 'Enumerable' type class.
+--   the 'Enumerable' type class; this can be done for you
+--   automatically by "Math.Combinatorics.Species.TH".
 --
 --   If an invalid type annotation is given, 'enumerate' will call
 --   'error' with a helpful error message.  This should not be much of
@@ -263,15 +268,15 @@ enumerateE (Wrap s) m
 --   will sometimes work and sometimes fail.  However, those who like
 --   their functions total can use 'extractStructure' to make a
 --   version of 'enumerate' (or the other variants) with a return type
---   of @[Either String (f a)]@ (which will return an annoying ton of
---   duplicate error message) or @Either String [f a]@ (which has the
+--   of @['Either' 'String' (f a)]@ (which will return an annoying ton of
+--   duplicate error messages) or @'Either' 'String' [f a]@ (which has the
 --   unfortunate property of being much less lazy than the current
 --   versions, since it must compute the entire list before deciding
---   whether to return @Left@ or @Right@).
+--   whether to return @'Left'@ or @'Right'@).
 --
 --   For slight variants on 'enumerate', see 'enumerateL',
 --   'enumerateU', and 'enumerateM'.
-enumerate :: (Enumerable f, Typeable a, Eq a) => ESpeciesAST -> [a] -> [f a]
+enumerate :: (Enumerable f, Typeable a, Eq a) => SpeciesAST -> [a] -> [f a]
 enumerate s = enumerateM s . MS.fromListEq
 
 -- | Labelled enumeration: given a species expression and a list of
@@ -280,7 +285,7 @@ enumerate s = enumerateM s . MS.fromListEq
 --   for the enumeration does not match the species expression (via an
 --   'Enumerable' instance), call 'error' with an error message
 --   explaining the mismatch.
-enumerateL :: (Enumerable f, Typeable a) =>  ESpeciesAST -> [a] -> [f a]
+enumerateL :: (Enumerable f, Typeable a) =>  SpeciesAST -> [a] -> [f a]
 enumerateL s = enumerateM s . MS.fromDistinctList
 
 -- | Unlabelled enumeration: given a species expression and an integer
@@ -291,7 +296,7 @@ enumerateL s = enumerateM s . MS.fromDistinctList
 --
 --   Note that @'enumerateU' s n@ is equivalent to @'enumerate' s
 --   (replicate n ())@.
-enumerateU ::  Enumerable f => ESpeciesAST -> Int -> [f ()]
+enumerateU ::  Enumerable f => SpeciesAST -> Int -> [f ()]
 enumerateU s n = enumerateM s (MS.fromCounts [((),n)])
 
 -- | General enumeration: given a species expression and a multiset of
@@ -299,16 +304,16 @@ enumerateU s n = enumerateM s (MS.fromCounts [((),n)])
 --   the given labels. If the type given for the enumeration does not
 --   match the species expression, call 'error' with a message
 --   explaining the mismatch.
-enumerateM :: (Enumerable f, Typeable a) => ESpeciesAST -> Multiset a -> [f a]
-enumerateM s m = map unsafeExtractStructure $ enumerateE s m
+enumerateM :: (Enumerable f, Typeable a) => SpeciesAST -> Multiset a -> [f a]
+enumerateM s m = map unsafeExtractStructure $ enumerateE (unerase s) m
 
 -- | Lazily enumerate all unlabelled structures.
-enumerateAllU :: Enumerable f => ESpeciesAST -> [f ()]
+enumerateAllU :: Enumerable f => SpeciesAST -> [f ()]
 enumerateAllU s = concatMap (enumerateU s) [0..]
 
 -- | Lazily enumerate all labelled structures, using [1..] as the
 --   labels.
-enumerateAll :: Enumerable f => ESpeciesAST -> [f Int]
+enumerateAll :: Enumerable f => SpeciesAST -> [f Int]
 enumerateAll s = concatMap (\n -> enumerateL s (take n [1..])) [0..]
 
 -- | The 'Enumerable' class allows you to enumerate structures of any
@@ -321,8 +326,9 @@ enumerateAll s = concatMap (\n -> enumerateL s (take n [1..])) [0..]
 --   custom data type as the target of the enumeration if you don't
 --   want to.
 --
---   See "Math.Combinatorics.Species.TRec" for some example instances
---   of 'Enumerable'.
+--   You should only rarely have to explicitly make an instance of
+--   'Enumerable' yourself; Template Haskell code to derive instances
+--   for you is provided in "Math.Combinatorics.Species.TH".
 class Typeable1 (StructTy f) => Enumerable (f :: * -> *) where
   -- | The standard structure type (see
   --   "Math.Combinatorics.Species.Structures") that will map into @f@.
