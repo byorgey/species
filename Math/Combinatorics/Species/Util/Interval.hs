@@ -45,6 +45,7 @@ import qualified Algebra.Ring as Ring
 data NatO = Nat Integer | Omega
   deriving (Eq, Ord, Show)
 
+-- | The infinite 'NatO' value.
 omega :: NatO
 omega = Omega
 
