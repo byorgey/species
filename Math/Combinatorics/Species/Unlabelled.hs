@@ -1,5 +1,16 @@
--- | An interpretation of species as ordinary generating functions,
---   which count unlabelled structures.
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Math.Combinatorics.Species.CycleIndex
+-- Copyright   :  (c) Brent Yorgey 2010
+-- License     :  BSD-style (see LICENSE)
+-- Maintainer  :  byorgey@cis.upenn.edu
+-- Stability   :  experimental
+--
+-- An interpretation of species as ordinary generating functions,
+-- which count unlabelled structures.
+--
+-----------------------------------------------------------------------------
+
 module Math.Combinatorics.Species.Unlabelled
     ( unlabelled ) where
 
@@ -42,9 +53,9 @@ unlabelledCoeffs :: GF -> [Integer]
 unlabelledCoeffs (GF p) = PS.coeffs p ++ repeat 0
 
 -- | Extract the coefficients of an ordinary generating function as a
---   list of Integers.  In particular, @unlabelled s !!  n@ is the
---   number of unlabelled s-structures on an underlying set of size n
---   (@unlabelled s@ is guaranteed to be infinite).  For example:
+--   list of Integers.  In particular, @'unlabelled' s '!!'  n@ is the
+--   number of unlabelled @s@-structures on an underlying set of size
+--   @n@ (@unlabelled s@ is guaranteed to be infinite).  For example:
 --
 -- > > take 10 $ unlabelled octopi
 -- > [0,1,2,3,5,7,13,19,35,59]
@@ -53,7 +64,7 @@ unlabelledCoeffs (GF p) = PS.coeffs p ++ repeat 0
 --
 --   Actually, the above is something of a white lie, as you may have
 --   already realized by looking at the input type of 'unlabelled',
---   which is 'ESpeciesAST' rather than the expected 'GF'.  The reason
+--   which is 'SpeciesAST' rather than the expected 'GF'.  The reason
 --   is that although products and sums of unlabelled species
 --   correspond to products and sums of ordinary generating functions,
 --   other operations such as composition and differentiation do not!
