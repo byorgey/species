@@ -29,3 +29,5 @@
   elegant/consistent.
 
 * implementation for omega in Labelled
+
+* fix problem in NewtonRaphson with remaining occurrences of X
