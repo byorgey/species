@@ -2,8 +2,19 @@
            , GeneralizedNewtypeDeriving
   #-}
 
--- | Some common types used by the species library, along with some
---   utility functions.
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Math.Combinatorics.Species.Types
+-- Copyright   :  (c) Brent Yorgey 2010
+-- License     :  BSD-style (see LICENSE)
+-- Maintainer  :  byorgey@cis.upenn.edu
+-- Stability   :  experimental
+--
+-- Some common types used by the species library, along with some
+-- utility functions.
+--
+-----------------------------------------------------------------------------
+
 module Math.Combinatorics.Species.Types
     ( -- * Miscellaneous
 
