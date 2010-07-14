@@ -2,8 +2,20 @@
            , GeneralizedNewtypeDeriving
            , PatternGuards
   #-}
--- | An interpretation of species as exponential generating functions,
---   which count labelled structures.
+
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Math.Combinatorics.Species.Labelled
+-- Copyright   :  (c) Brent Yorgey 2010
+-- License     :  BSD-style (see LICENSE)
+-- Maintainer  :  byorgey@cis.upenn.edu
+-- Stability   :  experimental
+--
+-- An interpretation of species as exponential generating functions,
+-- which count labelled structures.
+--
+-----------------------------------------------------------------------------
+
 module Math.Combinatorics.Species.Labelled
     ( labelled
     ) where

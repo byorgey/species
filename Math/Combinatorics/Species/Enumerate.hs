@@ -7,8 +7,19 @@
            , DeriveDataTypeable
   #-}
 
--- | Enumeration (i.e. exhaustive generation of structures) of both
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Math.Combinatorics.Species.Enumerate
+-- Copyright   :  (c) Brent Yorgey 2010
+-- License     :  BSD-style (see LICENSE)
+-- Maintainer  :  byorgey@cis.upenn.edu
+-- Stability   :  experimental
+--
+-- Enumeration (i.e. exhaustive generation of structures) of both
 -- labelled and unlabelled species.
+--
+-----------------------------------------------------------------------------
+
 module Math.Combinatorics.Species.Enumerate
     (
       -- * Enumeration methods
@@ -22,16 +33,16 @@ module Math.Combinatorics.Species.Enumerate
     , enumerateAll
     , enumerateAllU
 
-    -- * Where all the work actually happens
-
-    , enumerate', enumerateE
-
     -- * Tools for dealing with structure types
 
     , Enumerable(..)
 
     , Structure(..), extractStructure, unsafeExtractStructure
     , structureType, showStructureType
+
+    -- * Where all the work actually happens
+
+    , enumerate', enumerateE
 
     ) where
 
