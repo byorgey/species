@@ -1,7 +1,18 @@
 {-# LANGUAGE NoImplicitPrelude, GADTs #-}
 
--- | Functions to manipulate and simplify species expressions
---   according to algebraic species isomorphisms.
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Math.Combinatorics.Species.Simplify
+-- Copyright   :  (c) Brent Yorgey 2010
+-- License     :  BSD-style (see LICENSE)
+-- Maintainer  :  byorgey@cis.upenn.edu
+-- Stability   :  experimental
+--
+-- Functions to manipulate and simplify species expressions according
+-- to algebraic species isomorphisms.
+--
+-----------------------------------------------------------------------------
+
 module Math.Combinatorics.Species.Simplify
     ( simplify, sumOfProducts
     ) where
@@ -15,6 +26,8 @@ import Math.Combinatorics.Species.AST.Instances
 import Data.List (genericLength)
 import Data.Typeable
 
+-- | Given a species expression @s@, return a species expression
+--   in normal form which represents a species isomorphic to @s@.
 simplify :: SpeciesAST -> SpeciesAST
 simplify Zero          = Zero
 simplify One           = One

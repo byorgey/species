@@ -31,3 +31,7 @@
 * implementation for omega in Labelled
 
 * fix problem in NewtonRaphson with remaining occurrences of X
+
+* simplify the Simplify module!
+
+* Document the exact normal form returned by 'simplify'
