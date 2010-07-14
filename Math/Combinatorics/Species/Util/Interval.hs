@@ -1,9 +1,21 @@
 {-# LANGUAGE NoImplicitPrelude
   #-}
--- | A simple implementation of intervals of natural numbers, for use
---   in tracking the possible sizes of structures of a species.  For
---   example, the species TX + TX^2 + TX^3 will correspond to the
---   interval [1,3].
+
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Math.Combinatorics.Species.Util.Interval
+-- Copyright   :  (c) Brent Yorgey 2010
+-- License     :  BSD-style (see LICENSE)
+-- Maintainer  :  byorgey@cis.upenn.edu
+-- Stability   :  experimental
+--
+-- A simple implementation of intervals of natural numbers, for use in
+-- tracking the possible sizes of structures of a species.  For
+-- example, the species @x + x^2 + x^3@ will correspond to the
+-- interval [1,3].
+--
+-----------------------------------------------------------------------------
+
 module Math.Combinatorics.Species.Util.Interval
     (
     -- * The 'NatO' type
@@ -75,8 +87,8 @@ instance Ring.C NatO where
 --   represents the values 2,3,4,5; [2,omega] represents all integers
 --   greater than 1; intervals where the first endpoint is greater than the
 --   second also represent the empty interval.
-data Interval = I { iLow  :: NatO
-                  , iHigh :: NatO
+data Interval = I { iLow  :: NatO -- ^ Get the lower endpoint of an 'Interval'
+                  , iHigh :: NatO -- ^ Get the upper endpoint of an 'Interval'
                   }
   deriving Show
 
