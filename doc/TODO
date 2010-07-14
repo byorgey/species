@@ -35,3 +35,9 @@
 * simplify the Simplify module!
 
 * Document the exact normal form returned by 'simplify'
+
+* Add proper Eq (and Ord?) instances for Cycle and Set functors in Structure
+
+* Think about Show instance for Star etc., does it need fixing?
+
+* Add some examples to illustrate Mu/Interp/ASTFunctor

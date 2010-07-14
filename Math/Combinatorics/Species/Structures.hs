@@ -6,7 +6,19 @@
            , EmptyDataDecls
   #-}
 
--- | Types used for expressing generic structures when enumerating species.
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Math.Combinatorics.Species.Structures
+-- Copyright   :  (c) Brent Yorgey 2010
+-- License     :  BSD-style (see LICENSE)
+-- Maintainer  :  byorgey@cis.upenn.edu
+-- Stability   :  experimental
+--
+-- Types used for expressing generic structures when enumerating
+-- species.
+--
+-----------------------------------------------------------------------------
+
 module Math.Combinatorics.Species.Structures
     ( -- * Structure functors
       -- $struct
@@ -116,14 +128,14 @@ instance (Typeable1 f, Typeable1 g) => Typeable1 (Comp f g) where
           getG :: Comp f g a -> g a
           getG = undefined
 
--- | Cycle structure.  A value of type 'Cycle a' is implemented as
---   '[a]', but thought of as a directed cycle.
+-- | Cycle structure.  A value of type @'Cycle' a@ is implemented as
+--   @[a]@, but thought of as a directed cycle.
 newtype Cycle a = Cycle { getCycle :: [a] }
   deriving (Functor, Typeable)
 instance (Show a) => Show (Cycle a) where
   show (Cycle xs) = "<" ++ intercalate "," (map show xs) ++ ">"
 
--- | Set structure.  A value of type 'Set a' is implemented as '[a]',
+-- | Set structure.  A value of type @'Set' a@ is implemented as @[a]@,
 --   but thought of as an unordered set.
 newtype Set a = Set { getSet :: [a] }
   deriving (Functor, Typeable)
@@ -142,10 +154,12 @@ instance (Show a) => Show (Star a) where
   show Star = "*"
   show (Original a) = show a
 
--- | Higher-order fixpoint. @'Mu' f a@ is morally isomorphic to @f ('Mu'
---   f) a@, except that we actually need a level of indirection.  In
---   fact @'Mu' f a@ is isomorphic to @'Interp' f ('Mu' f) a@; @f@ is a
---   placeholder which is interpreted by the 'Interp' type function.
+-- XXX add some examples for Mu/Interp
+
+-- | Higher-order fixpoint. @'Mu' f a@ is morally isomorphic to @f
+--   ('Mu' f) a@, except that we actually need a level of indirection.
+--   In fact @'Mu' f a@ is isomorphic to @'Interp' f ('Mu' f) a@; @f@
+--   is a code which is interpreted by the 'Interp' type function.
 data Mu f a = Mu { unMu :: Interp f (Mu f) a }
   deriving Typeable
 
