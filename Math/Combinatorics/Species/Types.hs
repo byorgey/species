@@ -26,6 +26,8 @@ module Math.Combinatorics.Species.Types
     , liftCI
     , liftCI2
 
+      -- * Series utility functions
+
     , filterCoeffs
     , selectIndex
 
@@ -47,13 +49,13 @@ import qualified Algebra.ZeroTestable as ZeroTestable
 import qualified Algebra.Field as Field
 
 -- | A representation of the cycle type of a permutation.  If @c ::
---   CycleType@ and @(k,n) `elem` c@, then the permutation has @n@
+--   CycleType@ and @(k,n) ``elem`` c@, then the permutation has @n@
 --   cycles of size @k@.
 type CycleType = [(Integer, Integer)]
 
---------------------------------------------------------------------------------
---  Series types  --------------------------------------------------------------
---------------------------------------------------------------------------------
+------------------------------------------------------------
+--  Series types  ------------------------------------------
+------------------------------------------------------------
 
 -- | Exponential generating functions, for counting labelled species.
 newtype EGF = EGF { unEGF :: PS.T Rational }
@@ -98,7 +100,9 @@ liftCI2 :: (MVP.T Rational -> MVP.T Rational -> MVP.T Rational)
         -> CycleIndex -> CycleIndex -> CycleIndex
 liftCI2 f (CI x) (CI y) = CI (f x y)
 
--- Some series utility functions
+------------------------------------------------------------
+--  Some series utility functions  -------------------------
+------------------------------------------------------------
 
 -- | Filter the coefficients of a series according to a predicate.
 filterCoeffs :: (Additive.C a) => (Integer -> Bool) -> [a] -> [a]

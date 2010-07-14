@@ -41,3 +41,5 @@
 * Think about Show instance for Star etc., does it need fixing?
 
 * Add some examples to illustrate Mu/Interp/ASTFunctor
+
+* CLEAN UP/COMMENT Species.TH !!
