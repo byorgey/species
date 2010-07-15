@@ -266,11 +266,11 @@ enumerateE (Wrap s) m
 --   due to the magic of type inference.
 --
 --   For help in knowing what type annotation you can give when
---   enumerating the structures of a particular species, see the
---   'structureType' function.  To be able to use your own custom data
---   type in an enumeration, just make your data type an instance of
---   the 'Enumerable' type class; this can be done for you
---   automatically by "Math.Combinatorics.Species.TH".
+--   enumerating the structures of a particular species at the @ghci@
+--   prompt, see the 'structureType' function.  To be able to use your
+--   own custom data type in an enumeration, just make your data type
+--   an instance of the 'Enumerable' type class; this can be done for
+--   you automatically by "Math.Combinatorics.Species.TH".
 --
 --   If an invalid type annotation is given, 'enumerate' will call
 --   'error' with a helpful error message.  This should not be much of
@@ -295,7 +295,19 @@ enumerate s = enumerateM s . MS.fromListEq
 --   all structures built from the given labels.  If the type given
 --   for the enumeration does not match the species expression (via an
 --   'Enumerable' instance), call 'error' with an error message
---   explaining the mismatch.
+--   explaining the mismatch.  This is slightly more efficient than
+--   'enumerate' for lists of labels which are known to be distinct,
+--   since it doesn't have to waste time checking for
+--   duplicates. (However, it probably doesn't really make much
+--   difference, since the time to do the actual enumeration will
+--   usually dwarf the time to process the list of labels anyway.)
+--
+--   For example:
+--
+--   > > enumerateL ballots [1,2,3] :: [Comp [] Set Int]
+--   > [[{1,2,3}],[{2,3},{1}],[{1},{2,3}],[{2},{1,3}],[{1,3},{2}],[{3},{1,2}]
+--   > ,[{1,2},{3}],[{3},{2},{1}],[{3},{1},{2}],[{2},{3},{1}],[{2},{1},{3}]
+--   > ,[{1},{3},{2}],[{1},{2},{3}]]
 enumerateL :: (Enumerable f, Typeable a) =>  SpeciesAST -> [a] -> [f a]
 enumerateL s = enumerateM s . MS.fromDistinctList
 
@@ -307,6 +319,12 @@ enumerateL s = enumerateM s . MS.fromDistinctList
 --
 --   Note that @'enumerateU' s n@ is equivalent to @'enumerate' s
 --   (replicate n ())@.
+--
+--   For example:
+--
+--   > > enumerateU octopi 4 :: [Comp Cycle [] ()]
+--   > [<[(),(),(),()]>,<[(),()],[(),()]>,<[(),(),()],[()]>
+--   > ,<[(),()],[()],[()]>,<[()],[()],[()],[()]>]
 enumerateU ::  Enumerable f => SpeciesAST -> Int -> [f ()]
 enumerateU s n = enumerateM s (MS.fromCounts [((),n)])
 
@@ -319,11 +337,24 @@ enumerateM :: (Enumerable f, Typeable a) => SpeciesAST -> Multiset a -> [f a]
 enumerateM s m = map unsafeExtractStructure $ enumerateE (unerase s) m
 
 -- | Lazily enumerate all unlabelled structures.
+--
+--   For example:
+--
+--   > > take 10 $ enumerateAllU octopi :: [Comp Cycle [] ()]
+--   > [<[()]>,<[(),()]>,<[()],[()]>,<[(),(),()]>,<[(),()],[()]>
+--   > ,<[()],[()],[()]>,<[(),(),(),()]>,<[(),()],[(),()]>
+--   > ,<[(),(),()],[()]>,<[(),()],[()],[()]>]
 enumerateAllU :: Enumerable f => SpeciesAST -> [f ()]
 enumerateAllU s = concatMap (enumerateU s) [0..]
 
 -- | Lazily enumerate all labelled structures, using [1..] as the
 --   labels.
+--
+--   For example:
+--
+--   > > take 10 $ enumerateAll ballots :: [Comp [] Set Int]
+--   > [[],[{1}],[{1,2}],[{2},{1}],[{1},{2}],[{1,2,3}],[{2,3},{1}]
+--   > ,[{1},{2,3}],[{2},{1,3}],[{1,3},{2}]]
 enumerateAll :: Enumerable f => SpeciesAST -> [f Int]
 enumerateAll s = concatMap (\n -> enumerateL s (take n [1..])) [0..]
 

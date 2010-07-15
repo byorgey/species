@@ -16,14 +16,13 @@
 
 * Lazier Newton-Raphson in Labelled
 
-* Fix unlabelled enumeration bug for cartesian product, I forget what
-  the issue is exactly...
+* Fix unlabelled enumeration bug for cartesian product.
+  Unlabelled enumeration needs to return things with actual labels
+  (not just ()) since using () doesn't work with cartesian product.
 
 * Take care of XXX comments in enumerate'
 
 * Better names for Enumerable (?) and especially for 'iso'
-
-* Add examples in Enumerate for enumerateXX 
 
 * Rework types for enumerate', enumerateE', etc. to be a bit more
   elegant/consistent.
@@ -46,7 +45,17 @@
 
 * Add more documentation to deriveSpecies in TH
 
+* More features in TH:
+  - first, write down formal system describing how it works!?
+  - directed species derivation
+  - deal with things like Maybe, Either, (), Bool, and arrow types
+    with finite LHSs
+
 New features
 ============
 
 * Random generation
+
+* Virtual species
+
+* Atomic and molecular decomposition
