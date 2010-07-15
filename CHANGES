@@ -1,0 +1,11 @@
+0.3        12 June 2010
+  * A bunch of new features including:
+    - Template Haskell support for deriving instances for user-defined data types
+    - simplifier
+    - Newton-Raphson iteration
+  
+0.3.0.1    30 June 2010
+  * Fix broken dependency versions
+
+0.3.0.2    15 July 2010
+  * General cleanup, and added documentation
