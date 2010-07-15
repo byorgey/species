@@ -11,7 +11,7 @@
 
    * need function to compute a (default) species from a Struct.
      - currently have structToSp :: Struct -> Q Exp.
-     - [TX] refactor it into two pieces, Struct -> SpeciesAST and SpeciesAST -> Q Exp.
+     - [X] refactor it into two pieces, Struct -> SpeciesAST and SpeciesAST -> Q Exp.
 
    * should really go through and add some comments to things!
      Unfortunately I wasn't good about that when I wrote the code... =P
@@ -28,8 +28,23 @@
 
 -}
 
--- | Code to derive species instances for user-defined data types.
-module Math.Combinatorics.Species.TH where
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Math.Combinatorics.Species.CycleIndex
+-- Copyright   :  (c) Brent Yorgey 2010
+-- License     :  BSD-style (see LICENSE)
+-- Maintainer  :  byorgey@cis.upenn.edu
+-- Stability   :  experimental
+--
+-- Use Template Haskell to automatically derive species instances for
+-- user-defined data types.
+--
+-----------------------------------------------------------------------------
+
+module Math.Combinatorics.Species.TH
+       ( deriveDefaultSpecies
+       , deriveSpecies
+       ) where
 
 import NumericPrelude
 import PreludeBase hiding (cycle)
@@ -370,11 +385,46 @@ typeToSpAST _ _        = error "non-constructor in typeToSpAST?"
 -- XXX need to add something to check whether the type and given
 -- species are compatible.
 
+-- | Generate default species declarations for the given user-defined
+--   data type.  To use it:
+--
+--   > {-# LANGUAGE TemplateHaskell,
+--   >              TypeFamilies,
+--   >              DeriveDataTypeable,
+--   >              FlexibleInstances,
+--   >              UndecidableInstances #-}
+--   >
+--   > data MyType = ...
+--   >
+--   > $(deriveDefaultSpecies ''MyType)
+--
+--   Yes, you really do need all those extensions.  And don't panic
+--   about the @UndecidableInstances@; the instances generated
+--   actually are decidable, but GHC just can't tell.
+--
+--   This is what you get:
+--
+--     * An 'Enumerable' instance for @MyType@ (and various other
+--     supporting things like a code and an 'ASTFunctor' instance if
+--     your data type is recursive)
+--
+--     * A declaration of @myType :: Species s => s@ (the same name as
+--     the type constructor but with the first letter lowercased)
+--
+--   You can then use @myType@ in any species expression, or as input
+--   to any function expecting a species.  For example, to count your
+--   data type's distinct shapes, you can do
+--
+--   > take 10 . unlabelled $ myType
+--
 deriveDefaultSpecies :: Name -> Q [Dec]
 deriveDefaultSpecies nm = do
   st <- nameToStruct nm
   deriveSpecies nm (structToSp st)
 
+-- | Like 'deriveDefaultSpecies', except that you specify the species
+-- expression that your data type should be isomorphic to.  Note: this
+-- is currently experimental (read: bug-ridden).
 deriveSpecies :: Name -> SpeciesAST -> Q [Dec]
 deriveSpecies nm sp = do
   st <- nameToStruct nm

@@ -43,3 +43,10 @@
 * Add some examples to illustrate Mu/Interp/ASTFunctor
 
 * CLEAN UP/COMMENT Species.TH !!
+
+* Add more documentation to deriveSpecies in TH
+
+New features
+============
+
+* Random generation
