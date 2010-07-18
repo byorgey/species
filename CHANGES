@@ -9,3 +9,7 @@
 
 0.3.0.2    15 July 2010
   * General cleanup, and added documentation
+
+0.3.1      18 July 2010
+  * rename 'unerase' to the more descriptive 'annotate'
+  * export more stuff from Math.Combinatorics.Species and add some docs
