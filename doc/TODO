@@ -3,8 +3,6 @@
 
 * Move reify/reflect functions to separate module?
 
-* Better name for unerase?
-
 * Think about having 'ofSize' take an expression from a small language
   of size constraints, rather than a general Haskell size predicate
 

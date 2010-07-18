@@ -27,7 +27,16 @@
 module Math.Combinatorics.Species
     ( -- * The combinatorial species DSL
       -- $DSL
-      Species(..)
+
+      -- Explicitly export methods of the Species class since
+      -- we don't want to export all of them
+
+      Species ( singleton, set, cycle, linOrd
+              , subset, ksubset, element
+              , o, (><), (@@)
+              , ofSize, ofSizeExactly, nonEmpty
+              , rec
+              )
 
       -- ** Convenience methods
       -- $synonyms
@@ -74,16 +83,30 @@ module Math.Combinatorics.Species
 
       -- * Species AST
       -- $ast
-    , TSpeciesAST(..)
-    , ESpeciesAST(..)
+    , SpeciesAST
     , reify
     , reflect
 
+    , TSpeciesAST
+    , ESpeciesAST
+
+    , wrap, unwrap
+    , erase, erase', annotate
+
+      -- * Species simplification
+
+    , simplify
+    , sumOfProducts
+
       -- * Recursive species
       -- $rec
-    , Mu(..), Interp, ASTFunctor(..)
+
+    , ASTFunctor(..)
+    , newtonRaphsonRec
+    , newtonRaphson
 
       -- * Template Haskell
+    , deriveDefaultSpecies
     , deriveSpecies
 
     ) where
@@ -96,6 +119,8 @@ import Math.Combinatorics.Species.Enumerate
 import Math.Combinatorics.Species.AST
 import Math.Combinatorics.Species.AST.Instances
 import Math.Combinatorics.Species.TH
+import Math.Combinatorics.Species.Simplify
+import Math.Combinatorics.Species.NewtonRaphson
 
 -- $DSL
 -- The combinatorial species DSL consists of the 'Species' type class,
@@ -111,10 +136,8 @@ import Math.Combinatorics.Species.TH
 -- sets@.
 
 -- $counting
--- XXX
 
 -- $enum
--- XXX
 
 -- $types
 -- Many of these functors are already defined elsewhere, in other
@@ -122,7 +145,7 @@ import Math.Combinatorics.Species.TH
 -- naming/instance schemes, etc., we just redefine them here.
 
 -- $ast
--- XXX
+-- Species expressions can be reified into one of several AST types.
 
 -- $rec
--- XXX
+-- Tools for dealing with recursive species.
