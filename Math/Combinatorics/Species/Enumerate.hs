@@ -334,7 +334,7 @@ enumerateU s n = enumerateM s (MS.fromCounts [((),n)])
 --   match the species expression, call 'error' with a message
 --   explaining the mismatch.
 enumerateM :: (Enumerable f, Typeable a) => SpeciesAST -> Multiset a -> [f a]
-enumerateM s m = map unsafeExtractStructure $ enumerateE (unerase s) m
+enumerateM s m = map unsafeExtractStructure $ enumerateE (annotate s) m
 
 -- | Lazily enumerate all unlabelled structures.
 --

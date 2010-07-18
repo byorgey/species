@@ -33,7 +33,7 @@ module Math.Combinatorics.Species.AST
 
       -- ** Existentially wrapped AST
     , ESpeciesAST(..), wrap, unwrap
-    , erase, erase', unerase
+    , erase, erase', annotate
 
       -- * ASTFunctor class (codes for higher-order functors)
     , ASTFunctor(..)
@@ -65,7 +65,7 @@ import PreludeBase hiding (cycle)
 -- | A basic, untyped AST type for species expressions, for easily
 -- doing things like analysis, simplification, deriving isomorphisms,
 -- and so on.  Converting between 'SpeciesAST' and the typed variant
--- 'ESpeciesAST' can be done with 'unerase' and 'erase'.
+-- 'ESpeciesAST' can be done with 'annotate' and 'erase'.
 data SpeciesAST where
   Zero          :: SpeciesAST
   One           :: SpeciesAST
@@ -246,37 +246,37 @@ erase' (TRec f)             = Rec f
 erase' TOmega               = Omega
 
 -- | Reconstruct the type and interval annotations on a species AST.
-unerase :: SpeciesAST -> ESpeciesAST
-unerase Zero                = wrap TZero
-unerase One                 = wrap TOne
-unerase (N n)               = wrap (TN n)
-unerase X                   = wrap TX
-unerase E                   = wrap TE
-unerase C                   = wrap TC
-unerase L                   = wrap TL
-unerase Subset              = wrap TSubset
-unerase (KSubset k)         = wrap (TKSubset k)
-unerase Elt                 = wrap TElt
-unerase (f :+: g)           = unerase f + unerase g
+annotate :: SpeciesAST -> ESpeciesAST
+annotate Zero                = wrap TZero
+annotate One                 = wrap TOne
+annotate (N n)               = wrap (TN n)
+annotate X                   = wrap TX
+annotate E                   = wrap TE
+annotate C                   = wrap TC
+annotate L                   = wrap TL
+annotate Subset              = wrap TSubset
+annotate (KSubset k)         = wrap (TKSubset k)
+annotate Elt                 = wrap TElt
+annotate (f :+: g)           = annotate f + annotate g
   where Wrap f + Wrap g      = wrap $ f :+:: g
-unerase (f :*: g)           = unerase f * unerase g
+annotate (f :*: g)           = annotate f * annotate g
   where Wrap f * Wrap g      = wrap $ f :*:: g
-unerase (f :.: g)           = unerase f . unerase g
+annotate (f :.: g)           = annotate f . annotate g
   where Wrap f . Wrap g      = wrap $ f :.:: g
-unerase (f :><: g)          = unerase f >< unerase g
+annotate (f :><: g)          = annotate f >< annotate g
   where Wrap f >< Wrap g     = wrap $ f :><:: g
-unerase (f :@: g)           = unerase f @@ unerase g
+annotate (f :@: g)           = annotate f @@ annotate g
   where Wrap f @@ Wrap g     = wrap $ f :@:: g
-unerase (Der f)             = der $ unerase f
+annotate (Der f)             = der $ annotate f
   where der (Wrap f)         = wrap (TDer f)
-unerase (OfSize f p)        = ofSize $ unerase f
+annotate (OfSize f p)        = ofSize $ annotate f
   where ofSize (Wrap f)      = wrap $ TOfSize f p
-unerase (OfSizeExactly f k) = ofSize $ unerase f
+annotate (OfSizeExactly f k) = ofSize $ annotate f
   where ofSize (Wrap f)      = wrap $ TOfSizeExactly f k
-unerase (NonEmpty f)        = nonEmpty $ unerase f
+annotate (NonEmpty f)        = nonEmpty $ annotate f
   where nonEmpty (Wrap f)    = wrap $ TNonEmpty f
-unerase (Rec f)             = wrap $ TRec f
-unerase Omega               = wrap TOmega
+annotate (Rec f)             = wrap $ TRec f
+annotate Omega               = wrap TOmega
 
 ------------------------------------------------------------
 --  ASTFunctor class  --------------------------------------
