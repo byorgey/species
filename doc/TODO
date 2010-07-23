@@ -1,12 +1,8 @@
 
 * Parser for species expressions
 
-* Move reify/reflect functions to separate module?
-
 * Think about having 'ofSize' take an expression from a small language
   of size constraints, rather than a general Haskell size predicate
-
-* Be sure not to export 'omega' from the Species module
 
 * Improve rec for CycleIndex, right now it has 10 iterations
   hard-coded etc.  Really, I guess this just means improving the
@@ -14,9 +10,12 @@
 
 * Lazier Newton-Raphson in Labelled
 
-* Fix unlabelled enumeration bug for cartesian product.
-  Unlabelled enumeration needs to return things with actual labels
-  (not just ()) since using () doesn't work with cartesian product.
+* Fix unlabelled enumeration bug for cartesian product.  Unlabelled
+  enumeration needs to return things with actual labels (not just ())
+  since using () doesn't work with cartesian product.  This actually
+  seems quite difficult.  Instead of working with a multiset (i.e. set
+  of equivalence classes) we need to be able to work with any
+  conjugacy class of Sn!
 
 * Take care of XXX comments in enumerate'
 
