@@ -58,9 +58,9 @@ import Data.Typeable
 data Void a
   deriving Typeable
 instance Functor Void where
-  fmap _ _ = undefined
+  fmap = undefined
 instance Show (Void a) where
-  show _   = undefined
+  show = undefined
 
 -- | The (constantly) unit functor.
 data Unit a = Unit

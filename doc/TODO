@@ -19,7 +19,9 @@
 
 * Take care of XXX comments in enumerate'
 
-* Better names for Enumerable (?) and especially for 'iso'
+* Import isomorphism stuff from paper into library and give
+  iso method from Enumerate class the type signature
+    iso :: StructTy f <-> f
 
 * Rework types for enumerate', enumerateE', etc. to be a bit more
   elegant/consistent.
