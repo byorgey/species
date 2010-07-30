@@ -71,7 +71,7 @@ import Math.Combinatorics.Species.AST
 --   differentiation, i.e. adjoining a distinguished element).
 --
 --   Minimal complete definition: 'singleton', 'set', 'cycle', 'o',
---   'cartesian', 'fcomp', 'ofSize'.
+--   '><', '@@', 'ofSize'.
 --
 --   Note that the 'o' operation can be used infix to suggest common
 --   notation for composition, and also to be read as an abbreviation
