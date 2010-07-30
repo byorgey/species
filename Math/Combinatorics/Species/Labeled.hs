@@ -5,19 +5,20 @@
 
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Math.Combinatorics.Species.Labelled
+-- Module      :  Math.Combinatorics.Species.Labeled
 -- Copyright   :  (c) Brent Yorgey 2010
 -- License     :  BSD-style (see LICENSE)
 -- Maintainer  :  byorgey@cis.upenn.edu
 -- Stability   :  experimental
 --
 -- An interpretation of species as exponential generating functions,
--- which count labelled structures.
+-- which count labeled structures.
 --
 -----------------------------------------------------------------------------
 
-module Math.Combinatorics.Species.Labelled
-    ( labelled
+module Math.Combinatorics.Species.Labeled
+    ( labeled
+    , labelled
     ) where
 
 -- A previous version of this module used an EGF library which
@@ -70,20 +71,25 @@ instance Species EGF where
 
 -- | Extract the coefficients of an exponential generating function as
 --   a list of 'Integer's.  Since 'EGF' is an instance of 'Species', the
---   idea is that 'labelled' can be applied directly to an expression
---   of the species DSL.  In particular, @'labelled' s '!!'  n@ is the
---   number of labelled @s@-structures on an underlying set of size @n@
---   (note that @'labelled' s@ is guaranteed to be an infinite list).
+--   idea is that 'labeled' can be applied directly to an expression
+--   of the species DSL.  In particular, @'labeled' s '!!'  n@ is the
+--   number of labeled @s@-structures on an underlying set of size @n@
+--   (note that @'labeled' s@ is guaranteed to be an infinite list).
 --   For example:
 --
--- > > take 10 $ labelled octopi
+-- > > take 10 $ labeled octopi
 -- > [0,1,3,14,90,744,7560,91440,1285200,20603520]
 --
---   gives the number of labelled octopi on 0, 1, 2, 3, ... 9 labels.
+--   gives the number of labeled octopi on 0, 1, 2, 3, ... 9 labels.
 
+labeled :: EGF -> [Integer]
+labeled (EGF f) = (++repeat 0)
+                . map numerator
+                . zipWith (*) (map fromInteger facts)
+                $ PS.coeffs f
+
+-- | A synonym for 'labeled', since both spellings are acceptable and
+--   it's annoying to have to remember which is correct.
 labelled :: EGF -> [Integer]
-labelled (EGF f) = (++repeat 0)
-                 . map numerator
-                 . zipWith (*) (map fromInteger facts)
-                 $ PS.coeffs f
+labelled = labeled
 

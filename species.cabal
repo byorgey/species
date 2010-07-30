@@ -11,7 +11,7 @@ category:       Math
 synopsis:       Computational combinatorial species
 
 description:    A DSL for describing and computing with combinatorial species,
-                e.g. counting labelled or unlabelled structures, or generating
+                e.g. counting labeled or unlabeled structures, or generating
                 a list of all labeled structures for a species.
 homepage:       http://www.cis.upenn.edu/~byorgey/species
 extra-source-files: CHANGES
@@ -28,8 +28,8 @@ Library
     Math.Combinatorics.Species
     Math.Combinatorics.Species.Class
     Math.Combinatorics.Species.Types
-    Math.Combinatorics.Species.Labelled
-    Math.Combinatorics.Species.Unlabelled
+    Math.Combinatorics.Species.Labeled
+    Math.Combinatorics.Species.Unlabeled
     Math.Combinatorics.Species.CycleIndex
     Math.Combinatorics.Species.AST
     Math.Combinatorics.Species.AST.Instances

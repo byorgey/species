@@ -7,12 +7,12 @@
 -- Stability   :  experimental
 --
 -- An interpretation of species as ordinary generating functions,
--- which count unlabelled structures.
+-- which count unlabeled structures.
 --
 -----------------------------------------------------------------------------
 
-module Math.Combinatorics.Species.Unlabelled
-    ( unlabelled ) where
+module Math.Combinatorics.Species.Unlabeled
+    ( unlabeled, unlabelled ) where
 
 import Math.Combinatorics.Species.Types
 import Math.Combinatorics.Species.Class
@@ -29,7 +29,7 @@ import NumericPrelude
 import PreludeBase hiding (cycle)
 
 ciErr :: String -> a
-ciErr op = error ("unlabelled " ++ op ++ " must go via cycle index series.")
+ciErr op = error ("unlabeled " ++ op ++ " must go via cycle index series.")
 
 instance Differential.C GF where
   differentiate = ciErr "differentiation"
@@ -49,34 +49,38 @@ instance Species GF where
                           "Unable to express " ++ show f ++ " in the form T = TX*R(T)."
                         Just ls -> ls
 
-unlabelledCoeffs :: GF -> [Integer]
-unlabelledCoeffs (GF p) = PS.coeffs p ++ repeat 0
+unlabeledCoeffs :: GF -> [Integer]
+unlabeledCoeffs (GF p) = PS.coeffs p ++ repeat 0
 
 -- | Extract the coefficients of an ordinary generating function as a
---   list of Integers.  In particular, @'unlabelled' s '!!'  n@ is the
---   number of unlabelled @s@-structures on an underlying set of size
---   @n@ (@unlabelled s@ is guaranteed to be infinite).  For example:
+--   list of Integers.  In particular, @'unlabeled' s '!!'  n@ is the
+--   number of unlabeled @s@-structures on an underlying set of size
+--   @n@ (@unlabeled s@ is guaranteed to be infinite).  For example:
 --
--- > > take 10 $ unlabelled octopi
+-- > > take 10 $ unlabeled octopi
 -- > [0,1,2,3,5,7,13,19,35,59]
 --
---   gives the number of unlabelled octopi on 0, 1, 2, 3, ... 9 elements.
+--   gives the number of unlabeled octopi on 0, 1, 2, 3, ... 9 elements.
 --
 --   Actually, the above is something of a white lie, as you may have
---   already realized by looking at the input type of 'unlabelled',
+--   already realized by looking at the input type of 'unlabeled',
 --   which is 'SpeciesAST' rather than the expected 'GF'.  The reason
---   is that although products and sums of unlabelled species
+--   is that although products and sums of unlabeled species
 --   correspond to products and sums of ordinary generating functions,
 --   other operations such as composition and differentiation do not!
 --   In order to compute an ordinary generating function for a species
 --   defined in terms of composition and/or differentiation, we must
 --   compute the cycle index series for the species and then convert
---   it to an ordinary generating function.  So 'unlabelled' actually
+--   it to an ordinary generating function.  So 'unlabeled' actually
 --   works by first reifying the species to an AST and checking which
 --   operations are used in its definition, and then choosing to work
 --   with cycle index series or directly with (much faster) ordinary
 --   generating functions as appropriate.
+unlabeled :: SpeciesAST -> [Integer]
+unlabeled s
+  | needsCI s = unlabeledCoeffs . zToGF . reflect $ s
+  | otherwise = unlabeledCoeffs . reflect $ s
+
+-- | A synonym for 'unlabeled', since both spellings are acceptable.
 unlabelled :: SpeciesAST -> [Integer]
-unlabelled s
-  | needsCI s = unlabelledCoeffs . zToGF . reflect $ s
-  | otherwise = unlabelledCoeffs . reflect $ s
+unlabelled = unlabeled

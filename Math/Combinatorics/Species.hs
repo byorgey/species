@@ -61,8 +61,8 @@ module Math.Combinatorics.Species
 
       -- * Counting species structures
       -- $counting
-    , labelled
-    , unlabelled
+    , labeled, labelled
+    , unlabeled, unlabelled
 
       -- * Enumerating species structures
       -- $enum
@@ -112,8 +112,8 @@ module Math.Combinatorics.Species
     ) where
 
 import Math.Combinatorics.Species.Class
-import Math.Combinatorics.Species.Labelled
-import Math.Combinatorics.Species.Unlabelled
+import Math.Combinatorics.Species.Labeled
+import Math.Combinatorics.Species.Unlabeled
 import Math.Combinatorics.Species.Structures
 import Math.Combinatorics.Species.Enumerate
 import Math.Combinatorics.Species.AST

@@ -415,7 +415,7 @@ typeToSpAST _ _        = error "non-constructor in typeToSpAST?"
 --   to any function expecting a species.  For example, to count your
 --   data type's distinct shapes, you can do
 --
---   > take 10 . unlabelled $ myType
+--   > take 10 . unlabeled $ myType
 --
 deriveDefaultSpecies :: Name -> Q [Dec]
 deriveDefaultSpecies nm = do

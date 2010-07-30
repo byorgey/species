@@ -31,7 +31,7 @@ module Math.Combinatorics.Species.CycleIndex
 
 import Math.Combinatorics.Species.Types
 import Math.Combinatorics.Species.Class
-import Math.Combinatorics.Species.Labelled
+import Math.Combinatorics.Species.Labeled
 
 import Math.Combinatorics.Species.NewtonRaphson
 
@@ -228,7 +228,7 @@ zFComp f g = ciFromMonomials $
   where for     = flip map
 
         -- Convert g to an EGF for later reference.
-        gEGF    = labelled $ zToEGF g
+        gEGF    = labeled $ zToEGF g
 
         -- Given a cycle type @nn@ (corresponding to a permutation
         -- sigma on @n@ elements), compute the cycle type of G[sigma],

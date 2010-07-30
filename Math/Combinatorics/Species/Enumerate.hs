@@ -16,7 +16,7 @@
 -- Stability   :  experimental
 --
 -- Enumeration (i.e. exhaustive generation of structures) of both
--- labelled and unlabelled species.
+-- labeled and unlabeled species.
 --
 -----------------------------------------------------------------------------
 
@@ -72,12 +72,12 @@ import PreludeBase hiding (cycle)
 --   existentially quantified; see 'enumerateE'.
 --
 --   Generating structures over base elements from a /multiset/
---   unifies labelled and unlabelled generation into one framework.
---   To enumerate labelled structures, use a multiset where each
---   element occurs exactly once; to enumerate unlabelled structures,
+--   unifies labeled and unlabeled generation into one framework.
+--   To enumerate labeled structures, use a multiset where each
+--   element occurs exactly once; to enumerate unlabeled structures,
 --   use a multiset with the desired number of copies of a single
---   element.  To do labelled generation we could get away without the
---   generality of multisets, but to do unlabelled generation we need
+--   element.  To do labeled generation we could get away without the
+--   generality of multisets, but to do unlabeled generation we need
 --   the full generality anyway.
 --
 --   'enumerate'' does all the actual work, but is not meant to be used
@@ -290,7 +290,7 @@ enumerateE (Wrap s) m
 enumerate :: (Enumerable f, Typeable a, Eq a) => SpeciesAST -> [a] -> [f a]
 enumerate s = enumerateM s . MS.fromListEq
 
--- | Labelled enumeration: given a species expression and a list of
+-- | Labeled enumeration: given a species expression and a list of
 --   labels (which are assumed to be distinct), compute the list of
 --   all structures built from the given labels.  If the type given
 --   for the enumeration does not match the species expression (via an
@@ -311,9 +311,9 @@ enumerate s = enumerateM s . MS.fromListEq
 enumerateL :: (Enumerable f, Typeable a) =>  SpeciesAST -> [a] -> [f a]
 enumerateL s = enumerateM s . MS.fromDistinctList
 
--- | Unlabelled enumeration: given a species expression and an integer
+-- | Unlabeled enumeration: given a species expression and an integer
 --   indicating the number of labels to use, compute the list of all
---   unlabelled structures of the given size.  If the type given for
+--   unlabeled structures of the given size.  If the type given for
 --   the enumeration does not match the species expression, call
 --   'error' with an error message explaining the mismatch.
 --
@@ -336,7 +336,7 @@ enumerateU s n = enumerateM s (MS.fromCounts [((),n)])
 enumerateM :: (Enumerable f, Typeable a) => SpeciesAST -> Multiset a -> [f a]
 enumerateM s m = map unsafeExtractStructure $ enumerateE (annotate s) m
 
--- | Lazily enumerate all unlabelled structures.
+-- | Lazily enumerate all unlabeled structures.
 --
 --   For example:
 --
@@ -347,7 +347,7 @@ enumerateM s m = map unsafeExtractStructure $ enumerateE (annotate s) m
 enumerateAllU :: Enumerable f => SpeciesAST -> [f ()]
 enumerateAllU s = concatMap (enumerateU s) [0..]
 
--- | Lazily enumerate all labelled structures, using [1..] as the
+-- | Lazily enumerate all labeled structures, using [1..] as the
 --   labels.
 --
 --   For example:

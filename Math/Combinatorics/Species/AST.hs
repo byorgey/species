@@ -159,7 +159,7 @@ interval (f :@:: g)           = natsI
     -- Note, the above interval for functor composition is obviously
     -- overly conservative.  To do this right we'd have to compute the
     -- generating function for g --- and actually it would depend on
-    -- whether we were doing labelled or unlabelled enumeration, which
+    -- whether we were doing labeled or unlabeled enumeration, which
     -- we don't know at this point.
 interval (TDer f)             = decrI (getI f)
 interval (TOfSize f p)        = fromI $ smallestIn (getI f) p

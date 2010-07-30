@@ -68,7 +68,7 @@ type CycleType = [(Integer, Integer)]
 --  Series types  ------------------------------------------
 ------------------------------------------------------------
 
--- | Exponential generating functions, for counting labelled species.
+-- | Exponential generating functions, for counting labeled species.
 newtype EGF = EGF { unEGF :: PS.T Rational }
   deriving (Additive.C, Differential.C, Ring.C, Show)
 
@@ -82,7 +82,7 @@ liftEGF2 :: (PS.T Rational -> PS.T Rational -> PS.T Rational)
          -> EGF -> EGF -> EGF
 liftEGF2 f (EGF x) (EGF y) = EGF (f x y)
 
--- | Ordinary generating functions, for counting unlabelled species.
+-- | Ordinary generating functions, for counting unlabeled species.
 newtype GF = GF (PS.T Integer)
   deriving (Additive.C, Ring.C, Show)
 
