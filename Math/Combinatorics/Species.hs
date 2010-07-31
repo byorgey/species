@@ -102,6 +102,7 @@ module Math.Combinatorics.Species
       -- $rec
 
     , ASTFunctor(..)
+    , Interp
     , newtonRaphsonRec
     , newtonRaphson
 
