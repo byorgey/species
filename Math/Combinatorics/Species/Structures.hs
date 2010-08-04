@@ -40,7 +40,7 @@ module Math.Combinatorics.Species.Structures
 
 import NumericPrelude
 import PreludeBase
-import Data.List (intercalate)
+import Data.List (intercalate, foldl', delete, inits, tails)
 
 import Data.Typeable
 
@@ -134,6 +134,10 @@ newtype Cycle a = Cycle { getCycle :: [a] }
   deriving (Functor, Typeable)
 instance (Show a) => Show (Cycle a) where
   show (Cycle xs) = "<" ++ intercalate "," (map show xs) ++ ">"
+instance Eq a => Eq (Cycle a) where
+  Cycle xs == Cycle ys = any (==ys) (rotations xs)
+    where rotations xs = zipWith (++)  (tails xs)
+                                       (inits xs)
 
 -- | Set structure.  A value of type @'Set' a@ is implemented as @[a]@,
 --   but thought of as an unordered set.
@@ -141,6 +145,9 @@ newtype Set a = Set { getSet :: [a] }
   deriving (Functor, Typeable)
 instance (Show a) => Show (Set a) where
   show (Set xs) = "{" ++ intercalate "," (map show xs) ++ "}"
+instance Eq a => Eq (Set a) where
+  Set xs == Set ys = xs `subBag` ys && ys `subBag` xs
+    where subBag b = null . foldl' (flip delete) b
 
 -- | 'Star' is isomorphic to 'Maybe', but with a more useful 'Show'
 --   instance for our purposes.  Used to implement species
