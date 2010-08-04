@@ -25,7 +25,7 @@ module Math.Combinatorics.Species.Class
     , oneHole
     , x
 
-      -- ** Plurals
+      -- ** Plurals and synonyms
 
       -- | It can be grammatically convenient to define plural
       -- versions of species as synonyms for the singular versions.
@@ -37,6 +37,8 @@ module Math.Combinatorics.Species.Class
     , subsets
     , ksubsets
     , elements
+
+    , bag, bags
 
       -- * Derived operations
       -- $derived_ops
@@ -180,6 +182,10 @@ x = singleton
 
 sets :: Species s => s
 sets = set
+
+bag, bags :: Species s => s
+bag = set
+bags = set
 
 cycles :: Species s => s
 cycles = cycle
