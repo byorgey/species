@@ -161,6 +161,16 @@ instance (Show a) => Show (Star a) where
   show Star = "*"
   show (Original a) = show a
 
+-- Note, the above instance does not properly display structures
+-- arising from higher derivatives, since the different holes are not
+-- distinguished (although they should be).  This could be fixed by
+-- prefixing all the Original elements with some special character;
+-- then you could tell the difference between, say, "*" and "~*" (if ~
+-- was the special character).  However, this solution seems a bit
+-- heavyweight.  Multiple differentiation is not that common, and you
+-- can always do case analysis to correctly figure out the structure;
+-- it's just the String representations which would be misleading.
+
 -- XXX add some examples for Mu/Interp
 
 -- | Higher-order fixpoint. @'Mu' f a@ is morally isomorphic to @f
