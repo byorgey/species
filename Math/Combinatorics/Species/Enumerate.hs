@@ -107,8 +107,6 @@ enumerate' (f :+:: g) xs         = map Inl (enumerate' (stripI f) xs)
   -- things returned by splits to make sure they are in the
   -- appropriate ranges.
 
-  -- XXX use multiset operations instead of 'length'
-
 enumerate' (f :*:: g) xs         = [ Prod x y
                                    | (s1,s2) <- MS.splits xs
                                    ,            (fromIntegral $ MS.size s1) `I.elem` (getI f)
@@ -123,10 +121,17 @@ enumerate' (f :.:: g) xs         = [ Comp y
                                    , xs' <- MS.sequenceMS . fmap (enumerate' (stripI g)) $ p
                                    , y   <- enumerate' (stripI f) xs'
                                    ]
+enumerate' (f :><:: g) xs
+  | any (/= 1) $ MS.getCounts xs
+  = error "Unlabeled enumeration does not (yet) work with cartesian product."
 enumerate' (f :><:: g) xs        = [ Prod x y
                                    | x <- enumerate' (stripI f) xs
                                    , y <- enumerate' (stripI g) xs
                                    ]
+
+enumerate' (f :@:: g) xs
+  | any (/= 1) $ MS.getCounts xs
+  = error "Unlabeled enumeration does not (yet) work with functor composition."
 enumerate' (f :@:: g) xs         = map Comp
                                    . enumerate' (stripI f)
                                    . MS.fromDistinctList
