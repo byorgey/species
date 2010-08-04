@@ -100,12 +100,8 @@ enumerate' TElt xs               = map (Id . fst) . MS.toCounts $ xs
 enumerate' (f :+:: g) xs         = map Inl (enumerate' (stripI f) xs)
                                 ++ map Inr (enumerate' (stripI g) xs)
 
-  -- XXX working here.  Need to change this to use the annotations
-  -- which are now contained in f and g.  I suppose MS.splits should
-  -- be changed (?) to only return splits which are of appropriate
-  -- sizes.  I guess a quick and dirty solution is just to filter the
-  -- things returned by splits to make sure they are in the
-  -- appropriate ranges.
+  -- A better solution here might be to change MS.splits to only
+  -- return splits which are of appropriate sizes.
 
 enumerate' (f :*:: g) xs         = [ Prod x y
                                    | (s1,s2) <- MS.splits xs
