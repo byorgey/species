@@ -5,6 +5,7 @@
            , TypeFamilies
            , PatternGuards
            , DeriveDataTypeable
+           , TypeOperators
   #-}
 
 {- Refactoring plan:
@@ -214,11 +215,11 @@ spToExp self = spToExp'
   spToExp' Subset              = [| subset |]
   spToExp' (KSubset k)         = [| ksubset $(lift k) |]
   spToExp' Elt                 = [| element |]
-  spToExp' (f :+: g)           = [| $(spToExp' f) + $(spToExp' g) |]
-  spToExp' (f :*: g)           = [| $(spToExp' f) * $(spToExp' g) |]
-  spToExp' (f :.: g)           = [| $(spToExp' f) `o` $(spToExp' g) |]
-  spToExp' (f :><: g)          = [| $(spToExp' f) >< $(spToExp' g) |]
-  spToExp' (f :@: g)           = [| $(spToExp' f) @@ $(spToExp' g) |]
+  spToExp' (f :+ g)           = [| $(spToExp' f) + $(spToExp' g) |]
+  spToExp' (f :* g)           = [| $(spToExp' f) * $(spToExp' g) |]
+  spToExp' (f :. g)           = [| $(spToExp' f) `o` $(spToExp' g) |]
+  spToExp' (f :>< g)          = [| $(spToExp' f) >< $(spToExp' g) |]
+  spToExp' (f :@ g)           = [| $(spToExp' f) @@ $(spToExp' g) |]
   spToExp' (Der f)             = [| oneHole $(spToExp' f) |]
   spToExp' (OfSize _ _)        = error "Can't reify general size predicate into code"
   spToExp' (OfSizeExactly f k) = [| $(spToExp' f) `ofSizeExactly` $(lift k) |]
@@ -242,11 +243,11 @@ spToTy self = spToTy'
   spToTy' Subset              = [t| Set |]
   spToTy' (KSubset _)         = [t| Set |]
   spToTy' Elt                 = [t| Id |]
-  spToTy' (f :+: g)           = [t| Sum  $(spToTy' f) $(spToTy' g) |]
-  spToTy' (f :*: g)           = [t| Prod $(spToTy' f) $(spToTy' g) |]
-  spToTy' (f :.: g)           = [t| Comp $(spToTy' f) $(spToTy' g) |]
-  spToTy' (f :><: g)          = [t| Prod $(spToTy' f) $(spToTy' g) |]
-  spToTy' (f :@: g)           = [t| Comp $(spToTy' f) $(spToTy' g) |]
+  spToTy' (f :+ g)            = [t| $(spToTy' f) :+: $(spToTy' g) |]
+  spToTy' (f :* g)            = [t| $(spToTy' f) :*: $(spToTy' g) |]
+  spToTy' (f :. g)            = [t| $(spToTy' f) :.: $(spToTy' g) |]
+  spToTy' (f :>< g)           = [t| $(spToTy' f) :*: $(spToTy' g) |]
+  spToTy' (f :@ g)            = [t| $(spToTy' f) :.: $(spToTy' g) |]
   spToTy' (Der f)             = [t| Star $(spToTy' f) |]
   spToTy' (OfSize f _)        = spToTy' f
   spToTy' (OfSizeExactly f _) = spToTy' f
@@ -311,7 +312,7 @@ mkIsoMatches _ (SEnum t)  = newName "x" >>= \x ->
 mkIsoMatches _ (SSumProd [])     = return []
 mkIsoMatches sp (SSumProd [con]) = mkIsoConMatches sp con
 mkIsoMatches sp (SSumProd cons)  = addInjs 0 <$> zipWithM mkIsoConMatches (terms sp) cons
- where terms (f :+: g) = terms f ++ [g]
+ where terms (f :+ g) = terms f ++ [g]
        terms f = [f]
 
        addInjs :: Int -> [[(Pat, Exp)]] -> [(Pat, Exp)]
@@ -332,11 +333,11 @@ mkIsoMatches _ SSelf         = newName "s" >>= \s ->
 mkIsoConMatches :: SpeciesAST -> (Name, [Struct]) -> Q [(Pat, Exp)]
 mkIsoConMatches _ (cnm, []) = return [(ConP 'Unit [], ConE cnm)]
 mkIsoConMatches sp (cnm, ps) = map mkProd . sequence <$> zipWithM mkIsoMatches (factors sp) ps
-  where factors (f :*: g) = factors f ++ [g]
+  where factors (f :* g) = factors f ++ [g]
         factors f = [f]
 
         mkProd :: [(Pat, Exp)] -> (Pat, Exp)
-        mkProd = (foldl1 (\x y -> (ConP 'Prod [x, y])) *** foldl AppE (ConE cnm))
+        mkProd = (foldl1 (\x y -> (ConP '(:*:) [x, y])) *** foldl AppE (ConE cnm))
                . unzip
 
 -- Species definition --------
@@ -362,14 +363,14 @@ structToSpAST _    SId           = [| TX |]
 structToSpAST _    (SConst t)    = error "SConst in structToSpAST?"
 structToSpAST self (SEnum t)     = typeToSpAST self t
 structToSpAST _    (SSumProd []) = [| TZero |]
-structToSpAST self (SSumProd ss) = foldl1 (\x y -> [| annI $x :+: annI $y |])
+structToSpAST self (SSumProd ss) = foldl1 (\x y -> [| annI $x :+ annI $y |])
                                      $ map (conToSpAST self) ss
-structToSpAST self (SComp s1 s2) = [| annI $(structToSpAST self s1) :.: annI $(structToSpAST self s2) |]
+structToSpAST self (SComp s1 s2) = [| annI $(structToSpAST self s1) :. annI $(structToSpAST self s2) |]
 structToSpAST self SSelf         = varE self
 
 conToSpAST :: Name -> (Name, [Struct]) -> Q Exp
 conToSpAST _    (_,[]) = [| TOne |]
-conToSpAST self (_,ps) = foldl1 (\x y -> [| annI $x :*: annI $y |]) $ map (structToSpAST self) ps
+conToSpAST self (_,ps) = foldl1 (\x y -> [| annI $x :* annI $y |]) $ map (structToSpAST self) ps
 
 typeToSpAST :: Name -> Type -> Q Exp
 typeToSpAST _    ListT    = [| TL |]

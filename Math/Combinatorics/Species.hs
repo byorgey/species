@@ -78,7 +78,7 @@ module Math.Combinatorics.Species
       -- $types
     , Void, Unit(..)
     , Id(..), Const(..)
-    , Sum(..), Prod(..), Comp(..)
+    , (:+:)(..), (:*:)(..), (:.:)(..)
     , Star(..), Cycle(..), Set(..)
 
       -- * Species AST

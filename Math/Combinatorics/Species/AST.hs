@@ -4,6 +4,7 @@
            , KindSignatures
            , FlexibleContexts
            , RankNTypes
+           , TypeOperators
   #-}
 
 -----------------------------------------------------------------------------
@@ -77,11 +78,11 @@ data SpeciesAST where
   Subset        :: SpeciesAST
   KSubset       :: Integer -> SpeciesAST
   Elt           :: SpeciesAST
-  (:+:)         :: SpeciesAST -> SpeciesAST -> SpeciesAST
-  (:*:)         :: SpeciesAST -> SpeciesAST -> SpeciesAST
-  (:.:)         :: SpeciesAST -> SpeciesAST -> SpeciesAST
-  (:><:)        :: SpeciesAST -> SpeciesAST -> SpeciesAST
-  (:@:)         :: SpeciesAST -> SpeciesAST -> SpeciesAST
+  (:+)         :: SpeciesAST -> SpeciesAST -> SpeciesAST
+  (:*)         :: SpeciesAST -> SpeciesAST -> SpeciesAST
+  (:.)         :: SpeciesAST -> SpeciesAST -> SpeciesAST
+  (:><)        :: SpeciesAST -> SpeciesAST -> SpeciesAST
+  (:@)         :: SpeciesAST -> SpeciesAST -> SpeciesAST
   Der           :: SpeciesAST -> SpeciesAST
   OfSize        :: SpeciesAST -> (Integer -> Bool) -> SpeciesAST
   OfSizeExactly :: SpeciesAST -> Integer -> SpeciesAST
@@ -121,12 +122,12 @@ data TSpeciesAST (s :: * -> *) where
    TSubset   :: TSpeciesAST Set
    TKSubset  :: Integer -> TSpeciesAST Set
    TElt      :: TSpeciesAST Id
-   (:+::)    :: SizedSpeciesAST f -> SizedSpeciesAST g -> TSpeciesAST (Sum f g)
-   (:*::)    :: SizedSpeciesAST f -> SizedSpeciesAST g -> TSpeciesAST (Prod f g)
-   (:.::)    :: SizedSpeciesAST f -> SizedSpeciesAST g -> TSpeciesAST (Comp f g)
-   (:><::)   :: SizedSpeciesAST f -> SizedSpeciesAST g -> TSpeciesAST (Prod f g)
-   (:@::)    :: SizedSpeciesAST f -> SizedSpeciesAST g -> TSpeciesAST (Comp f g)
-   TDer      :: SizedSpeciesAST f -> TSpeciesAST (Comp f Star)
+   (:+::)    :: SizedSpeciesAST f -> SizedSpeciesAST g -> TSpeciesAST (f :+: g)
+   (:*::)    :: SizedSpeciesAST f -> SizedSpeciesAST g -> TSpeciesAST (f :*: g)
+   (:.::)    :: SizedSpeciesAST f -> SizedSpeciesAST g -> TSpeciesAST (f :.: g)
+   (:><::)   :: SizedSpeciesAST f -> SizedSpeciesAST g -> TSpeciesAST (f :*: g)
+   (:@::)    :: SizedSpeciesAST f -> SizedSpeciesAST g -> TSpeciesAST (f :.: g)
+   TDer      :: SizedSpeciesAST f -> TSpeciesAST (f :.: Star)
    TOfSize   :: SizedSpeciesAST f -> (Integer -> Bool) -> TSpeciesAST f
    TOfSizeExactly :: SizedSpeciesAST f -> Integer -> TSpeciesAST f
    TNonEmpty :: SizedSpeciesAST f -> TSpeciesAST f
@@ -233,11 +234,11 @@ erase' TL                   = L
 erase' TSubset              = Subset
 erase' (TKSubset k)         = KSubset k
 erase' TElt                 = Elt
-erase' (f :+:: g)           = erase' (stripI f) :+: erase' (stripI g)
-erase' (f :*:: g)           = erase' (stripI f) :*: erase' (stripI g)
-erase' (f :.:: g)           = erase' (stripI f) :.: erase' (stripI g)
-erase' (f :><:: g)          = erase' (stripI f) :><: erase' (stripI g)
-erase' (f :@:: g)           = erase' (stripI f) :@: erase' (stripI g)
+erase' (f :+:: g)           = erase' (stripI f) :+ erase' (stripI g)
+erase' (f :*:: g)           = erase' (stripI f) :* erase' (stripI g)
+erase' (f :.:: g)           = erase' (stripI f) :. erase' (stripI g)
+erase' (f :><:: g)          = erase' (stripI f) :>< erase' (stripI g)
+erase' (f :@:: g)           = erase' (stripI f) :@ erase' (stripI g)
 erase' (TDer f)             = Der . erase' . stripI $ f
 erase' (TOfSize f p)        = OfSize (erase' . stripI $ f) p
 erase' (TOfSizeExactly f k) = OfSizeExactly (erase' . stripI $ f) k
@@ -257,15 +258,15 @@ annotate L                   = wrap TL
 annotate Subset              = wrap TSubset
 annotate (KSubset k)         = wrap (TKSubset k)
 annotate Elt                 = wrap TElt
-annotate (f :+: g)           = annotate f + annotate g
+annotate (f :+ g)           = annotate f + annotate g
   where Wrap f + Wrap g      = wrap $ f :+:: g
-annotate (f :*: g)           = annotate f * annotate g
+annotate (f :* g)           = annotate f * annotate g
   where Wrap f * Wrap g      = wrap $ f :*:: g
-annotate (f :.: g)           = annotate f . annotate g
+annotate (f :. g)           = annotate f . annotate g
   where Wrap f . Wrap g      = wrap $ f :.:: g
-annotate (f :><: g)          = annotate f >< annotate g
+annotate (f :>< g)          = annotate f >< annotate g
   where Wrap f >< Wrap g     = wrap $ f :><:: g
-annotate (f :@: g)           = annotate f @@ annotate g
+annotate (f :@ g)           = annotate f @@ annotate g
   where Wrap f @@ Wrap g     = wrap $ f :@:: g
 annotate (Der f)             = der $ annotate f
   where der (Wrap f)         = wrap (TDer f)
@@ -301,11 +302,11 @@ class (Typeable f, Show f, Typeable1 (Interp f (Mu f))) => ASTFunctor f where
 --   index series.
 needsCI :: SpeciesAST -> Bool
 needsCI L            = True
-needsCI (f :+: g)    = needsCI f || needsCI g
-needsCI (f :*: g)    = needsCI f || needsCI g
-needsCI (_ :.: _)    = True
-needsCI (_ :><: _)   = True
-needsCI (_ :@: _)    = True
+needsCI (f :+ g)    = needsCI f || needsCI g
+needsCI (f :* g)    = needsCI f || needsCI g
+needsCI (_ :. _)    = True
+needsCI (_ :>< _)   = True
+needsCI (_ :@ _)    = True
 needsCI (Der _)      = True
 needsCI (OfSize f _) = needsCI f
 needsCI (OfSizeExactly f _) = needsCI f
@@ -315,11 +316,11 @@ needsCI _            = False
 
 -- | Substitute an expression for recursive occurrences.
 substRec :: ASTFunctor f => f -> SpeciesAST -> SpeciesAST -> SpeciesAST
-substRec c e (f :+: g)                          = substRec c e f :+: substRec c e g
-substRec c e (f :*: g)                          = substRec c e f :*: substRec c e g
-substRec c e (f :.: g)                          = substRec c e f :.: substRec c e g
-substRec c e (f :><: g)                         = substRec c e f :><: substRec c e g
-substRec c e (f :@: g)                          = substRec c e f :@: substRec c e g
+substRec c e (f :+ g)                          = substRec c e f :+ substRec c e g
+substRec c e (f :* g)                          = substRec c e f :* substRec c e g
+substRec c e (f :. g)                          = substRec c e f :. substRec c e g
+substRec c e (f :>< g)                         = substRec c e f :>< substRec c e g
+substRec c e (f :@ g)                          = substRec c e f :@ substRec c e g
 substRec c e (Der f)                            = Der (substRec c e f)
 substRec c e (OfSize f p)                       = OfSize (substRec c e f) p
 substRec c e (OfSizeExactly f k)                = OfSizeExactly (substRec c e f) k

@@ -4,6 +4,7 @@
            , DeriveDataTypeable
            , TypeFamilies
            , EmptyDataDecls
+           , TypeOperators
   #-}
 
 -----------------------------------------------------------------------------
@@ -27,9 +28,9 @@ module Math.Combinatorics.Species.Structures
     , Unit(..)
     , Const(..)
     , Id(..)
-    , Sum(..)
-    , Prod(..)
-    , Comp(..)
+    , (:+:)(..)
+    , (:*:)(..)
+    , (:.:)(..)
     , Cycle(..)
     , Set(..)
     , Star(..)
@@ -88,44 +89,54 @@ instance (Show a) => Show (Id a) where
   show (Id x) = show x
 
 -- | Functor coproduct.
-data Sum f g a = Inl (f a) | Inr (g a)
-instance (Functor f, Functor g) => Functor (Sum f g) where
+data (f :+: g) a = Inl (f a) | Inr (g a)
+instance (Functor f, Functor g) => Functor (f :+: g) where
   fmap f (Inl fa) = Inl (fmap f fa)
   fmap f (Inr ga) = Inr (fmap f ga)
-instance (Show (f a), Show (g a)) => Show (Sum f g a) where
+instance (Show (f a), Show (g a)) => Show ((f :+: g) a) where
   show (Inl fa) = "inl(" ++ show fa ++ ")"
   show (Inr ga) = "inr(" ++ show ga ++ ")"
-instance (Typeable1 f, Typeable1 g) => Typeable1 (Sum f g) where
-  typeOf1 x = mkTyConApp (mkTyCon "Math.Combinatorics.Species.Types.Sum") [typeOf1 (getF x), typeOf1 (getG x)]
-    where getF :: Sum f g a -> f a
+instance (Typeable1 f, Typeable1 g) => Typeable1 (f :+: g) where
+  typeOf1 x = mkTyConApp (mkTyCon "Math.Combinatorics.Species.Types.(:+:)") [typeOf1 (getF x), typeOf1 (getG x)]
+    where getF :: (f :+: g) a -> f a
           getF = undefined
-          getG :: Sum f g a -> g a
+          getG :: (f :+: g) a -> g a
           getG = undefined
 
 -- | Functor product.
-data Prod f g a = Prod (f a) (g a)
-instance (Functor f, Functor g) => Functor (Prod f g) where
-  fmap f (Prod fa ga) = Prod (fmap f fa) (fmap f ga)
-instance (Show (f a), Show (g a)) => Show (Prod f g a) where
-  show (Prod x y) = show (x,y)
-instance (Typeable1 f, Typeable1 g) => Typeable1 (Prod f g) where
-  typeOf1 x = mkTyConApp (mkTyCon "Math.Combinatorics.Species.Types.Prod") [typeOf1 (getF x), typeOf1 (getG x)]
-    where getF :: Prod f g a -> f a
+data (f :*: g) a = f a :*: g a
+
+pFst :: (f :*: g) a -> f a
+pFst (x :*: y) = x
+
+pSnd :: (f :*: g) a -> g a
+pSnd (x :*: y) = y
+
+pSwap :: (f :*: g) a -> (g :*: f) a
+pSwap (x :*: y) = y :*: x
+
+instance (Functor f, Functor g) => Functor (f :*: g) where
+  fmap f (fa :*: ga) = fmap f fa :*: fmap f ga
+instance (Show (f a), Show (g a)) => Show ((f :*: g) a) where
+  show (x :*: y) = show (x,y)
+instance (Typeable1 f, Typeable1 g) => Typeable1 (f :*: g) where
+  typeOf1 x = mkTyConApp (mkTyCon "Math.Combinatorics.Species.Types.(:*:)") [typeOf1 (getF x), typeOf1 (getG x)]
+    where getF :: (f :*: g) a -> f a
           getF = undefined
-          getG :: Prod f g a -> g a
+          getG :: (f :*: g) a -> g a
           getG = undefined
 
 -- | Functor composition.
-data Comp f g a = Comp { unComp :: (f (g a)) }
-instance (Functor f, Functor g) => Functor (Comp f g) where
+data (f :.: g) a = Comp { unComp :: (f (g a)) }
+instance (Functor f, Functor g) => Functor (f :.: g) where
   fmap f (Comp fga) = Comp (fmap (fmap f) fga)
-instance (Show (f (g a))) => Show (Comp f g a) where
+instance (Show (f (g a))) => Show ((f :.: g) a) where
   show (Comp x) = show x
-instance (Typeable1 f, Typeable1 g) => Typeable1 (Comp f g) where
-  typeOf1 x = mkTyConApp (mkTyCon "Math.Combinatorics.Species.Types.Comp") [typeOf1 (getF x), typeOf1 (getG x)]
-    where getF :: Comp f g a -> f a
+instance (Typeable1 f, Typeable1 g) => Typeable1 (f :.: g) where
+  typeOf1 x = mkTyConApp (mkTyCon "Math.Combinatorics.Species.Types.(:.:)") [typeOf1 (getF x), typeOf1 (getG x)]
+    where getF :: (f :.: g) a -> f a
           getF = undefined
-          getG :: Comp f g a -> g a
+          getG :: (f :.: g) a -> g a
           getG = undefined
 
 -- | Cycle structure.  A value of type @'Cycle' a@ is implemented as

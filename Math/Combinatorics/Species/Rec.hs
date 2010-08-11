@@ -33,7 +33,7 @@ instance Show BTreeC where
 type instance Interp BTreeC self = Sum Unit (Prod Id (Prod self self))
 
 instance ASTFunctor BTreeC where
-  apply _ self = TOne :+: (TX :*: (self :*: self))
+  apply _ self = TOne :+ (TX :* (self :* self))
 
 instance Show a => Show (Mu BTreeC a) where
   show = show . unMu

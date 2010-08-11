@@ -5,6 +5,7 @@
            , KindSignatures
            , TypeFamilies
            , DeriveDataTypeable
+           , TypeOperators
   #-}
 
 -----------------------------------------------------------------------------
@@ -103,7 +104,7 @@ enumerate' (f :+:: g) xs         = map Inl (enumerate' (stripI f) xs)
   -- A better solution here might be to change MS.splits to only
   -- return splits which are of appropriate sizes.
 
-enumerate' (f :*:: g) xs         = [ Prod x y
+enumerate' (f :*:: g) xs         = [ x :*: y
                                    | (s1,s2) <- MS.splits xs
                                    ,            (fromIntegral $ MS.size s1) `I.elem` (getI f)
                                    ,            (fromIntegral $ MS.size s2) `I.elem` (getI g)
@@ -120,7 +121,7 @@ enumerate' (f :.:: g) xs         = [ Comp y
 enumerate' (f :><:: g) xs
   | any (/= 1) $ MS.getCounts xs
   = error "Unlabeled enumeration does not (yet) work with cartesian product."
-enumerate' (f :><:: g) xs        = [ Prod x y
+enumerate' (f :><:: g) xs        = [ x :*: y
                                    | x <- enumerate' (stripI f) xs
                                    , y <- enumerate' (stripI g) xs
                                    ]
@@ -396,17 +397,17 @@ instance Enumerable Id where
   type StructTy Id = Id
   iso = id
 
-instance (Enumerable f, Enumerable g) => Enumerable (Sum f g) where
-  type StructTy (Sum f g) = Sum (StructTy f) (StructTy g)
+instance (Enumerable f, Enumerable g) => Enumerable (f :+: g) where
+  type StructTy (f :+: g) = StructTy f :+: StructTy g
   iso (Inl x) = Inl (iso x)
   iso (Inr y) = Inr (iso y)
 
-instance (Enumerable f, Enumerable g) => Enumerable (Prod f g) where
-  type StructTy (Prod f g) = Prod (StructTy f) (StructTy g)
-  iso (Prod x y) = Prod (iso x) (iso y)
+instance (Enumerable f, Enumerable g) => Enumerable (f :*: g) where
+  type StructTy (f :*: g) = StructTy f :*: StructTy g
+  iso (x :*: y) = iso x :*: iso y
 
-instance (Enumerable f, Functor f, Enumerable g) => Enumerable (Comp f g) where
-  type StructTy (Comp f g) = Comp (StructTy f) (StructTy g)
+instance (Enumerable f, Functor f, Enumerable g) => Enumerable (f :.: g) where
+  type StructTy (f :.: g) = StructTy f :.: StructTy g
   iso (Comp fgx) = Comp (fmap iso (iso fgx))
 
 instance Enumerable [] where
@@ -430,6 +431,6 @@ instance Typeable f => Enumerable (Mu f) where
   iso = id
 
 instance Enumerable Maybe where
-  type StructTy Maybe = Sum Unit Id
+  type StructTy Maybe = Unit :+: Id
   iso (Inl Unit)   = Nothing
   iso (Inr (Id x)) = Just x
