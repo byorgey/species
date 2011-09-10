@@ -1,6 +1,9 @@
-{-# LANGUAGE TypeFamilies, EmptyDataDecls, FlexibleInstances, FlexibleContexts #-}
+{-# LANGUAGE CPP, TypeFamilies, EmptyDataDecls, FlexibleInstances, FlexibleContexts #-}
 import NumericPrelude
+#if MIN_VERSION_numeric_prelude(0,2,0)
+#else
 import PreludeBase
+#endif
 
 import Math.Combinatorics.Species
 

@@ -1,4 +1,6 @@
-{-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE NoImplicitPrelude
+           , CPP
+  #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -59,8 +61,12 @@ module Math.Combinatorics.Species.Class
 
 import qualified Algebra.Differential as Differential
 
+#if MIN_VERSION_numeric_prelude(0,2,0)
+import NumericPrelude hiding (cycle)
+#else
 import NumericPrelude
 import PreludeBase hiding (cycle)
+#endif
 
 import Math.Combinatorics.Species.AST
 

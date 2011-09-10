@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveDataTypeable
+           , CPP
            , FlexibleInstances
            , TypeFamilies
   #-}
@@ -15,7 +16,10 @@ module Math.Combinatorics.Species.TRec
        ) where
 
 import NumericPrelude
+#if MIN_VERSION_numeric_prelude(0,2,0)
+#else
 import PreludeBase
+#endif
 
 import Data.Typeable
 

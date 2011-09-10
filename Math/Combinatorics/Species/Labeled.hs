@@ -1,4 +1,5 @@
 {-# LANGUAGE NoImplicitPrelude
+           , CPP
            , GeneralizedNewtypeDeriving
            , PatternGuards
   #-}
@@ -38,7 +39,10 @@ import qualified MathObj.PowerSeries as PS
 import qualified MathObj.FactoredRational as FQ
 
 import NumericPrelude
+#if MIN_VERSION_numeric_prelude(0,2,0)
+#else
 import PreludeBase hiding (cycle)
+#endif
 
 facts :: [Integer]
 facts = 1 : zipWith (*) [1..] facts

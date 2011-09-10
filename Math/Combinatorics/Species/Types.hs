@@ -1,4 +1,5 @@
 {-# LANGUAGE NoImplicitPrelude
+           , CPP
            , GeneralizedNewtypeDeriving
   #-}
 
@@ -45,7 +46,10 @@ module Math.Combinatorics.Species.Types
     ) where
 
 import NumericPrelude
+#if MIN_VERSION_numeric_prelude(0,2,0)
+#else
 import PreludeBase
+#endif
 import Data.List (genericReplicate)
 
 
@@ -130,6 +134,6 @@ selectIndex n xs = xs'
           safeIndex 0 (x:_)  = Just x
           safeIndex n (_:xs) = safeIndex (n-1) xs
           xs' = case mx of
-                  Just 0 -> []
-                  Just x -> genericReplicate n 0 ++ [x]
-                  _      -> []
+                  Just x | x /= zero
+                    -> genericReplicate n zero ++ [x]
+                  _ -> []

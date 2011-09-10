@@ -1,4 +1,5 @@
 {-# LANGUAGE NoImplicitPrelude
+           , CPP
            , GADTs
            , FlexibleContexts
            , ScopedTypeVariables
@@ -59,7 +60,10 @@ import Math.Combinatorics.Multiset (Multiset(..), (+:))
 import Data.Typeable
 
 import NumericPrelude
+#if MIN_VERSION_numeric_prelude(0,2,0)
+#else
 import PreludeBase hiding (cycle)
+#endif
 
 -- | Given an AST describing a species, with a phantom type parameter
 --   representing the structure of the species, and an underlying

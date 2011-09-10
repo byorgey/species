@@ -1,4 +1,5 @@
 {-# LANGUAGE NoImplicitPrelude
+           , CPP
            , TemplateHaskell
            , FlexibleInstances
            , TypeSynonymInstances
@@ -47,8 +48,12 @@ module Math.Combinatorics.Species.TH
        , deriveSpecies
        ) where
 
+#if MIN_VERSION_numeric_prelude(0,2,0)
+import NumericPrelude hiding (cycle)
+#else
 import NumericPrelude
 import PreludeBase hiding (cycle)
+#endif
 
 import Math.Combinatorics.Species.Class
 import Math.Combinatorics.Species.Enumerate

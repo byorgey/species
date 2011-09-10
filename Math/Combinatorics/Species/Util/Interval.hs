@@ -1,4 +1,5 @@
 {-# LANGUAGE NoImplicitPrelude
+           , CPP
   #-}
 
 -----------------------------------------------------------------------------
@@ -31,8 +32,13 @@ module Math.Combinatorics.Species.Util.Interval
     , natsI, fromI, emptyI, omegaI
     ) where
 
+#if MIN_VERSION_numeric_prelude(0,2,0)
+import NumericPrelude hiding (min, max, elem)
+import Prelude (min, max)
+#else
 import NumericPrelude
 import PreludeBase hiding (elem)
+#endif
 
 import qualified Algebra.Additive as Additive
 import qualified Algebra.Ring as Ring
@@ -109,14 +115,14 @@ intersect (I l1 h1) (I l2 h2) = I (max l1 l2) (min h1 h2)
 
 -- | Intervals can be added by adding their endpoints pointwise.
 instance Additive.C Interval where
-  zero = I 0 0
+  zero = I zero zero
   (I l1 h1) + (I l2 h2) = I (l1 + l2) (h1 + h2)
   negate = error "Interval negation: intervals only form a semiring"
 
 -- | Intervals form a semiring, with the multiplication operation
 --   being pointwise multiplication of their endpoints.
 instance Ring.C Interval where
-  one = I 1 1
+  one = I one one
   (I l1 h1) * (I l2 h2) = I (l1 * l2) (h1 * h2)
   fromInteger n = I (Nat n) (Nat n)
 
@@ -134,7 +140,7 @@ toList (I (Nat lo) (Nat hi)) = [lo..hi]
 
 -- | The range [0,omega] containing all natural numbers.
 natsI :: Interval
-natsI = I 0 Omega
+natsI = I zero Omega
 
 -- | Construct an open range [n,omega].
 fromI :: NatO -> Interval
@@ -142,7 +148,7 @@ fromI n = I n Omega
 
 -- | The empty interval.
 emptyI :: Interval
-emptyI = I 1 0
+emptyI = I one zero
 
 -- | The interval which contains only omega.
 omegaI :: Interval

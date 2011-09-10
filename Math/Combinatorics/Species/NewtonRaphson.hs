@@ -1,4 +1,5 @@
 {-# LANGUAGE NoImplicitPrelude
+           , CPP
   #-}
 
 -----------------------------------------------------------------------------
@@ -28,7 +29,10 @@ module Math.Combinatorics.Species.NewtonRaphson
     ) where
 
 import NumericPrelude
+#if MIN_VERSION_numeric_prelude(0,2,0)
+#else
 import PreludeBase
+#endif
 
 import Math.Combinatorics.Species.Class
 import Math.Combinatorics.Species.AST
@@ -67,7 +71,7 @@ inits' xs = [] : inits'' xs
 --   r k@ computes a species which has contact at least @k@ with the
 --   species @t = x '*' (r ``o`` t)@.
 newtonRaphson :: Species s => s -> Integer -> s
-newtonRaphson r n = newtonRaphson' 0 0
+newtonRaphson r n = newtonRaphson' zero 0
   where newtonRaphson' a k
           | k >= n = a
           | otherwise = newtonRaphson' (newtonRaphsonIter r k a) (2*k + 2)

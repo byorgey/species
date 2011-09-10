@@ -1,4 +1,5 @@
 {-# LANGUAGE NoImplicitPrelude
+           , CPP
            , FlexibleInstances
   #-}
 
@@ -50,7 +51,10 @@ import Data.Function (on)
 import Control.Arrow ((&&&), first, second)
 
 import NumericPrelude
+#if MIN_VERSION_numeric_prelude(0,2,0)
+#else
 import PreludeBase hiding (cycle)
+#endif
 
 -- | An interpretation of species expressions as cycle index series.
 -- For the definition of the 'CycleIndex' type, see
@@ -86,7 +90,7 @@ partToMonomial js = Monomial.Cons (ezCoeff js) (M.fromList js)
 -- | @'ezCoeff' js@ is the coefficient of the corresponding monomial in
 --   the cycle index series for the species of sets.
 ezCoeff :: CycleType -> Rational
-ezCoeff js = toRational $ 1 / aut js
+ezCoeff js = toRational . recip $ aut js
 
 -- | @aut js@ is is the number of automorphisms of a permutation with
 --   cycle type @js@ (i.e. a permutation which has @n@ cycles of size
@@ -153,7 +157,7 @@ insertZeros = insertZeros' [0..]
   where
     insertZeros' _ [] = []
     insertZeros' (n:ns) ((pow,c):pcs)
-      | n < pow   = genericReplicate (pow - n) 0
+      | n < pow   = genericReplicate (pow - n) zero
                     ++ insertZeros' (genericDrop (pow - n) (n:ns)) ((pow,c):pcs)
       | otherwise = c : insertZeros' ns pcs
 
@@ -222,7 +226,7 @@ zFComp f g = ciFromMonomials $
              concat $ for [0..] $ \n ->
                for (intPartitions n) $ \nn ->
                  Monomial.mkMonomial
-                   (toRational (1 / aut nn) * (zFix f (gnn nn n) % 1))
+                   (toRational (recip (aut nn)) * (zFix f (gnn nn n) % 1))
                    nn
 
   where for     = flip map

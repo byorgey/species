@@ -1,4 +1,5 @@
 {-# LANGUAGE NoImplicitPrelude
+           , CPP
            , GADTs
            , TypeFamilies
            , KindSignatures
@@ -57,7 +58,10 @@ import Unsafe.Coerce
 import Data.Maybe (fromMaybe)
 
 import NumericPrelude
+#if MIN_VERSION_numeric_prelude(0,2,0)
+#else
 import PreludeBase hiding (cycle)
+#endif
 
 ------------------------------------------------------------
 --  Untyped AST  -------------------------------------------
@@ -143,15 +147,15 @@ data SizedSpeciesAST (s :: * -> *) where
 --   structures.
 interval :: TSpeciesAST s -> Interval
 interval TZero                = emptyI
-interval TOne                 = 0
-interval (TN n)               = 0
-interval TX                   = 1
+interval TOne                 = zero
+interval (TN n)               = zero
+interval TX                   = one
 interval TE                   = natsI
-interval TC                   = fromI 1
+interval TC                   = fromI one
 interval TL                   = natsI
 interval TSubset              = natsI
 interval (TKSubset k)         = fromI (fromInteger k)
-interval TElt                 = fromI 1
+interval TElt                 = fromI one
 interval (f :+:: g)           = getI f `I.union` getI g
 interval (f :*:: g)           = getI f + getI g
 interval (f :.:: g)           = getI f * getI g
@@ -165,7 +169,7 @@ interval (f :@:: g)           = natsI
 interval (TDer f)             = decrI (getI f)
 interval (TOfSize f p)        = fromI $ smallestIn (getI f) p
 interval (TOfSizeExactly f n) = fromInteger n `I.intersect` getI f
-interval (TNonEmpty f)        = fromI 1 `I.intersect` getI f
+interval (TNonEmpty f)        = fromI one `I.intersect` getI f
 interval (TRec f)             = interval (apply f TOmega)
 interval TOmega               = omegaI
 

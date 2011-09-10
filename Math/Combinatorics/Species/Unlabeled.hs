@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Math.Combinatorics.Species.CycleIndex
@@ -26,7 +27,10 @@ import qualified MathObj.PowerSeries as PS
 import qualified Algebra.Differential as Differential
 
 import NumericPrelude
+#if MIN_VERSION_numeric_prelude(0,2,0)
+#else
 import PreludeBase hiding (cycle)
+#endif
 
 ciErr :: String -> a
 ciErr op = error ("unlabeled " ++ op ++ " must go via cycle index series.")

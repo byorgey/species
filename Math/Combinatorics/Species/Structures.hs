@@ -1,4 +1,5 @@
 {-# LANGUAGE NoImplicitPrelude
+           , CPP
            , GeneralizedNewtypeDeriving
            , FlexibleContexts
            , DeriveDataTypeable
@@ -40,7 +41,10 @@ module Math.Combinatorics.Species.Structures
     ) where
 
 import NumericPrelude
+#if MIN_VERSION_numeric_prelude(0,2,0)
+#else
 import PreludeBase
+#endif
 import Data.List (intercalate, foldl', delete, inits, tails)
 
 import Data.Typeable

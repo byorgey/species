@@ -1,4 +1,4 @@
-{-# LANGUAGE GADTs #-}
+{-# LANGUAGE CPP, GADTs #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -24,8 +24,12 @@ module Math.Combinatorics.Species.AST.Instances
     ( reify, reifyE, reflect, reflectT, reflectE )
     where
 
+#if MIN_VERSION_numeric_prelude(0,2,0)
+import NumericPrelude hiding (cycle)
+#else
 import NumericPrelude
 import PreludeBase hiding (cycle)
+#endif
 
 import Math.Combinatorics.Species.Class
 import Math.Combinatorics.Species.AST
@@ -284,8 +288,8 @@ reifyE = id
 
 -- | Reflect an AST back into any instance of the 'Species' class.
 reflect :: Species s => SpeciesAST -> s
-reflect Zero                = 0
-reflect One                 = 1
+reflect Zero                = zero
+reflect One                 = one
 reflect (N n)               = fromInteger n
 reflect X                   = singleton
 reflect E                   = set

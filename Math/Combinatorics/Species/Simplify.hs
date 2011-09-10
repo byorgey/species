@@ -1,4 +1,4 @@
-{-# LANGUAGE NoImplicitPrelude, GADTs #-}
+{-# LANGUAGE CPP, NoImplicitPrelude, GADTs #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -18,7 +18,10 @@ module Math.Combinatorics.Species.Simplify
     ) where
 
 import NumericPrelude
+#if MIN_VERSION_numeric_prelude(0,2,0)
+#else
 import PreludeBase
+#endif
 
 import Math.Combinatorics.Species.AST
 import Math.Combinatorics.Species.AST.Instances
