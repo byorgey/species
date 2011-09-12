@@ -18,3 +18,6 @@
   * rename M.C.S.Unlabelled to M.C.S.Unlabeled and M.C.S.Labelled to M.C.S.Labeled;
     add 'labeled' and 'unlabeled' as aliases for 'labelled' and 'unlabelled'
   * export Interp from M.C.Species
+
+0.3.2.1    12 Sep 2011
+  * update to build with GHC 7
