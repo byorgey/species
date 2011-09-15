@@ -21,3 +21,6 @@
 
 0.3.2.1    12 Sep 2011
   * update to build with GHC 7
+
+0.3.2.2    15 Sep 2011
+  * update to build with GHC 7.2
