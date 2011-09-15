@@ -11,7 +11,7 @@ import Math.Combinatorics.Species.AST.Instances
 
 import Data.Typeable
 
-import MyPrelude
+import NumericPrelude
 
 data Tree2C = Tree2C
   deriving (Typeable, Show)

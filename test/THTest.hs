@@ -7,7 +7,7 @@
 import Math.Combinatorics.Species.TH
 import Math.Combinatorics.Species
 
-import MyPrelude
+import NumericPrelude
 
 -- data Florp a = Fleep [a] a
 --   deriving Show
