@@ -197,5 +197,5 @@ data Mu f a = Mu { unMu :: Interp f (Mu f) a }
 
 -- | Interpretation type function for codes for higher-order type
 --   constructors, used as arguments to the higher-order fixpoint 'Mu'.
-type family Interp f self :: * -> *
+type family Interp f (self :: * -> *) :: * -> *
 
