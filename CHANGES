@@ -1,26 +1,29 @@
-0.3        12 June 2010
-  * A bunch of new features including:
-    - Template Haskell support for deriving instances for user-defined data types
-    - simplifier
-    - Newton-Raphson iteration
-  
-0.3.0.1    30 June 2010
-  * Fix broken dependency versions
+0.3.2.3    18 Oct 2012
+  * drop support for GHC < 7.4, and update to work with 7.4 and 7.6
 
-0.3.0.2    15 July 2010
-  * General cleanup, and added documentation
+0.3.2.2    15 Sep 2011
+  * update to build with GHC 7.2
 
-0.3.1      18 July 2010
-  * rename 'unerase' to the more descriptive 'annotate'
-  * export more stuff from Math.Combinatorics.Species and add some docs
+0.3.2.1    12 Sep 2011
+  * update to build with GHC 7
 
 0.3.2      31 July 2010
   * rename M.C.S.Unlabelled to M.C.S.Unlabeled and M.C.S.Labelled to M.C.S.Labeled;
     add 'labeled' and 'unlabeled' as aliases for 'labelled' and 'unlabelled'
   * export Interp from M.C.Species
 
-0.3.2.1    12 Sep 2011
-  * update to build with GHC 7
+0.3.1      18 July 2010
+  * rename 'unerase' to the more descriptive 'annotate'
+  * export more stuff from Math.Combinatorics.Species and add some docs
 
-0.3.2.2    15 Sep 2011
-  * update to build with GHC 7.2
+0.3.0.2    15 July 2010
+  * General cleanup, and added documentation
+
+0.3.0.1    30 June 2010
+  * Fix broken dependency versions
+
+0.3        12 June 2010
+  * A bunch of new features including:
+    - Template Haskell support for deriving instances for user-defined data types
+    - simplifier
+    - Newton-Raphson iteration
