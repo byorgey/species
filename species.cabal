@@ -26,7 +26,7 @@ Library
                  np-extras >= 0.3 && < 0.4,
                  containers >= 0.2 && < 0.6,
                  multiset-comb >= 0.2.3 && < 0.3,
-                 template-haskell >= 2.4 && < 2.8
+                 template-haskell >= 2.7 && < 2.9
   exposed-modules:
     Math.Combinatorics.Species
     Math.Combinatorics.Species.Class
