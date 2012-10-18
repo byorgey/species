@@ -76,10 +76,6 @@ import Language.Haskell.TH.Syntax (lift)
 --  Preliminaries  -----------------------------------------
 ------------------------------------------------------------
 
-instance Applicative Q where
-  pure  = return
-  (<*>) = ap
-
 -- | Report a fatal error and stop processing in the 'Q' monad.
 errorQ :: String -> Q a
 errorQ msg = report True msg >> error msg
