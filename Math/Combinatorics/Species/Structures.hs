@@ -74,15 +74,15 @@ instance Functor Unit where
   fmap _ Unit = Unit
 
 -- | The constant functor.
-newtype Const x a = Const x
+newtype Const x a = Const x deriving (Typeable)
 instance Functor (Const x) where
   fmap _ (Const x) = Const x
 instance (Show x) => Show (Const x a) where
   show (Const x) = show x
-instance Typeable2 Const where
-  typeOf2 _ = mkTyConApp (mkTyCon "Const") []
-instance Typeable x => Typeable1 (Const x) where
-  typeOf1 = typeOf1Default
+-- instance Typeable2 Const where
+--   typeOf2 _ = mkTyConApp (mkTyCon "Const") []
+-- instance Typeable x => Typeable1 (Const x) where
+--   typeOf1 = typeOf1Default
 
 -- | The identity functor.
 newtype Id a = Id a
@@ -93,22 +93,22 @@ instance (Show a) => Show (Id a) where
   show (Id x) = show x
 
 -- | Functor coproduct.
-data (f :+: g) a = Inl (f a) | Inr (g a)
+data (f :+: g) a = Inl (f a) | Inr (g a) deriving Typeable
 instance (Functor f, Functor g) => Functor (f :+: g) where
   fmap f (Inl fa) = Inl (fmap f fa)
   fmap f (Inr ga) = Inr (fmap f ga)
 instance (Show (f a), Show (g a)) => Show ((f :+: g) a) where
   show (Inl fa) = "inl(" ++ show fa ++ ")"
   show (Inr ga) = "inr(" ++ show ga ++ ")"
-instance (Typeable1 f, Typeable1 g) => Typeable1 (f :+: g) where
-  typeOf1 x = mkTyConApp (mkTyCon "Math.Combinatorics.Species.Types.(:+:)") [typeOf1 (getF x), typeOf1 (getG x)]
-    where getF :: (f :+: g) a -> f a
-          getF = undefined
-          getG :: (f :+: g) a -> g a
-          getG = undefined
+-- instance (Typeable f, Typeable g) => Typeable (f :+: g) where
+--   typeOf x = mkTyConApp (mkTyCon "Math.Combinatorics.Species.Types.(:+:)") [typeOf (getF x), typeOf (getG x)]
+--    where getF :: (f :+: g) a -> f a
+--          getF = undefined
+--          getG :: (f :+: g) a -> g a
+--          getG = undefined
 
 -- | Functor product.
-data (f :*: g) a = f a :*: g a
+data (f :*: g) a = f a :*: g a deriving Typeable
 
 pFst :: (f :*: g) a -> f a
 pFst (x :*: y) = x
@@ -123,25 +123,25 @@ instance (Functor f, Functor g) => Functor (f :*: g) where
   fmap f (fa :*: ga) = fmap f fa :*: fmap f ga
 instance (Show (f a), Show (g a)) => Show ((f :*: g) a) where
   show (x :*: y) = show (x,y)
-instance (Typeable1 f, Typeable1 g) => Typeable1 (f :*: g) where
-  typeOf1 x = mkTyConApp (mkTyCon "Math.Combinatorics.Species.Types.(:*:)") [typeOf1 (getF x), typeOf1 (getG x)]
-    where getF :: (f :*: g) a -> f a
-          getF = undefined
-          getG :: (f :*: g) a -> g a
-          getG = undefined
+-- instance (Typeable1 f, Typeable1 g) => Typeable1 (f :*: g) where
+--   typeOf1 x = mkTyConApp (mkTyCon "Math.Combinatorics.Species.Types.(:*:)") [typeOf1 (getF x), typeOf1 (getG x)]
+--     where getF :: (f :*: g) a -> f a
+--           getF = undefined
+--           getG :: (f :*: g) a -> g a
+--           getG = undefined
 
 -- | Functor composition.
-data (f :.: g) a = Comp { unComp :: (f (g a)) }
+data (f :.: g) a = Comp { unComp :: (f (g a)) } deriving Typeable
 instance (Functor f, Functor g) => Functor (f :.: g) where
   fmap f (Comp fga) = Comp (fmap (fmap f) fga)
 instance (Show (f (g a))) => Show ((f :.: g) a) where
   show (Comp x) = show x
-instance (Typeable1 f, Typeable1 g) => Typeable1 (f :.: g) where
-  typeOf1 x = mkTyConApp (mkTyCon "Math.Combinatorics.Species.Types.(:.:)") [typeOf1 (getF x), typeOf1 (getG x)]
-    where getF :: (f :.: g) a -> f a
-          getF = undefined
-          getG :: (f :.: g) a -> g a
-          getG = undefined
+-- instance (Typeable1 f, Typeable1 g) => Typeable1 (f :.: g) where
+--   typeOf1 x = mkTyConApp (mkTyCon "Math.Combinatorics.Species.Types.(:.:)") [typeOf1 (getF x), typeOf1 (getG x)]
+--     where getF :: (f :.: g) a -> f a
+--           getF = undefined
+--           getG :: (f :.: g) a -> g a
+--           getG = undefined
 
 -- | Cycle structure.  A value of type @'Cycle' a@ is implemented as
 --   @[a]@, but thought of as a directed cycle.
@@ -198,4 +198,3 @@ data Mu f a = Mu { unMu :: Interp f (Mu f) a }
 -- | Interpretation type function for codes for higher-order type
 --   constructors, used as arguments to the higher-order fixpoint 'Mu'.
 type family Interp f (self :: * -> *) :: * -> *
-

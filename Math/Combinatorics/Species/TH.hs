@@ -78,7 +78,7 @@ import Language.Haskell.TH.Syntax (lift)
 
 -- | Report a fatal error and stop processing in the 'Q' monad.
 errorQ :: String -> Q a
-errorQ msg = report True msg >> error msg
+errorQ msg = reportError msg >> error msg
 
 ------------------------------------------------------------
 --  Parsing type declarations  -----------------------------
@@ -288,7 +288,8 @@ mkEnumerableInst nm sp st code = do
                Nothing -> spToTy undefined sp  -- undefined is OK, it isn't recursive
                                                -- so won't use that argument
   instanceD (return []) (appT (conT ''Enumerable) (conT nm))
-    [ tySynInstD ''StructTy [conT nm] stTy
+--    [ tySynInstD ''StructTy [conT nm] stTy
+    [ tySynInstD ''StructTy (tySynEqn [conT nm] stTy)
     , return $ FunD 'iso clauses
     ]
 

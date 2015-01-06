@@ -156,7 +156,7 @@ enumerate' (TOfSizeExactly f n) xs
 -- | An existential wrapper for structures, hiding the structure
 --   functor and ensuring that it is 'Typeable'.
 data Structure a where
-  Structure :: Typeable1 f => f a -> Structure a
+  Structure :: Typeable f => f a -> Structure a
 
 -- | Extract the contents from a 'Structure' wrapper, if we know the
 --   type, and map it into an isomorphic type.  If the type doesn't
@@ -202,7 +202,7 @@ unsafeExtractStructure = either error id . extractStructure
 -- 'enumerate' can often be inferred.
 structureType :: ESpeciesAST -> String
 structureType (Wrap s) = showStructureType . extractType $ (stripI s)
-  where extractType :: forall s. Typeable1 s => TSpeciesAST s -> TypeRep
+  where extractType :: forall s. Typeable s => TSpeciesAST s -> TypeRep
         extractType _ = typeOf1 (undefined :: s ())
 
 -- | Show a 'TypeRep' while stripping off qualifier portions of 'TyCon'
@@ -214,13 +214,13 @@ showStructureType t = showsPrecST 0 t ""
   where showsPrecST :: Int -> TypeRep -> ShowS
         showsPrecST p t =
           case splitTyConApp t of
-            (tycon, [])   -> showString (dropQuals $ tyConString tycon)
-            (tycon, [x])  | tyConString tycon == "[]"
-                          -> showChar '[' . showsPrecST 11 x . showChar ']'
+            (tycon, [])   -> showString (dropQuals $ tyConName tycon)
+            (tycon, [x])  | tyConName tycon == "[]"
+                              -> showChar '[' . showsPrecST 11 x . showChar ']'
             (tycon, args) -> showParen (p > 9)
-                           $ showString (dropQuals $ tyConString tycon)
-                           . showChar ' '
-                           . showArgsST args
+                               $ showString (dropQuals $ tyConName tycon)
+                               . showChar ' '
+                               . showArgsST args
 
         showArgsST :: [TypeRep] -> ShowS
         showArgsST []     = id
@@ -377,7 +377,7 @@ enumerateAll s = concatMap (\n -> enumerateL s (take n [1..])) [0..]
 --   You should only rarely have to explicitly make an instance of
 --   'Enumerable' yourself; Template Haskell code to derive instances
 --   for you is provided in "Math.Combinatorics.Species.TH".
-class Typeable1 (StructTy f) => Enumerable (f :: * -> *) where
+class Typeable (StructTy f) => Enumerable (f :: * -> *) where
   -- | The standard structure type (see
   --   "Math.Combinatorics.Species.Structures") that will map into @f@.
   type StructTy f :: * -> *

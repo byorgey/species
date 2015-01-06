@@ -21,12 +21,12 @@ source-repository head
   location: http://hub.darcs.net/byorgey/species
 
 Library
-  build-depends: base >= 3 && < 4.7,
-                 numeric-prelude >= 0.3 && < 0.4,
+  build-depends: base >= 3 && < 4.8,
+                 numeric-prelude >= 0.3 && < 0.5,
                  np-extras >= 0.3 && < 0.4,
                  containers >= 0.2 && < 0.6,
                  multiset-comb >= 0.2.3 && < 0.3,
-                 template-haskell >= 2.7 && < 2.9
+                 template-haskell >= 2.7 && < 3.0
   exposed-modules:
     Math.Combinatorics.Species
     Math.Combinatorics.Species.Class

@@ -196,18 +196,18 @@ getI (Sized i _) = i
 -- | An existential wrapper to hide the phantom type parameter to
 --   'SizedSpeciesAST', so we can make it an instance of 'Species'.
 data ESpeciesAST where
-  Wrap :: Typeable1 s => SizedSpeciesAST s -> ESpeciesAST
+  Wrap :: Typeable s => SizedSpeciesAST s -> ESpeciesAST
 
 -- | Construct an 'ESpeciesAST' from a 'TSpeciesAST' by adding an
 --   appropriate interval annotation and hiding the type.
-wrap :: Typeable1 s => TSpeciesAST s -> ESpeciesAST
+wrap :: Typeable s => TSpeciesAST s -> ESpeciesAST
 wrap = Wrap . annI
 
 -- | Unwrap an existential wrapper to get out a typed AST.  You can
 --   get out any type you like as long as it is the right one.
 --
 --   CAUTION: Don't try this at home!
-unwrap :: Typeable1 s => ESpeciesAST -> TSpeciesAST s
+unwrap :: Typeable s => ESpeciesAST -> TSpeciesAST s
 unwrap (Wrap f) = gcast1'
                 . stripI
                 $ f
@@ -292,8 +292,8 @@ annotate Omega               = wrap TOmega
 --   species expressions.  The 'apply' method allows such codes to be
 --   applied to a species AST.  The indirection is needed to implement
 --   recursive species.
-class (Typeable f, Show f, Typeable1 (Interp f (Mu f))) => ASTFunctor f where
-  apply :: Typeable1 g => f -> TSpeciesAST g -> TSpeciesAST (Interp f g)
+class (Typeable f, Show f, Typeable (Interp f (Mu f))) => ASTFunctor f where
+  apply :: Typeable g => f -> TSpeciesAST g -> TSpeciesAST (Interp f g)
 
 ------------------------------------------------------------
 --  Miscellaneous AST operations  --------------------------
