@@ -4,21 +4,20 @@ license:        BSD3
 license-file:   LICENSE
 build-type:     Simple
 cabal-version:  >= 1.10
-tested-with:    GHC == 7.4.2, GHC == 7.6.1
+tested-with:    GHC == 7.4.2, GHC == 7.6.3, GHC == 7.8.4, GHC == 7.10.1
 author:         Brent Yorgey
-maintainer:     Brent Yorgey <byorgey@cis.upenn.edu>
-bug-reports:    http://hub.darcs.net/byorgey/species/issues
+maintainer:     Brent Yorgey <byorgey@gmail.com>
+bug-reports:    https://github.com/byorgey/species/issues
 category:       Math
 synopsis:       Computational combinatorial species
 
 description:    A DSL for describing and computing with combinatorial species,
                 e.g. counting labeled or unlabeled structures, or generating
                 a list of all labeled structures for a species.
-homepage:       http://www.cis.upenn.edu/~byorgey/species
 extra-source-files: CHANGES
 source-repository head
-  type:     darcs
-  location: http://hub.darcs.net/byorgey/species
+  type:     git
+  location: https://github.com/byorgey/species
 
 Library
   build-depends: base >= 3 && < 4.8,
