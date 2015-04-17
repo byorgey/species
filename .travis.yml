@@ -1,10 +1,14 @@
 # Based on example at https://github.com/hvr/multi-ghc-travis
 
-env:
- - CABALVER=1.16 GHCVER=7.4.2
- - CABALVER=1.18 GHCVER=7.6.3
- - CABALVER=1.18 GHCVER=7.8.4
- - CABALVER=1.22 GHCVER=7.10.1
+matrix:
+  env:
+    - CABALVER=1.18 GHCVER=7.8.4
+    - CABALVER=1.22 GHCVER=7.10.1
+    - CABALVER=head GHCVER=head
+
+matrix:
+  allow_failures:
+    - env: CABALVER=head GHCVER=head
 
 before_install:
  - travis_retry sudo add-apt-repository -y ppa:hvr/ghc
