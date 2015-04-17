@@ -4,7 +4,7 @@ license:        BSD3
 license-file:   LICENSE
 build-type:     Simple
 cabal-version:  >= 1.10
-tested-with:    GHC == 7.4.2, GHC == 7.6.3, GHC == 7.8.4, GHC == 7.10.1
+tested-with:    GHC == 7.8.4, GHC == 7.10.1
 author:         Brent Yorgey
 maintainer:     Brent Yorgey <byorgey@gmail.com>
 bug-reports:    https://github.com/byorgey/species/issues
@@ -20,7 +20,7 @@ source-repository head
   location: https://github.com/byorgey/species
 
 Library
-  build-depends: base >= 3 && < 4.9,
+  build-depends: base >= 4.7 && < 4.9,
                  numeric-prelude >= 0.3 && < 0.5,
                  np-extras >= 0.3 && < 0.4,
                  containers >= 0.2 && < 0.6,
