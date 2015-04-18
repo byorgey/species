@@ -1,6 +1,5 @@
-{-# LANGUAGE NoImplicitPrelude
-           , CPP
-  #-}
+{-# LANGUAGE CPP               #-}
+{-# LANGUAGE NoImplicitPrelude #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -31,8 +30,8 @@ module Math.Combinatorics.Species.Class
 
       -- | It can be grammatically convenient to define plural
       -- versions of species as synonyms for the singular versions.
-      -- For example, we can use @'set' ``o`` 'nonEmpty' 'sets'@
-      -- instead of @'set' ``o`` 'nonEmpty' 'set'@.
+      -- For example, we can use @'set' `o` 'nonEmpty' 'sets'@
+      -- instead of @'set' `o` 'nonEmpty' 'set'@.
     , sets
     , cycles
     , linOrds
@@ -59,16 +58,16 @@ module Math.Combinatorics.Species.Class
 
     ) where
 
-import qualified Algebra.Differential as Differential
+import qualified Algebra.Differential           as Differential
 
 #if MIN_VERSION_numeric_prelude(0,2,0)
-import NumericPrelude hiding (cycle)
+import           NumericPrelude                 hiding (cycle)
 #else
-import NumericPrelude
-import PreludeBase hiding (cycle)
+import           NumericPrelude
+import           PreludeBase                    hiding (cycle)
 #endif
 
-import Math.Combinatorics.Species.AST
+import           Math.Combinatorics.Species.AST
 
 -- | The Species type class.  Note that the @Differential@ constraint
 --   requires s to be a differentiable ring, which means that every
@@ -77,9 +76,6 @@ import Math.Combinatorics.Species.AST
 --   "Algebra.Ring" (the species 1 and species multiplication,
 --   i.e. partitional product), and "Algebra.Differential" (species
 --   differentiation, i.e. adjoining a distinguished element).
---
---   Minimal complete definition: 'singleton', 'set', 'cycle', 'o',
---   '><', '@@', 'ofSize'.
 --
 --   Note that the 'o' operation can be used infix to suggest common
 --   notation for composition, and also to be read as an abbreviation
@@ -119,7 +115,7 @@ class (Differential.C s) => Species s where
   subset = set * set
 
   -- | Subsets of size exactly k, @'ksubset' k = ('set'
-  -- ``ofSizeExactly`` k) * 'set'@.  Included with a default definition
+  -- \`ofSizeExactly\` k) * 'set'@.  Included with a default definition
   -- in the 'Species' class for the same reason as 'subset'.
   ksubset :: Integer -> s
   ksubset k = (set `ofSizeExactly` k) * set
@@ -131,7 +127,7 @@ class (Differential.C s) => Species s where
   element :: s
   element = singleton * set
 
-  -- | Partitional composition.  To form all @(f ``o`` g)@-structures on
+  -- | Partitional composition.  To form all @(f \`o\` g)@-structures on
   --   the underlying label set U, first form all set partitions of U;
   --   for each partition @p@, put an @f@-structure on the classes of
   --   @p@, and a separate @g@-structure on the elements in each
@@ -143,7 +139,7 @@ class (Differential.C s) => Species s where
   -- the same underlying set.
   (><) :: s -> s -> s
 
-  -- | Functor composition of two species.  An @(f '@@' g)@-structure
+  -- | Functor composition of two species.  An @(f \@\@ g)@-structure
   --   consists of an @f@-structure on the set of all @g@-structures.
   (@@) :: s -> s -> s
 
@@ -166,8 +162,8 @@ class (Differential.C s) => Species s where
   nonEmpty :: s -> s
   nonEmpty = flip ofSize (>0)
 
-  -- | 'rec f' is the least fixpoint of (the interpretation of) the
-  --   higher-order species constructor 'f'.
+  -- | @rec f@ is the least fixpoint of (the interpretation of) the
+  --   higher-order species constructor @f@.
   rec :: ASTFunctor f => f -> s
 
   -- | Omega is the pseudo-species which only puts a structure on
@@ -175,6 +171,8 @@ class (Differential.C s) => Species s where
   --   but it is sometimes a convenient fiction to use Omega to stand
   --   in for recursive occurrences of a species.
   omega :: s
+
+  {-# MINIMAL singleton, set, cycle, o, (><), (@@), ofSize #-}
 
 -- | A convenient synonym for differentiation.  @'oneHole'
 -- f@-structures look like @f@-structures on a set formed by adjoining
@@ -217,19 +215,19 @@ elements = element
 
 -- | An octopus is a cyclic arrangement of lists, so called because
 --   the lists look like \"tentacles\" attached to the cyclic
---   \"body\": @'octopus' = 'cycle' ``o`` 'nonEmpty' 'linOrds'@.
+--   \"body\": @'octopus' = 'cycle' \`o\` 'nonEmpty' 'linOrds'@.
 octopi, octopus :: Species s => s
 octopus = cycle `o` nonEmpty linOrds
 octopi  = octopus
 
 -- | The species of set partitions is just the composition @'set'
--- ``o`` 'nonEmpty' 'sets'@.
+-- \`o\` 'nonEmpty' 'sets'@.
 partitions, partition :: Species s => s
 partition  = set `o` nonEmpty sets
 partitions = partition
 
 -- | A permutation is a set of disjoint cycles: @'permutation' = 'set'
--- ``o`` 'cycles'@.
+-- \`o\` 'cycles'@.
 permutations, permutation :: Species s => s
 permutation = set `o` cycles
 permutations = permutation
@@ -238,7 +236,7 @@ subsets :: Species s => s
 subsets = subset
 
 -- | The species of ballots consists of linear orderings of
---   nonempty sets: @'ballot' = 'linOrd' ``o`` 'nonEmpty' 'sets'@.
+--   nonempty sets: @'ballot' = 'linOrd' \`o\` 'nonEmpty' 'sets'@.
 ballots, ballot :: Species s => s
 ballot = linOrd `o` nonEmpty sets
 ballots = ballot
@@ -248,13 +246,13 @@ ksubsets = ksubset
 
 -- | Simple graphs (undirected, without loops). A simple graph is a
 --   subset of the set of all size-two subsets of the vertices:
---   @'simpleGraph' = 'subset' '@@' ('ksubset' 2)@.
+--   @'simpleGraph' = 'subset' \@\@ ('ksubset' 2)@.
 simpleGraphs, simpleGraph :: Species s => s
 simpleGraph = subset @@ (ksubset 2)
 simpleGraphs = simpleGraph
 
 -- | A directed graph (with loops) is a subset of all pairs drawn
---   (with replacement) from the set of vertices: @'subset' '@@'
+--   (with replacement) from the set of vertices: @'subset' \@\@
 --   ('element' '><' 'element')@.  It can also be thought of as the
 --   species of binary relations.
 directedGraphs, directedGraph :: Species s => s

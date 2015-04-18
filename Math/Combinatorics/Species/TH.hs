@@ -1,13 +1,12 @@
-{-# LANGUAGE NoImplicitPrelude
-           , CPP
-           , TemplateHaskell
-           , FlexibleInstances
-           , TypeSynonymInstances
-           , TypeFamilies
-           , PatternGuards
-           , DeriveDataTypeable
-           , TypeOperators
-  #-}
+{-# LANGUAGE CPP                  #-}
+{-# LANGUAGE DeriveDataTypeable   #-}
+{-# LANGUAGE FlexibleInstances    #-}
+{-# LANGUAGE NoImplicitPrelude    #-}
+{-# LANGUAGE PatternGuards        #-}
+{-# LANGUAGE TemplateHaskell      #-}
+{-# LANGUAGE TypeFamilies         #-}
+{-# LANGUAGE TypeOperators        #-}
+{-# LANGUAGE TypeSynonymInstances #-}
 
 {- Refactoring plan:
 
@@ -49,28 +48,29 @@ module Math.Combinatorics.Species.TH
        ) where
 
 #if MIN_VERSION_numeric_prelude(0,2,0)
-import NumericPrelude hiding (cycle)
+import           NumericPrelude                           hiding (cycle)
 #else
-import NumericPrelude
-import PreludeBase hiding (cycle)
+import           NumericPrelude
+import           PreludeBase                              hiding (cycle)
 #endif
 
-import Math.Combinatorics.Species.Class
-import Math.Combinatorics.Species.Enumerate
-import Math.Combinatorics.Species.Structures
-import Math.Combinatorics.Species.AST
-import Math.Combinatorics.Species.AST.Instances () -- only import instances
+import           Math.Combinatorics.Species.AST
+import           Math.Combinatorics.Species.AST.Instances ()
+import           Math.Combinatorics.Species.Class
+import           Math.Combinatorics.Species.Enumerate
+import           Math.Combinatorics.Species.Structures
 
-import Control.Arrow (first, second, (***))
-import Control.Monad (zipWithM, liftM2, mapM, ap)
-import Control.Applicative (Applicative(..), (<$>), (<*>))
-import Data.Char (toLower)
-import Data.Maybe (isJust)
+import           Control.Applicative                      (Applicative (..),
+                                                           (<$>), (<*>))
+import           Control.Arrow                            (first, (***))
+import           Control.Monad                            (zipWithM)
+import           Data.Char                                (toLower)
+import           Data.Maybe                               (isJust)
 
-import Data.Typeable
+import           Data.Typeable
 
-import Language.Haskell.TH
-import Language.Haskell.TH.Syntax (lift)
+import           Language.Haskell.TH
+import           Language.Haskell.TH.Syntax               (lift)
 
 ------------------------------------------------------------
 --  Preliminaries  -----------------------------------------
@@ -407,11 +407,11 @@ typeToSpAST _ _        = error "non-constructor in typeToSpAST?"
 --
 --   This is what you get:
 --
---     * An 'Enumerable' instance for @MyType@ (and various other
+--   * An 'Enumerable' instance for @MyType@ (and various other
 --     supporting things like a code and an 'ASTFunctor' instance if
 --     your data type is recursive)
 --
---     * A declaration of @myType :: Species s => s@ (the same name as
+--   * A declaration of @myType :: Species s => s@ (the same name as
 --     the type constructor but with the first letter lowercased)
 --
 --   You can then use @myType@ in any species expression, or as input

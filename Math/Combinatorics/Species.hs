@@ -12,11 +12,11 @@
 --   For a friendly introduction to combinatorial species in general
 --   and this library in particular, see my series of blog posts:
 --
---    * <http://byorgey.wordpress.com/2009/07/24/introducing-math-combinatorics-species/>
+--   * <http://byorgey.wordpress.com/2009/07/24/introducing-math-combinatorics-species/>
 --
---    * <http://byorgey.wordpress.com/2009/07/30/primitive-species-and-species-operations/>
+--   * <http://byorgey.wordpress.com/2009/07/30/primitive-species-and-species-operations/>
 --
---    * <http://byorgey.wordpress.com/2009/07/31/primitive-species-and-species-operations-part-ii/>
+--   * <http://byorgey.wordpress.com/2009/07/31/primitive-species-and-species-operations-part-ii/>
 --
 --   For a good reference (really, the
 --   only English-language reference!) on combinatorial species, see
@@ -112,16 +112,16 @@ module Math.Combinatorics.Species
 
     ) where
 
-import Math.Combinatorics.Species.Class
-import Math.Combinatorics.Species.Labeled
-import Math.Combinatorics.Species.Unlabeled
-import Math.Combinatorics.Species.Structures
-import Math.Combinatorics.Species.Enumerate
-import Math.Combinatorics.Species.AST
-import Math.Combinatorics.Species.AST.Instances
-import Math.Combinatorics.Species.TH
-import Math.Combinatorics.Species.Simplify
-import Math.Combinatorics.Species.NewtonRaphson
+import           Math.Combinatorics.Species.AST
+import           Math.Combinatorics.Species.AST.Instances
+import           Math.Combinatorics.Species.Class
+import           Math.Combinatorics.Species.Enumerate
+import           Math.Combinatorics.Species.Labeled
+import           Math.Combinatorics.Species.NewtonRaphson
+import           Math.Combinatorics.Species.Simplify
+import           Math.Combinatorics.Species.Structures
+import           Math.Combinatorics.Species.TH
+import           Math.Combinatorics.Species.Unlabeled
 
 -- $DSL
 -- The combinatorial species DSL consists of the 'Species' type class,
