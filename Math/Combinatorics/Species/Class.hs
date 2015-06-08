@@ -34,6 +34,8 @@ module Math.Combinatorics.Species.Class
       -- instead of @'set' `o` 'nonEmpty' 'set'@.
     , sets
     , cycles
+    , necklace, necklaces
+    , bracelets
     , linOrds
     , subsets
     , ksubsets
@@ -94,6 +96,10 @@ class (Differential.C s) => Species s where
 
   -- | The species @C@ of cyclical orderings (cycles/rings).
   cycle :: s
+
+  -- | The species of bracelets (i.e. cycles that can also be
+  --   flipped).
+  bracelet :: s
 
   -- | The species @L@ of linear orderings (lists). Since linear
   --   orderings are isomorphic to cyclic orderings with a hole, we
@@ -172,7 +178,7 @@ class (Differential.C s) => Species s where
   --   in for recursive occurrences of a species.
   omega :: s
 
-  {-# MINIMAL singleton, set, cycle, o, (><), (@@), ofSize #-}
+  {-# MINIMAL singleton, set, cycle, bracelet, o, (><), (@@), ofSize #-}
 
 -- | A convenient synonym for differentiation.  @'oneHole'
 -- f@-structures look like @f@-structures on a set formed by adjoining
@@ -193,6 +199,14 @@ bags = set
 
 cycles :: Species s => s
 cycles = cycle
+
+-- | A synonym for 'cycle'.
+necklace, necklaces :: Species s => s
+necklace = cycle
+necklaces = cycle
+
+bracelets :: Species s => s
+bracelets = bracelet
 
 -- $derived_ops
 -- Some derived operations on species.

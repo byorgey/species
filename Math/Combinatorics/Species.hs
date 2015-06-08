@@ -31,7 +31,7 @@ module Math.Combinatorics.Species
       -- Explicitly export methods of the Species class since
       -- we don't want to export all of them
 
-      Species ( singleton, set, cycle, linOrd
+      Species ( singleton, set, cycle, bracelet, linOrd
               , subset, ksubset, element
               , o, (><), (@@)
               , ofSize, ofSizeExactly, nonEmpty
@@ -42,7 +42,7 @@ module Math.Combinatorics.Species
       -- $synonyms
 
     , oneHole
-    , x, sets, cycles
+    , x, sets, cycles, bracelets
     , linOrds
     , subsets
     , ksubsets

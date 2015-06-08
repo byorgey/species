@@ -1,8 +1,7 @@
-{-# LANGUAGE NoImplicitPrelude
-           , CPP
-           , GeneralizedNewtypeDeriving
-           , PatternGuards
-  #-}
+{-# LANGUAGE CPP                        #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE NoImplicitPrelude          #-}
+{-# LANGUAGE PatternGuards              #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -28,20 +27,18 @@ module Math.Combinatorics.Species.Labeled
 -- zipping/unzipping with factorial denominators as necessary, which
 -- is the current approach.
 
-import Math.Combinatorics.Species.Types
-import Math.Combinatorics.Species.Class
+import           Math.Combinatorics.Species.Class
+import           Math.Combinatorics.Species.Types
 
-import Math.Combinatorics.Species.AST
-import Math.Combinatorics.Species.AST.Instances
-import Math.Combinatorics.Species.NewtonRaphson
+import           Math.Combinatorics.Species.NewtonRaphson
 
-import qualified MathObj.PowerSeries as PS
-import qualified MathObj.FactoredRational as FQ
+import qualified MathObj.FactoredRational                 as FQ
+import qualified MathObj.PowerSeries                      as PS
 
-import NumericPrelude
+import           NumericPrelude
 #if MIN_VERSION_numeric_prelude(0,2,0)
 #else
-import PreludeBase hiding (cycle)
+import           PreludeBase                              hiding (cycle)
 #endif
 
 facts :: [Integer]
@@ -51,18 +48,18 @@ instance Species EGF where
   singleton  = egfFromCoeffs [0,1]
   set        = egfFromCoeffs (map (1%) facts)
   cycle      = egfFromCoeffs (0 : map (1%) [1..])
+  bracelet   = egfFromCoeffs (0 : 1 : 1%2 : map (1%) [6, 8 ..])
   o          = liftEGF2 PS.compose
   (><)       = liftEGF2 . PS.lift2 $ \xs ys ->
-                 zipWith3 mult xs ys (map fromIntegral facts)
-                   where mult x y z = x * y * z
+                 zipWith3 (\a b c -> a*b*c) xs ys (map fromIntegral facts)
   (@@)       = liftEGF2 . PS.lift2 $ \fs gs ->
                  map (\(n,gn) -> let gn' = numerator $ gn
                                  in  (fs `safeIndex` gn') *
                                      toRational (FQ.factorial gn' / FQ.factorial n))
                      (zip [0..] $ zipWith (*) (map fromIntegral facts) gs)
     where safeIndex [] _     = 0
-          safeIndex (x:_)  0 = x
-          safeIndex (_:xs) n = safeIndex xs (n-1)
+          safeIndex (a:_)  0 = a
+          safeIndex (_:as) n = safeIndex as (n-1)
 
   ofSize s p        = (liftEGF . PS.lift1 $ filterCoeffs p) s
   ofSizeExactly s n = (liftEGF . PS.lift1 $ selectIndex n) s

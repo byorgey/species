@@ -15,21 +15,21 @@
 module Math.Combinatorics.Species.Unlabeled
     ( unlabeled, unlabelled ) where
 
-import Math.Combinatorics.Species.Types
-import Math.Combinatorics.Species.Class
-import Math.Combinatorics.Species.AST
-import Math.Combinatorics.Species.AST.Instances (reflect)
-import Math.Combinatorics.Species.CycleIndex
-import Math.Combinatorics.Species.NewtonRaphson
+import           Math.Combinatorics.Species.AST
+import           Math.Combinatorics.Species.AST.Instances (reflect)
+import           Math.Combinatorics.Species.Class
+import           Math.Combinatorics.Species.CycleIndex
+import           Math.Combinatorics.Species.NewtonRaphson
+import           Math.Combinatorics.Species.Types
 
-import qualified MathObj.PowerSeries as PS
+import qualified MathObj.PowerSeries                      as PS
 
-import qualified Algebra.Differential as Differential
+import qualified Algebra.Differential                     as Differential
 
-import NumericPrelude
+import           NumericPrelude
 #if MIN_VERSION_numeric_prelude(0,2,0)
 #else
-import PreludeBase hiding (cycle)
+import           PreludeBase                              hiding (cycle)
 #endif
 
 ciErr :: String -> a
@@ -42,6 +42,7 @@ instance Species GF where
   singleton         = gfFromCoeffs [0,1]
   set               = gfFromCoeffs (repeat 1)
   cycle             = set
+  bracelet          = set
   o                 = ciErr "composition"
   (><)              = ciErr "cartesian product"
   (@@)              = ciErr "functor composition"

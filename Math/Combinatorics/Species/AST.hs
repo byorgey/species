@@ -1,12 +1,11 @@
-{-# LANGUAGE NoImplicitPrelude
-           , CPP
-           , GADTs
-           , TypeFamilies
-           , KindSignatures
-           , FlexibleContexts
-           , RankNTypes
-           , TypeOperators
-  #-}
+{-# LANGUAGE CPP               #-}
+{-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE GADTs             #-}
+{-# LANGUAGE KindSignatures    #-}
+{-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE RankNTypes        #-}
+{-# LANGUAGE TypeFamilies      #-}
+{-# LANGUAGE TypeOperators     #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -48,19 +47,17 @@ module Math.Combinatorics.Species.AST
 
     ) where
 
-import Math.Combinatorics.Species.Structures
-import Math.Combinatorics.Species.Util.Interval
+import           Math.Combinatorics.Species.Structures
+import           Math.Combinatorics.Species.Util.Interval
 import qualified Math.Combinatorics.Species.Util.Interval as I
 
-import Data.Typeable
-import Unsafe.Coerce
+import           Data.Typeable
+import           Unsafe.Coerce
 
-import Data.Maybe (fromMaybe)
-
-import NumericPrelude
+import           NumericPrelude
 #if MIN_VERSION_numeric_prelude(0,2,0)
 #else
-import PreludeBase hiding (cycle)
+import           PreludeBase                              hiding (cycle)
 #endif
 
 ------------------------------------------------------------
@@ -78,15 +75,16 @@ data SpeciesAST where
   X             :: SpeciesAST
   E             :: SpeciesAST
   C             :: SpeciesAST
+  B             :: SpeciesAST
   L             :: SpeciesAST
   Subset        :: SpeciesAST
   KSubset       :: Integer -> SpeciesAST
   Elt           :: SpeciesAST
-  (:+)         :: SpeciesAST -> SpeciesAST -> SpeciesAST
-  (:*)         :: SpeciesAST -> SpeciesAST -> SpeciesAST
-  (:.)         :: SpeciesAST -> SpeciesAST -> SpeciesAST
-  (:><)        :: SpeciesAST -> SpeciesAST -> SpeciesAST
-  (:@)         :: SpeciesAST -> SpeciesAST -> SpeciesAST
+  (:+)          :: SpeciesAST -> SpeciesAST -> SpeciesAST
+  (:*)          :: SpeciesAST -> SpeciesAST -> SpeciesAST
+  (:.)          :: SpeciesAST -> SpeciesAST -> SpeciesAST
+  (:><)         :: SpeciesAST -> SpeciesAST -> SpeciesAST
+  (:@)          :: SpeciesAST -> SpeciesAST -> SpeciesAST
   Der           :: SpeciesAST -> SpeciesAST
   OfSize        :: SpeciesAST -> (Integer -> Bool) -> SpeciesAST
   OfSizeExactly :: SpeciesAST -> Integer -> SpeciesAST
@@ -122,6 +120,7 @@ data TSpeciesAST (s :: * -> *) where
    TX        :: TSpeciesAST Id
    TE        :: TSpeciesAST Set
    TC        :: TSpeciesAST Cycle
+   TB        :: TSpeciesAST Bracelet
    TL        :: TSpeciesAST []
    TSubset   :: TSpeciesAST Set
    TKSubset  :: Integer -> TSpeciesAST Set
@@ -148,10 +147,11 @@ data SizedSpeciesAST (s :: * -> *) where
 interval :: TSpeciesAST s -> Interval
 interval TZero                = emptyI
 interval TOne                 = zero
-interval (TN n)               = zero
+interval (TN _)               = zero
 interval TX                   = one
 interval TE                   = natsI
 interval TC                   = fromI one
+interval TB                   = fromI one
 interval TL                   = natsI
 interval TSubset              = natsI
 interval (TKSubset k)         = fromI (fromInteger k)
@@ -160,7 +160,7 @@ interval (f :+:: g)           = getI f `I.union` getI g
 interval (f :*:: g)           = getI f + getI g
 interval (f :.:: g)           = getI f * getI g
 interval (f :><:: g)          = getI f `I.intersect` getI g
-interval (f :@:: g)           = natsI
+interval (_ :@:: _)           = natsI
     -- Note, the above interval for functor composition is obviously
     -- overly conservative.  To do this right we'd have to compute the
     -- generating function for g --- and actually it would depend on
@@ -234,6 +234,7 @@ erase' (TN n)               = N n
 erase' TX                   = X
 erase' TE                   = E
 erase' TC                   = C
+erase' TB                   = B
 erase' TL                   = L
 erase' TSubset              = Subset
 erase' (TKSubset k)         = KSubset k
@@ -258,6 +259,7 @@ annotate (N n)               = wrap (TN n)
 annotate X                   = wrap TX
 annotate E                   = wrap TE
 annotate C                   = wrap TC
+annotate B                   = wrap TB
 annotate L                   = wrap TL
 annotate Subset              = wrap TSubset
 annotate (KSubset k)         = wrap (TKSubset k)

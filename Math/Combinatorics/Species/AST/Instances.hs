@@ -1,4 +1,5 @@
-{-# LANGUAGE CPP, GADTs #-}
+{-# LANGUAGE CPP   #-}
+{-# LANGUAGE GADTs #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -25,22 +26,20 @@ module Math.Combinatorics.Species.AST.Instances
     where
 
 #if MIN_VERSION_numeric_prelude(0,2,0)
-import NumericPrelude hiding (cycle)
+import           NumericPrelude                   hiding (cycle)
 #else
-import NumericPrelude
-import PreludeBase hiding (cycle)
+import           NumericPrelude
+import           PreludeBase                      hiding (cycle)
 #endif
 
-import Math.Combinatorics.Species.Class
-import Math.Combinatorics.Species.AST
-import Math.Combinatorics.Species.Util.Interval hiding (omega)
-import qualified Math.Combinatorics.Species.Util.Interval as I
+import           Math.Combinatorics.Species.AST
+import           Math.Combinatorics.Species.Class
 
-import qualified Algebra.Additive as Additive
-import qualified Algebra.Ring as Ring
-import qualified Algebra.Differential as Differential
+import qualified Algebra.Additive                 as Additive
+import qualified Algebra.Differential             as Differential
+import qualified Algebra.Ring                     as Ring
 
-import Data.Typeable
+import           Data.Typeable
 
 ------------------------------------------------------------
 --  SpeciesAST instances  ----------------------------------
@@ -62,15 +61,16 @@ instance Eq SpeciesAST where
   X                   == X                    = True
   E                   == E                    = True
   C                   == C                    = True
+  B                   == B                    = True
   L                   == L                    = True
   Subset              == Subset               = True
   (KSubset k)         == (KSubset j)          = k == j
   Elt                 == Elt                  = True
-  (f1 :+ g1)         == (f2 :+ g2)          = f1 == f2 && g1 == g2
-  (f1 :* g1)         == (f2 :* g2)          = f1 == f2 && g1 == g2
-  (f1 :. g1)         == (f2 :. g2)          = f1 == f2 && g1 == g2
-  (f1 :>< g1)        == (f2 :>< g2)         = f1 == f2 && g1 == g2
-  (f1 :@ g1)         == (f2 :@ g2)          = f1 == f2 && g1 == g2
+  (f1 :+ g1)          == (f2 :+ g2)           = f1 == f2 && g1 == g2
+  (f1 :* g1)          == (f2 :* g2)           = f1 == f2 && g1 == g2
+  (f1 :. g1)          == (f2 :. g2)           = f1 == f2 && g1 == g2
+  (f1 :>< g1)         == (f2 :>< g2)          = f1 == f2 && g1 == g2
+  (f1 :@ g1)          == (f2 :@ g2)           = f1 == f2 && g1 == g2
   Der f1              == Der f2               = f1 == f2
   -- note, OfSize will always compare False since we can't compare the functions for equality
   OfSizeExactly f1 k1 == OfSizeExactly f2 k2  = f1 == f2 && k1 == k2
@@ -98,6 +98,8 @@ instance Ord SpeciesAST where
   compare _ E                       = GT
   compare C _                       = LT
   compare _ C                       = GT
+  compare B _                       = LT
+  compare _ B                       = GT
   compare L _                       = LT
   compare _ L                       = GT
   compare Subset _                  = LT
@@ -130,7 +132,7 @@ instance Ord SpeciesAST where
   compare (Der f1) (Der f2)         = compare f1 f2
   compare (Der _) _                 = LT
   compare _ (Der _)                 = GT
-  compare (OfSize f1 p1) (OfSize f2 p2)
+  compare (OfSize f1 _) (OfSize f2 _)
                                     = compare f1 f2
   compare (OfSize _ _) _            = LT
   compare _ (OfSize _ _)            = GT
@@ -158,6 +160,7 @@ instance Show SpeciesAST where
   showsPrec _ X                   = showChar 'X'
   showsPrec _ E                   = showChar 'E'
   showsPrec _ C                   = showChar 'C'
+  showsPrec _ B                   = showChar 'B'
   showsPrec _ L                   = showChar 'L'
   showsPrec _ Subset              = showChar 'p'
   showsPrec _ (KSubset n)         = showChar 'p' . shows n
@@ -212,6 +215,7 @@ instance Species SpeciesAST where
   singleton     = X
   set           = E
   cycle         = C
+  bracelet      = B
   linOrd        = L
   subset        = Subset
   ksubset k     = KSubset k
@@ -254,6 +258,7 @@ instance Species ESpeciesAST where
   singleton                 = wrap TX
   set                       = wrap TE
   cycle                     = wrap TC
+  bracelet                  = wrap TB
   linOrd                    = wrap TL
   subset                    = wrap TSubset
   ksubset k                 = wrap $ TKSubset k
@@ -294,6 +299,7 @@ reflect (N n)               = fromInteger n
 reflect X                   = singleton
 reflect E                   = set
 reflect C                   = cycle
+reflect B                   = bracelet
 reflect L                   = linOrd
 reflect Subset              = subset
 reflect (KSubset k)         = ksubset k

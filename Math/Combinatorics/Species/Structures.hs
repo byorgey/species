@@ -1,12 +1,11 @@
-{-# LANGUAGE NoImplicitPrelude
-           , CPP
-           , GeneralizedNewtypeDeriving
-           , FlexibleContexts
-           , DeriveDataTypeable
-           , TypeFamilies
-           , EmptyDataDecls
-           , TypeOperators
-  #-}
+{-# LANGUAGE CPP                        #-}
+{-# LANGUAGE DeriveDataTypeable         #-}
+{-# LANGUAGE EmptyDataDecls             #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE NoImplicitPrelude          #-}
+{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE TypeOperators              #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -33,6 +32,7 @@ module Math.Combinatorics.Species.Structures
     , (:*:)(..)
     , (:.:)(..)
     , Cycle(..)
+    , Bracelet(..)
     , Set(..)
     , Star(..)
 
@@ -40,14 +40,14 @@ module Math.Combinatorics.Species.Structures
 
     ) where
 
-import NumericPrelude
+import           NumericPrelude
 #if MIN_VERSION_numeric_prelude(0,2,0)
 #else
-import PreludeBase
+import           PreludeBase
 #endif
-import Data.List (intercalate, foldl', delete, inits, tails)
+import           Data.List      (delete, foldl', inits, intercalate, tails)
 
-import Data.Typeable
+import           Data.Typeable
 
 --------------------------------------------------------------------------------
 --  Structure functors  --------------------------------------------------------
@@ -151,8 +151,20 @@ instance (Show a) => Show (Cycle a) where
   show (Cycle xs) = "<" ++ intercalate "," (map show xs) ++ ">"
 instance Eq a => Eq (Cycle a) where
   Cycle xs == Cycle ys = any (==ys) (rotations xs)
-    where rotations xs = zipWith (++)  (tails xs)
-                                       (inits xs)
+    where rotations zs = zipWith (++)  (tails zs)
+                                       (inits zs)
+
+-- | Bracelet structure.  A value of type @'Bracelet' a@ is implemented as
+--   @[a]@, but thought of as an undirected cycle (i.e. equivalent up
+--   to rotations as well as flips/reversals).
+newtype Bracelet a = Bracelet { getBracelet :: [a] }
+  deriving (Functor, Typeable)
+instance (Show a) => Show (Bracelet a) where
+  show (Bracelet xs) = "<<" ++ intercalate "," (map show xs) ++ ">>"
+instance Eq a => Eq (Bracelet a) where
+  Bracelet xs == Bracelet ys = any (==ys) (rotations xs ++ rotations (reverse xs))
+    where rotations zs = zipWith (++)  (tails zs)
+                                       (inits zs)
 
 -- | Set structure.  A value of type @'Set' a@ is implemented as @[a]@,
 --   but thought of as an unordered set.

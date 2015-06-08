@@ -1,13 +1,12 @@
-{-# LANGUAGE NoImplicitPrelude
-           , CPP
-           , GADTs
-           , FlexibleContexts
-           , ScopedTypeVariables
-           , KindSignatures
-           , TypeFamilies
-           , DeriveDataTypeable
-           , TypeOperators
-  #-}
+{-# LANGUAGE CPP                 #-}
+{-# LANGUAGE DeriveDataTypeable  #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE GADTs               #-}
+{-# LANGUAGE KindSignatures      #-}
+{-# LANGUAGE NoImplicitPrelude   #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies        #-}
+{-# LANGUAGE TypeOperators       #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -48,21 +47,19 @@ module Math.Combinatorics.Species.Enumerate
 
     ) where
 
-import Math.Combinatorics.Species.Class
-import Math.Combinatorics.Species.Types
-import Math.Combinatorics.Species.AST
-import Math.Combinatorics.Species.Structures
+import           Math.Combinatorics.Species.AST
+import           Math.Combinatorics.Species.Structures
 import qualified Math.Combinatorics.Species.Util.Interval as I
 
-import qualified Math.Combinatorics.Multiset as MS
-import Math.Combinatorics.Multiset (Multiset(..), (+:))
+import           Math.Combinatorics.Multiset              (Multiset (..), (+:))
+import qualified Math.Combinatorics.Multiset              as MS
 
-import Data.Typeable
+import           Data.Typeable
 
-import NumericPrelude
+import           NumericPrelude
 #if MIN_VERSION_numeric_prelude(0,2,0)
 #else
-import PreludeBase hiding (cycle)
+import           PreludeBase                              hiding (cycle)
 #endif
 
 -- | Given an AST describing a species, with a phantom type parameter
@@ -93,10 +90,11 @@ enumerate' TOne (MS [])          = [Unit]
 enumerate' TOne _                = []
 enumerate' (TN n) (MS [])        = map Const [1..n]
 enumerate' (TN _) _              = []
-enumerate' TX (MS [(x,1)])       = [Id x]
+enumerate' TX (MS [(a,1)])       = [Id a]
 enumerate' TX _                  = []
 enumerate' TE xs                 = [Set (MS.toList xs)]
 enumerate' TC m                  = map Cycle (MS.cycles m)
+enumerate' TB m                  = map Bracelet (MS.bracelets m)
 enumerate' TL xs                 = MS.permutations xs
 enumerate' TSubset xs            = map (Set . MS.toList . fst) (MS.splits xs)
 enumerate' (TKSubset k) xs       = map (Set . MS.toList)
@@ -122,7 +120,7 @@ enumerate' (f :.:: g) xs         = [ Comp y
                                    , xs' <- MS.sequenceMS . fmap (enumerate' (stripI g)) $ p
                                    , y   <- enumerate' (stripI f) xs'
                                    ]
-enumerate' (f :><:: g) xs
+enumerate' (_ :><:: _) xs
   | any (/= 1) $ MS.getCounts xs
   = error "Unlabeled enumeration does not (yet) work with cartesian product."
 enumerate' (f :><:: g) xs        = [ x :*: y
@@ -130,7 +128,7 @@ enumerate' (f :><:: g) xs        = [ x :*: y
                                    , y <- enumerate' (stripI g) xs
                                    ]
 
-enumerate' (f :@:: g) xs
+enumerate' (_ :@:: _) xs
   | any (/= 1) $ MS.getCounts xs
   = error "Unlabeled enumeration does not (yet) work with functor composition."
 enumerate' (f :@:: g) xs         = map Comp
@@ -141,7 +139,7 @@ enumerate' (f :@:: g) xs         = map Comp
 enumerate' (TDer f) xs           = map Comp
                                    . enumerate' (stripI f)
                                    $ (Star,1) +: fmap Original xs
-enumerate' (TNonEmpty f) (MS []) = []
+enumerate' (TNonEmpty _) (MS []) = []
 enumerate' (TNonEmpty f) xs      = enumerate' (stripI f) xs
 enumerate' (TRec f) xs           = map Mu $ enumerate' (apply f (TRec f)) xs
 enumerate' (TOfSize f p) xs
@@ -420,6 +418,10 @@ instance Enumerable [] where
 
 instance Enumerable Cycle where
   type StructTy Cycle = Cycle
+  iso = id
+
+instance Enumerable Bracelet where
+  type StructTy Bracelet = Bracelet
   iso = id
 
 instance Enumerable Set where

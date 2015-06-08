@@ -1,7 +1,6 @@
-{-# LANGUAGE NoImplicitPrelude
-           , CPP
-           , FlexibleInstances
-  #-}
+{-# LANGUAGE CPP               #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE NoImplicitPrelude #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -30,30 +29,32 @@ module Math.Combinatorics.Species.CycleIndex
     , cyclePower
     ) where
 
-import Math.Combinatorics.Species.Types
-import Math.Combinatorics.Species.Class
-import Math.Combinatorics.Species.Labeled
+import           Math.Combinatorics.Species.Class
+import           Math.Combinatorics.Species.Labeled
+import           Math.Combinatorics.Species.Types
 
-import Math.Combinatorics.Species.NewtonRaphson
+import           Math.Combinatorics.Species.NewtonRaphson
 
-import qualified MathObj.PowerSeries as PowerSeries
-import qualified MathObj.MultiVarPolynomial as MVP
-import qualified MathObj.Monomial as Monomial
-import qualified MathObj.FactoredRational as FQ
+import qualified MathObj.FactoredRational                 as FQ
+import qualified MathObj.Monomial                         as Monomial
+import qualified MathObj.MultiVarPolynomial               as MVP
+import qualified MathObj.PowerSeries                      as PowerSeries
 
-import qualified Algebra.Ring as Ring
-import qualified Algebra.ZeroTestable as ZeroTestable
+import qualified Algebra.Ring                             as Ring
+import qualified Algebra.ZeroTestable                     as ZeroTestable
 
-import qualified Data.Map as M
-import Data.List ( genericReplicate, genericDrop, groupBy, sort, intercalate, scanl
-                 , genericIndex)
-import Data.Function (on)
-import Control.Arrow ((&&&), first, second)
+import           Control.Arrow                            ((&&&))
+import           Data.Function                            (on)
+import           Data.List                                (genericDrop,
+                                                           genericIndex,
+                                                           genericReplicate,
+                                                           groupBy, sort)
+import qualified Data.Map                                 as M
 
-import NumericPrelude
+import           NumericPrelude
 #if MIN_VERSION_numeric_prelude(0,2,0)
 #else
-import PreludeBase hiding (cycle)
+import           PreludeBase                              hiding (cycle)
 #endif
 
 -- | An interpretation of species expressions as cycle index series.
@@ -64,6 +65,8 @@ instance Species CycleIndex where
   set        = ciFromMonomials . map partToMonomial . concatMap intPartitions $ [0..]
 
   cycle      = ciFromMonomials . concatMap cycleMonomials $ [1..]
+
+  bracelet   = ciFromMonomials . concatMap braceletMonomials $ [1..]
 
   o          = liftCI2 MVP.compose
 
@@ -112,7 +115,7 @@ intPartitions :: Integer -> [CycleType]
 intPartitions n = intPartitions' n n
   where intPartitions' :: Integer -> Integer -> [[(Integer,Integer)]]
         intPartitions' 0 _ = [[]]
-        intPartitions' n 0 = []
+        intPartitions' _ 0 = []
         intPartitions' n k =
           [ if (j == 0) then js else (k,j):js
             | j <- reverse [0..n `div` k]
@@ -126,6 +129,26 @@ cycleMonomials n = map cycleMonomial ds
         ds = sort . FQ.divisors $ n'
         cycleMonomial d = Monomial.Cons (FQ.eulerPhi (n' / d) % n)
                                         (M.singleton (n `div` (toInteger d)) (toInteger d))
+
+-- | @braceletMonomials d@ generates all monomials of partition degree
+--   @d@ in the cycle index series for the species B of bracelets.
+braceletMonomials :: Integer -> [Monomial.T Rational]
+braceletMonomials 1 = [ Monomial.Cons 1 (M.singleton 1 1)]
+braceletMonomials 2 = [ Monomial.Cons (1%2) (M.singleton 2 1)
+                      , Monomial.Cons (1%2) (M.singleton 1 2)
+                      ]
+braceletMonomials n = sort $ flips : map rotations ds
+  where n' = fromIntegral n
+        ds = sort . FQ.divisors $ n'
+        rotations k
+          = Monomial.Cons
+              ((FQ.eulerPhi k + (if kI == 2 then n `div` kI else 0)) % (2*n))
+              (M.singleton kI (n `div` kI))
+          where
+            kI = toInteger k
+        flips
+          | odd n     = Monomial.Cons (1 % 2) (M.fromList [(1,1), (2, n `div` 2)])
+          | otherwise = Monomial.Cons (1 % 4) (M.fromList [(1,2), (2, n `div` 2 - 1)])
 
 -- | Convert a cycle index series to an exponential generating
 --   function:  F(x) = Z_F(x,0,0,0,...).
@@ -266,6 +289,6 @@ zFComp f g = ciFromMonomials $
         truncToPartitionOf _ 0 = []
         truncToPartitionOf p n = map snd $ takeUntil ((>=n) . fst) partials
           where partials = zip (tail $ scanl (\soFar cyc -> soFar + uncurry (*) cyc) 0 p) p
-                takeUntil p [] = []
+                takeUntil _ [] = []
                 takeUntil p (x:xs) | p x = [x]
                                    | otherwise = x : takeUntil p xs
