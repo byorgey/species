@@ -1,3 +1,6 @@
+0.3.3      11 June 2015
+  * add primitive species of bracelets
+
 0.3.2.4    17 April 2015
   * update to work with GHC 7.8 and 7.10
   * drop support for GHC < 7.8
