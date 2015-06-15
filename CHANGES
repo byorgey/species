@@ -1,3 +1,6 @@
+0.3.4      15 June 2015
+  * re-export Bracelet type from Math.Combinatorics.Species module
+
 0.3.3      11 June 2015
   * add primitive species of bracelets
 
