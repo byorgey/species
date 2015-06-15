@@ -79,7 +79,7 @@ module Math.Combinatorics.Species
     , Void, Unit(..)
     , Id(..), Const(..)
     , (:+:)(..), (:*:)(..), (:.:)(..)
-    , Star(..), Cycle(..), Set(..)
+    , Star(..), Cycle(..), Bracelet(..), Set(..)
 
       -- * Species AST
       -- $ast
