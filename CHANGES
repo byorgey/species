@@ -1,4 +1,7 @@
-0.3.4.1    16 June 2015
+0.3.4.2    16 June 2015
+  * fix compilation error
+
+0.3.4.1    16 June 2015 [BROKEN]
   * fix ogfs for cycles & bracelets
 
 0.3.4      15 June 2015
