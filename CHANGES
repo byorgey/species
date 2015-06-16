@@ -1,3 +1,6 @@
+0.3.4.1    16 June 2015
+  * fix ogfs for cycles & bracelets
+
 0.3.4      15 June 2015
   * re-export Bracelet type from Math.Combinatorics.Species module
 
