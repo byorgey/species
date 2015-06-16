@@ -42,7 +42,7 @@ instance Species GF where
   singleton         = gfFromCoeffs [0,1]
   set               = gfFromCoeffs (repeat 1)
   cycle             = gfFromCoeffs (0 : repeat 1)
-  bracelet          = cycle
+  bracelet          = gfFromCoeffs (0 : repeat 1)
   o                 = ciErr "composition"
   (><)              = ciErr "cartesian product"
   (@@)              = ciErr "functor composition"
