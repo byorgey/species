@@ -106,10 +106,6 @@ module Math.Combinatorics.Species
     , newtonRaphsonRec
     , newtonRaphson
 
-      -- * Template Haskell
-    , deriveDefaultSpecies
-    , deriveSpecies
-
     ) where
 
 import           Math.Combinatorics.Species.AST
@@ -120,7 +116,6 @@ import           Math.Combinatorics.Species.Labeled
 import           Math.Combinatorics.Species.NewtonRaphson
 import           Math.Combinatorics.Species.Simplify
 import           Math.Combinatorics.Species.Structures
-import           Math.Combinatorics.Species.TH
 import           Math.Combinatorics.Species.Unlabeled
 
 -- $DSL
