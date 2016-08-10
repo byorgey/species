@@ -1,3 +1,9 @@
+0.4         9 August 2016
+
+  * Add support for GHC 8.0.1.  Unfortunately, the price to pay for this is
+    that the TH module is now gone.  GHC 8 broke it in a bunch of places and I don't
+    remember how it works or have the will to fix it.
+
 0.3.4.2    16 June 2015
   * fix compilation error
 
