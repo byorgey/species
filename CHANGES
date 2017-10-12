@@ -1,3 +1,7 @@
+0.4-r1     12 October 2017
+
+  * Allow base-4.10 (GHC 8.2)
+
 0.4         9 August 2016
 
   * Add support for GHC 8.0.1.  Unfortunately, the price to pay for this is
