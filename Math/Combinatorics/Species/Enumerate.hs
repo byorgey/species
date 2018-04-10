@@ -203,8 +203,7 @@ structureType (Wrap s) = showStructureType . extractType $ (stripI s)
   where extractType :: forall s. Typeable s => TSpeciesAST s -> TypeRep
         extractType _ = typeOf1 (undefined :: s ())
 
--- | Show a 'TypeRep' while stripping off qualifier portions of 'TyCon'
---   names.  This is essentially copied and pasted from the
+-- | Show a 'TypeRep'.  This is essentially copied and pasted from the
 --   "Data.Typeable" source, with a number of cases taken out that we
 --   don't care about (special cases for @(->)@, tuples, etc.).
 showStructureType :: TypeRep -> String
@@ -212,21 +211,26 @@ showStructureType t = showsPrecST 0 t ""
   where showsPrecST :: Int -> TypeRep -> ShowS
         showsPrecST p t =
           case splitTyConApp t of
-            (tycon, [])   -> showString (dropQuals $ tyConName tycon)
+            (tycon, [])   -> showString (tyConName tycon)
             (tycon, [x])  | tyConName tycon == "[]"
                               -> showChar '[' . showsPrecST 11 x . showChar ']'
-            (tycon, args) -> showParen (p > 9)
-                               $ showString (dropQuals $ tyConName tycon)
-                               . showChar ' '
-                               . showArgsST args
+            (tycon, args) -> showParen (p > 9) $
+              case (tyConName tycon, args) of
+                (':':_, [x,y]) -> showsPrecST 10 x . showChar ' '
+                                . showString (tyConName tycon)
+                                . showChar ' '
+                                . showsPrecST 10 y
+                (':':_, _)     -> showChar '(' . showString (tyConName tycon)
+                                . showChar ')' . showChar ' '
+                                . showArgsST args
+                _              -> showString (tyConName tycon)
+                                . showChar ' '
+                                . showArgsST args
 
         showArgsST :: [TypeRep] -> ShowS
         showArgsST []     = id
         showArgsST [t]    = showsPrecST 10 t
         showArgsST (t:ts) = showsPrecST 10 t . showChar ' ' . showArgsST ts
-
-        dropQuals :: String -> String
-        dropQuals = reverse . takeWhile (/= '.') . reverse
 
 -- | 'enumerateE' is a variant of 'enumerate'' which takes an
 --   (existentially quantified) typed AST and returns a list of
