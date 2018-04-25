@@ -1,3 +1,7 @@
+0.4.0.1-r1 25 April 2018
+
+  * Allow base-4.11 (GHC 8.4)
+
 0.4.0.1    10 April 2018
 
   * bug fix in 'structureType' function (https://github.com/byorgey/species/issues/3)
