@@ -1,3 +1,8 @@
+0.4.0.1-r2 18 January 2019
+
+  * Allow base-4.12 (GHC 8.6)
+  * Allow containers-0.6
+
 0.4.0.1-r1 25 April 2018
 
   * Allow base-4.11 (GHC 8.4)
