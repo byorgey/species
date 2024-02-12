@@ -1,3 +1,8 @@
+0.4.0.1-r5 12 Feb 2024
+
+  * Allow base-4.18 and -4.19 (GHC 9.6, 9.8)
+  * Drop support for GHC < 8.4
+
 0.4.0.1-r4 13 May 2022
 
   * Allow base-4.17 (GHC 9.4)
