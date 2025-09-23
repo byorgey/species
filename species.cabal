@@ -24,8 +24,7 @@ Library
                  numeric-prelude >= 0.3 && < 0.5,
                  np-extras >= 0.3 && < 0.4,
                  containers >= 0.2 && < 0.9,
-                 multiset-comb >= 0.2.4 && < 0.3,
-                 template-haskell >= 2.7 && < 3.0
+                 multiset-comb >= 0.2.4 && < 0.3
   exposed-modules:
     Math.Combinatorics.Species
     Math.Combinatorics.Species.Class
