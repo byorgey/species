@@ -133,7 +133,7 @@ elem n (I lo (Nat hi)) = lo <= fromInteger n && n <= hi
 
 -- | Convert an interval to a list of Integers.
 toList :: Interval -> [Integer]
-toList (I Omega Omega) = []
+toList (I Omega _) = []
 toList (I lo hi) | lo > hi = []
 toList (I (Nat lo) Omega) = [lo..]
 toList (I (Nat lo) (Nat hi)) = [lo..hi]
