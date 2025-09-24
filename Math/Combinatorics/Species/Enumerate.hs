@@ -150,6 +150,7 @@ enumerate' (TOfSizeExactly f n) xs
   | (fromIntegral . sum . MS.getCounts $ xs) == n
     = enumerate' (stripI f) xs
   | otherwise = []
+enumerate' TOmega _ = []
 
 -- | An existential wrapper for structures, hiding the structure
 --   functor and ensuring that it is 'Typeable'.
