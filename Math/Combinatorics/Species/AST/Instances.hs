@@ -185,6 +185,7 @@ instance Show SpeciesAST where
   showsPrec _ (OfSizeExactly f n) = showsPrec 11 f . shows n
   showsPrec _ (NonEmpty f)        = showsPrec 11 f . showChar '+'
   showsPrec _ (Rec f)             = shows f
+  showsPrec _ Omega               = showString "ω"
 
 -- | Species expressions are additive.
 instance Additive.C SpeciesAST where

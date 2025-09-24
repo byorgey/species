@@ -183,6 +183,7 @@ insertZeros = insertZeros' [0..]
       | n < pow   = genericReplicate (pow - n) zero
                     ++ insertZeros' (genericDrop (pow - n) (n:ns)) ((pow,c):pcs)
       | otherwise = c : insertZeros' ns pcs
+    insertZeros' [] _ = error "impossible! insertZeros' encountered empty index list"
 
 -- | Hadamard product.
 hadamard :: (Ring.C a, ZeroTestable.C a) => [Monomial.T a] -> [Monomial.T a] -> [Monomial.T a]

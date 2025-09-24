@@ -178,7 +178,7 @@ class (Differential.C s) => Species s where
   --   in for recursive occurrences of a species.
   omega :: s
 
-  {-# MINIMAL singleton, set, cycle, bracelet, o, (><), (@@), ofSize #-}
+  {-# MINIMAL singleton, set, cycle, bracelet, o, (><), (@@), ofSize, rec, omega #-}
 
 -- | A convenient synonym for differentiation.  @'oneHole'
 -- f@-structures look like @f@-structures on a set formed by adjoining

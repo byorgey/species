@@ -40,6 +40,7 @@ simplify f@(N _)       = f
 simplify X             =  X
 simplify E             =  E
 simplify C             =  C
+simplify B             =  B
 simplify L             =  L
 simplify Subset        =  Subset
 simplify f@(KSubset _) =  f
