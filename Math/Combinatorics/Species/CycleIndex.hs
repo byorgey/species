@@ -85,6 +85,8 @@ instance Species CycleIndex where
                    "Unable to express " ++ show f ++ " in the form T = TX*R(T)."
                  Just ls -> ls
 
+  omega      = error "omega CycleIndex unimplemented"
+
 -- | Convert an integer partition to the corresponding monomial in the
 --   cycle index series for the species of sets: 1/aut(js) * prod_i xi^ji.
 partToMonomial :: CycleType -> Monomial.T Rational

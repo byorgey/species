@@ -53,6 +53,7 @@ instance Species GF where
                         Nothing -> error $
                           "Unable to express " ++ show f ++ " in the form T = TX*R(T)."
                         Just ls -> ls
+  omega      = error "omega GF unimplemented"
 
 unlabeledCoeffs :: GF -> [Integer]
 unlabeledCoeffs (GF p) = PS.coeffs p ++ repeat 0

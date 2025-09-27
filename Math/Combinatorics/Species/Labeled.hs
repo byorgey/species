@@ -70,6 +70,8 @@ instance Species EGF where
             Nothing -> error $ "Unable to express " ++ show f ++ " in the form T = TX*R(T)."
             Just ls -> ls
 
+  omega = error "omega EGF unimplemented"
+
 -- | Extract the coefficients of an exponential generating function as
 --   a list of 'Integer's.  Since 'EGF' is an instance of 'Species', the
 --   idea is that 'labeled' can be applied directly to an expression
